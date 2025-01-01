@@ -11,6 +11,11 @@ _$FoodImpl _$$FoodImplFromJson(Map<String, dynamic> json) => _$FoodImpl(
       type: json['type'] as String,
       img: json['img'] as String,
       order: (json['order'] as num?)?.toInt() ?? 0,
+      similarNames: (json['similarNames'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      isCustom: json['isCustom'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$FoodImplToJson(_$FoodImpl instance) =>
@@ -19,4 +24,6 @@ Map<String, dynamic> _$$FoodImplToJson(_$FoodImpl instance) =>
       'type': instance.type,
       'img': instance.img,
       'order': instance.order,
+      'similarNames': instance.similarNames,
+      'isCustom': instance.isCustom,
     };

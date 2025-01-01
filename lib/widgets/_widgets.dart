@@ -1,3 +1,16 @@
 export 'header_widget.dart';
 export 'scaffoldPadding_widget.dart';
 export 'category_widget.dart';
+export 'dottedbar_widget.dart';
+export 'foodList_widget.dart';
+export 'foodPart_widget.dart';
+export 'roundedButtonPair_widget.dart';
+export 'recipeList_widget.dart';
+export 'recipeCard_widget.dart';
+export 'filterPopup_widget.dart';
+export 'backButton_widget.dart';
+export 'numberList_widget.dart';
+export 'ingredientTable_widget.dart';
+export 'recipeWishList_widget.dart';
+export 'mypageShrink_widget.dart';
+export 'matchRateIndicator_widget.dart';

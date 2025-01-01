@@ -24,6 +24,8 @@ mixin _$Food {
   String get type => throw _privateConstructorUsedError;
   String get img => throw _privateConstructorUsedError;
   int get order => throw _privateConstructorUsedError;
+  List<String> get similarNames => throw _privateConstructorUsedError;
+  bool get isCustom => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -35,7 +37,13 @@ abstract class $FoodCopyWith<$Res> {
   factory $FoodCopyWith(Food value, $Res Function(Food) then) =
       _$FoodCopyWithImpl<$Res, Food>;
   @useResult
-  $Res call({String name, String type, String img, int order});
+  $Res call(
+      {String name,
+      String type,
+      String img,
+      int order,
+      List<String> similarNames,
+      bool isCustom});
 }
 
 /// @nodoc
@@ -55,6 +63,8 @@ class _$FoodCopyWithImpl<$Res, $Val extends Food>
     Object? type = null,
     Object? img = null,
     Object? order = null,
+    Object? similarNames = null,
+    Object? isCustom = null,
   }) {
     return _then(_value.copyWith(
       name: null == name
@@ -73,6 +83,14 @@ class _$FoodCopyWithImpl<$Res, $Val extends Food>
           ? _value.order
           : order // ignore: cast_nullable_to_non_nullable
               as int,
+      similarNames: null == similarNames
+          ? _value.similarNames
+          : similarNames // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      isCustom: null == isCustom
+          ? _value.isCustom
+          : isCustom // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -84,7 +102,13 @@ abstract class _$$FoodImplCopyWith<$Res> implements $FoodCopyWith<$Res> {
       __$$FoodImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, String type, String img, int order});
+  $Res call(
+      {String name,
+      String type,
+      String img,
+      int order,
+      List<String> similarNames,
+      bool isCustom});
 }
 
 /// @nodoc
@@ -101,6 +125,8 @@ class __$$FoodImplCopyWithImpl<$Res>
     Object? type = null,
     Object? img = null,
     Object? order = null,
+    Object? similarNames = null,
+    Object? isCustom = null,
   }) {
     return _then(_$FoodImpl(
       name: null == name
@@ -119,6 +145,14 @@ class __$$FoodImplCopyWithImpl<$Res>
           ? _value.order
           : order // ignore: cast_nullable_to_non_nullable
               as int,
+      similarNames: null == similarNames
+          ? _value._similarNames
+          : similarNames // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      isCustom: null == isCustom
+          ? _value.isCustom
+          : isCustom // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -130,7 +164,10 @@ class _$FoodImpl implements _Food {
       {required this.name,
       required this.type,
       required this.img,
-      this.order = 0});
+      this.order = 0,
+      final List<String> similarNames = const [],
+      this.isCustom = false})
+      : _similarNames = similarNames;
 
   factory _$FoodImpl.fromJson(Map<String, dynamic> json) =>
       _$$FoodImplFromJson(json);
@@ -144,10 +181,22 @@ class _$FoodImpl implements _Food {
   @override
   @JsonKey()
   final int order;
+  final List<String> _similarNames;
+  @override
+  @JsonKey()
+  List<String> get similarNames {
+    if (_similarNames is EqualUnmodifiableListView) return _similarNames;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_similarNames);
+  }
+
+  @override
+  @JsonKey()
+  final bool isCustom;
 
   @override
   String toString() {
-    return 'Food(name: $name, type: $type, img: $img, order: $order)';
+    return 'Food(name: $name, type: $type, img: $img, order: $order, similarNames: $similarNames, isCustom: $isCustom)';
   }
 
   @override
@@ -158,12 +207,17 @@ class _$FoodImpl implements _Food {
             (identical(other.name, name) || other.name == name) &&
             (identical(other.type, type) || other.type == type) &&
             (identical(other.img, img) || other.img == img) &&
-            (identical(other.order, order) || other.order == order));
+            (identical(other.order, order) || other.order == order) &&
+            const DeepCollectionEquality()
+                .equals(other._similarNames, _similarNames) &&
+            (identical(other.isCustom, isCustom) ||
+                other.isCustom == isCustom));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, name, type, img, order);
+  int get hashCode => Object.hash(runtimeType, name, type, img, order,
+      const DeepCollectionEquality().hash(_similarNames), isCustom);
 
   @JsonKey(ignore: true)
   @override
@@ -184,7 +238,9 @@ abstract class _Food implements Food {
       {required final String name,
       required final String type,
       required final String img,
-      final int order}) = _$FoodImpl;
+      final int order,
+      final List<String> similarNames,
+      final bool isCustom}) = _$FoodImpl;
 
   factory _Food.fromJson(Map<String, dynamic> json) = _$FoodImpl.fromJson;
 
@@ -196,6 +252,10 @@ abstract class _Food implements Food {
   String get img;
   @override
   int get order;
+  @override
+  List<String> get similarNames;
+  @override
+  bool get isCustom;
   @override
   @JsonKey(ignore: true)
   _$$FoodImplCopyWith<_$FoodImpl> get copyWith =>

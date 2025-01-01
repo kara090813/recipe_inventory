@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart'; // Provider import 추가
 import 'package:recipe_inventory/widgets/_widgets.dart';
+import '../funcs/_funcs.dart';
 import '../models/_models.dart';
+import '../models/data.dart';
+import '../status/_status.dart';
 
 class InventoryComponents extends StatefulWidget {
   const InventoryComponents({super.key});
@@ -22,25 +26,38 @@ class _InventoryComponentsState extends State<InventoryComponents> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      const HeaderWidget(),
-      SizedBox(height: 6.h,),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "식재료 종류",
-            style: TextStyle(color: Color(0xFF6C3311), fontSize: 18.sp),
-          ),
-          InkWell(
-            onTap: () {
-              context.push('/foodDel');
-            },
-            child: Image.asset('assets/imgs/icons/trash.png',width: 18.w,)
-          )
-        ],
-      ),
-      CategoryWidget(onTabSelected: _onTabSelected),
-    ],);
+    // FoodStatus에서 사용자의 식재료 리스트를 가져옵니다.
+    final userFoodList = context.watch<FoodStatus>().userFood;
+
+    return Column(
+      children: [
+        HeaderWidget(),
+        SizedBox(height: 6.h,),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "식재료 종류",
+              style: TextStyle(color: Color(0xFF6C3311), fontSize: 16.sp),
+            ),
+            InkWell(
+                onTap: () {
+                  context.push('/foodDel');
+                },
+                child: Image.asset('assets/imgs/icons/trash.png', width: 18.w,)
+            )
+          ],
+        ),
+        SizedBox(height: 2.h,),
+        DottedBarWidget(),
+        CategoryWidget(onTabSelected: _onTabSelected),
+        FoodListWidget(
+          partCount: 7,
+          categoryIndex: _selectedTabIndex,
+          bkgColor: 0xFFBDD8D8,
+          foodList: userFoodList, // 사용자의 식재료 리스트를 전달
+        ),
+      ],
+    );
   }
 }
