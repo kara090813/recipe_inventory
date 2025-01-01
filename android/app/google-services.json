@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "992466273542",
+    "project_id": "recipe-inventory",
+    "storage_bucket": "recipe-inventory.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992466273542:android:7aae1163a2e7aded434a87",
+        "android_client_info": {
+          "package_name": "com.example.recipe_inventory"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992466273542-1roufo5vjhn8ch8foji1m724p1gonevg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq9v_jowp1ma_bafqYEtjrU7gbSs1tHmE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992466273542-1roufo5vjhn8ch8foji1m724p1gonevg.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992466273542-p8d26jagl9n5hppcjdro1q4bfa95oh1r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.recipeInventory"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
