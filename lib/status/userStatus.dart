@@ -60,18 +60,16 @@ class UserStatus extends ChangeNotifier {
   Future<void> loadUserStatus() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // 기존 데이터 로드
     final historyJson = prefs.getString('cookingHistory');
     if (historyJson != null) {
       final historyList = json.decode(historyJson) as List;
-      _cookingHistory = historyList.map((item) => CookingHistory.fromJson(item)).toList();
+      _cookingHistory =
+          historyList.map((item) => CookingHistory.fromJson(item)).toList();
     }
 
-    // 사용자 프로필 정보 로드
     final userProfileJson = prefs.getString('userProfile');
     if (userProfileJson != null) {
-      final profileMap = json.decode(userProfileJson);
-      _userProfile = UserProfile.fromJson(profileMap);
+      _userProfile = UserProfile.fromJson(json.decode(userProfileJson));
       _nickname = _userProfile?.name ?? generateRandomNickname();
       _profileImage = _userProfile?.photoURL;
     } else {
@@ -106,12 +104,16 @@ class UserStatus extends ChangeNotifier {
 
   Future<void> saveUserStatus() async {
     final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString('cookingHistory', json.encode(_cookingHistory.map((h) => h.toJson()).toList()));
-    await prefs.setString('ongoingCooking', json.encode(_ongoingCooking.map((o) => o.toJson()).toList()));
+    await prefs.setString(
+      'cookingHistory',
+      json.encode(_cookingHistory.map((h) => h.toJson()).toList()),
+    );
+    await prefs.setString(
+      'ongoingCooking',
+      json.encode(_ongoingCooking.map((o) => o.toJson()).toList()),
+    );
     await prefs.setString('nickname', _nickname);
     await prefs.setBool('isInitialized', _isInitialized);
-
   }
 
   String generateRandomNickname() {

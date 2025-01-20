@@ -31,17 +31,17 @@ class MyPageComponent extends StatelessWidget {
         SizedBox(
           width: 8.h,
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            InkWell(
-                onTap: () {
-                  userStatus.reset();
-                  recipeStatus.clearAllFavorites();
-                },
-                child: Image.asset('assets/imgs/icons/setting.png')),
-          ],
-        ),
+        // Row(
+        //   mainAxisAlignment: MainAxisAlignment.end,
+        //   children: [
+        //     InkWell(
+        //         onTap: () {
+        //           userStatus.reset();
+        //           recipeStatus.clearAllFavorites();
+        //         },
+        //         child: Image.asset('assets/imgs/icons/setting.png')),
+        //   ],
+        // ),
         Expanded(
           child: SingleChildScrollView(
             child: Column(
@@ -63,13 +63,13 @@ class MyPageComponent extends StatelessWidget {
                         context.push('/profileSet');
                       },
                       child: Text(
-                        "계정 설정하기",
+                        "냉털이 설정하기",
                         style: TextStyle(color: Color(0xFF7D674B)),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
                         textStyle: TextStyle(fontFamily: 'Mapo', fontSize: 12.sp),
-                        side: BorderSide(color: Color(0xFF707070)),
+                        side: BorderSide(color: Color(0xFF7D674B)),
                         minimumSize: Size(0, 0),
                       ),
                     ),
@@ -105,7 +105,10 @@ class MyPageComponent extends StatelessWidget {
                     RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
-                        style: TextStyle(color: Color(0xFF505050), fontSize: 12.sp),
+                        style: TextStyle(
+                            color: Color(0xFF505050),
+                            fontSize: 12.sp,
+                            fontFamily: 'Mapo'),
                         children: <TextSpan>[
                           TextSpan(text: '요리왕 '),
                           TextSpan(
@@ -225,7 +228,12 @@ class MyPageComponent extends StatelessWidget {
                                       )),
                                   Expanded(
                                       flex: 2,
-                                      child: Image.network(ongoingCooking[0].recipe.thumbnail))
+                                      child: ClipRRect(
+                                          borderRadius: BorderRadius.only(
+                                            topRight: Radius.circular(8.r), // 우측 상단
+                                            bottomRight: Radius.circular(8.r), // 우측 하단
+                                          ),
+                                          child: Image.network(ongoingCooking[0].recipe.thumbnail)))
                                 ],
                               ),
                             ),
@@ -346,11 +354,8 @@ class MyPageComponent extends StatelessWidget {
                             context.push('/cookHistory');
                           },
                           child: Text(
-                            '전체보기',
-                            style: TextStyle(
-                                color:
-                                    recentHistory.isEmpty ? Color(0xFF707070) : Color(0xFFFF8B27),
-                                fontSize: 12.sp),
+                            '달력보기',
+                            style: TextStyle(color: Color(0xFFFF8B27), fontSize: 12.sp),
                           ),
                         )
                       ],

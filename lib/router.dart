@@ -27,7 +27,7 @@ class AppRouter {
             GoRoute(
                 path: 'receiptScan',
                 builder: (context, state) {
-                  return Container();
+                  return ReceiptScanScreen();
                 }),
           ]),
       GoRoute(

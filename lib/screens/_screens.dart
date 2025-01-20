@@ -11,3 +11,5 @@ export 'cookHistory_screen.dart';
 export 'profileSet_screen.dart';
 export 'recipeWishList_screen.dart';
 export 'customFood_screen.dart';
+export 'customFoodAddTab_screen.dart';
+export 'customFoodDeleteTab_screen.dart';

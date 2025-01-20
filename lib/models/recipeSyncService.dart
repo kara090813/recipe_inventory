@@ -43,21 +43,27 @@ class RecipeSyncService {
     final prefs = await SharedPreferences.getInstance();
     final int? lastSync = prefs.getInt(LAST_SYNC_KEY);
 
-    if (lastSync == null) return true;
+    final localRecipes = await loadLocalRecipes();
+    // 로컬에 레시피가 하나도 없다면, lastSync 여부와 관계없이 무조건 동기화
+    if (localRecipes.isEmpty) {
+      return true;
+    }
+
+    if (lastSync == null) {
+      return true;
+    }
 
     final lastSyncDate = DateTime.fromMillisecondsSinceEpoch(lastSync);
     final daysSinceLastSync = DateTime.now().difference(lastSyncDate).inDays;
-
     if (daysSinceLastSync >= SYNC_INTERVAL_DAYS) {
-      // 로컬과 Firebase의 레시피 개수 비교
-      final localRecipes = await loadLocalRecipes();
       final firebaseRecipeCount = await getFirebaseRecipeCount();
-
       return localRecipes.length != firebaseRecipeCount;
     }
 
     return false;
   }
+
+
 
   // Firebase에서 모든 레시피 가져오기
   Future<List<Recipe>> fetchFirebaseRecipes() async {

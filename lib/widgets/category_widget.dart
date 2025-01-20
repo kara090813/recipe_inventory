@@ -31,6 +31,7 @@ class _CategoryWidgetState extends State<CategoryWidget> {
                 child: Text(
                   FOOD_CATEGORY[index],
                   style: TextStyle(
+                    fontFamily: 'Mapo',
                       color: _selectedIndex == index ? Colors.white : Color(0xFF707070),
                       fontSize: 14.sp),
                 ),

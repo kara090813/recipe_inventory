@@ -133,22 +133,108 @@ class _FoodAddScreenState extends State<FoodAddScreen> with SingleTickerProvider
   }
 
   Widget _buildTabButton(int index, String label, double screenWidth) {
+    // 냉장고 스캔 탭(index 0)인 경우의 스타일 처리
+    final bool isLocked = index == 0;
+
     return Expanded(
       child: GestureDetector(
-        onTap: () => _clickIndex(index),
+        onTap: isLocked
+            ? () {
+          // 잠금 상태일 때 알림 다이얼로그 표시
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return Dialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Container(
+                  padding: EdgeInsets.all(20.w),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 16.h),
+                      Icon(
+                        Icons.lock_outline,
+                        size: 48.w,
+                        color: Color(0xFFFF8B27),
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        '준비 중인 기능입니다',
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7D674B),
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'AI 기능 개발 중입니다.\n조금만 기다려주세요!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Color(0xFF969696),
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFFF8B27),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          minimumSize: Size(double.infinity, 48.h),
+                        ),
+                        child: Text(
+                          '확인',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontFamily: 'Mapo'
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        }
+            : () => _clickIndex(index),
         child: Container(
-          color: Colors.transparent, // 터치 영역을 위해 투명한 배경 추가
+          color: Colors.transparent,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: _tabIndex == index ? Color(0xFF6C3311) : Color(0xFF919191),
-                  fontSize: 14.sp,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: isLocked
+                          ? Color(0xFFBFBFBF)  // 잠금 상태일 때는 회색으로
+                          : _tabIndex == index
+                          ? Color(0xFF6C3311)
+                          : Color(0xFF919191),
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  if (isLocked) ...[
+                    SizedBox(width: 4.w),
+                    Icon(
+                      Icons.lock_outline,
+                      size: 14.sp,
+                      color: Color(0xFFBFBFBF),
+                    ),
+                  ],
+                ],
               ),
-              SizedBox(height: 8.h), // 텍스트와 바 사이의 간격
+              SizedBox(height: 8.h),
             ],
           ),
         ),

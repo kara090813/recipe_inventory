@@ -22,7 +22,6 @@ void main() async {
   // MobileAds 초기화를 try-catch로 감싸기
   try {
     await MobileAds.instance.initialize();
-    print('MobileAds initialized successfully');
   } catch (e) {
     print('Failed to initialize MobileAds: $e');
   }

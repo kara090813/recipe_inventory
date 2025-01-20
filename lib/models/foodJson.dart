@@ -106,8 +106,23 @@ const FOOD_JSON = [
   {"name": "마요네즈", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/mayonnaise.png"},
   {"name": "케찹", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/Ketchup.png"},
   {"name": "설탕", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/sugar.png"},
-  {"name": "후추", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/pepper.png"},
+  {
+    "name": "후추",
+    "type": "조미료/향신료",
+    "img": "assets/imgs/food/seasoning/pepper.png",
+    "similarNames": ["후춧가루"]
+  },
   {"name": "소금", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/salt.png"},
+  {
+    "name": "MSG",
+    "type": "조미료/향신료",
+    "img": "assets/imgs/food/seasoning/msg.png",
+    "similarNames": [
+      "맛소금",
+      "미원",
+      "다시다",
+    ]
+  },
   {"name": "쌈장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/Ssamjang.png"},
   {"name": "청국장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/soybean_paste.png"},
   {"name": "된장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/soybean_paste.png"},

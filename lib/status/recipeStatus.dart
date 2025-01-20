@@ -1,22 +1,110 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/_models.dart';
 import '../models/recipeSyncService.dart';
+import '_status.dart';
 
 class RecipeStatus extends ChangeNotifier {
+  static const int PAGE_SIZE = 10;
   final RecipeSyncService _syncService = RecipeSyncService();
   List<Recipe> _recipes = [];
+  List<Recipe> _loadedRecipes = [];
   List<Recipe> _recommendedRecipes = [];
   Set<String> _favoriteRecipeIds = {}; // 좋아요 누른 레시피 ID 목록
   bool _isLoading = true;
   String _searchQuery = '';
+  bool _hasMore = true;
+  int _currentPage = 0;
+
+
+  List<Recipe> get loadedRecipes => _loadedRecipes;
+  bool get hasMore => _hasMore;
+  // 페이지 단위로 레시피 로드
+  Future<List<Recipe>> loadMoreRecipes() async {
+    if (_isLoading || !_hasMore) return _loadedRecipes;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final start = _currentPage * PAGE_SIZE;
+      final end = start + PAGE_SIZE;
+
+      if (start >= _recipes.length) {
+        _hasMore = false;
+        _isLoading = false;
+        notifyListeners();
+        return _loadedRecipes;
+      }
+
+      // 지연 시뮬레이션 (실제 API 호출 대체)
+      await Future.delayed(Duration(milliseconds: 500));
+
+      final newRecipes = _recipes.sublist(
+          start,
+          min(end, _recipes.length)
+      );
+
+      _loadedRecipes.addAll(newRecipes);
+      _currentPage++;
+
+      if (end >= _recipes.length) {
+        _hasMore = false;
+      }
+
+    } catch (e) {
+      print('Error loading recipes: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+
+    return _loadedRecipes;
+  }
+
+  // 필터나 검색 시 페이지네이션 초기화
+  void resetPagination() {
+    _loadedRecipes.clear();
+    _currentPage = 0;
+    _hasMore = true;
+    _isLoading = false;
+    notifyListeners();
+  }
 
   static const String FAVORITE_RECIPES_KEY = 'favorite_recipes';
 
   RecipeStatus() {
     _initializeRecipes();
   }
+
+  void shuffleRecipes() {
+    final random = Random();
+
+    // 필터된 레시피가 있는 경우
+    if (_loadedRecipes.isNotEmpty) {
+      _loadedRecipes.shuffle(random);
+      notifyListeners();
+      return;
+    }
+
+    // 전체 레시피 셔플
+    _recipes.shuffle(random);
+    resetPagination();
+    notifyListeners();
+  }
+
+  List<Recipe> _currentTabRecipes = [];
+
+  void setCurrentTabRecipes(List<Recipe> recipes) {
+    _currentTabRecipes = recipes;
+    notifyListeners();
+  }
+
+  List<Recipe> get currentTabRecipes => _currentTabRecipes;
 
   String get searchQuery => _searchQuery;
 
@@ -51,6 +139,7 @@ class RecipeStatus extends ChangeNotifier {
     try {
       print("Syncing recipes...");
       _recipes = await _syncService.syncRecipes();
+      shuffleRecipes();
       print("Synced recipes count: ${_recipes.length}");
       _isLoading = false;
       notifyListeners();
@@ -91,7 +180,7 @@ class RecipeStatus extends ChangeNotifier {
       _favoriteRecipeIds.add(recipeId);
     }
     await _saveFavoriteRecipes();
-    notifyListeners();
+    notifyListeners(); // 좋아요 상태 변경만 알림
   }
 
   // 좋아요 상태 확인
@@ -111,13 +200,15 @@ class RecipeStatus extends ChangeNotifier {
   }
 
   // 필터링된 레시피 가져오기
-  List<Recipe> getFilteredRecipes({
+  List<Recipe> getFilteredRecipes(BuildContext context, {
     String? searchQuery,
     String? recipeType,
     String? difficulty,
     RangeValues? ingredientCount,
+    RangeValues? matchRate,
   }) {
-    print(searchQuery);
+    final foodStatus = Provider.of<FoodStatus>(context, listen: false);
+    
     return _recipes.where((recipe) {
       // 검색어 매칭 (제목과 서브타이틀 모두 검색)
       bool matchesSearch = searchQuery == null
@@ -141,8 +232,16 @@ class RecipeStatus extends ChangeNotifier {
       bool matchesIngredientCount = ingredientCount == null ||
           (recipe.ingredients_cnt >= ingredientCount.start &&
               recipe.ingredients_cnt <= ingredientCount.end);
+      bool matchesMatchRate = true;
 
-      return matchesSearch && matchesType && matchesDifficulty && matchesIngredientCount;
+      if (matchRate != null) {
+        final currentMatchRate = foodStatus.calculateMatchRate(recipe.ingredients);
+        matchesMatchRate = currentMatchRate >= matchRate.start &&
+            currentMatchRate <= matchRate.end;
+      }
+
+      return matchesSearch && matchesType && matchesDifficulty &&
+          matchesIngredientCount && matchesMatchRate;
     }).toList();
   }
 }

@@ -8,6 +8,7 @@ part of 'recipe_model.dart';
 
 _$RecipeImpl _$$RecipeImplFromJson(Map<String, dynamic> json) => _$RecipeImpl(
       id: json['id'] as String,
+      link: json['link'] as String,
       title: json['title'] as String,
       sub_title: json['sub_title'] as String,
       thumbnail: json['thumbnail'] as String,
@@ -28,6 +29,7 @@ _$RecipeImpl _$$RecipeImplFromJson(Map<String, dynamic> json) => _$RecipeImpl(
 Map<String, dynamic> _$$RecipeImplToJson(_$RecipeImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'link': instance.link,
       'title': instance.title,
       'sub_title': instance.sub_title,
       'thumbnail': instance.thumbnail,

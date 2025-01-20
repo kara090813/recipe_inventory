@@ -5,3 +5,5 @@ export 'foodMatch_func.dart';
 export 'etc_func.dart';
 export 'recipeRecommendationService_func.dart';
 export 'customFoodService_func.dart';
+export 'isTablet_func.dart';
+export 'onboardingGuideFunc.dart';

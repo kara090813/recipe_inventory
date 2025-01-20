@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:recipe_inventory/status/_status.dart';
+import '../funcs/_funcs.dart';
+import '../models/data.dart';
 import '../widgets/_widgets.dart';
 import '../components/_components.dart';
 import '_screens.dart';
@@ -15,114 +18,144 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-
-
-
   final List<List<dynamic>> barList = [
-    ['assets/imgs/icons/bar_home.png', '냉장고',],
-    ['assets/imgs/icons/bar_recomanded.png', '추천'],
+    [
+      'assets/imgs/icons/bar_home.png',
+      '냉장고',
+    ],
     ['assets/imgs/icons/bar_cart.png', '식재료 추가'],
+    ['assets/imgs/icons/bar_recomanded.png', '추천'],
     ['assets/imgs/icons/bar_search.png', '탐색'],
     ['assets/imgs/icons/bar_my.png', '마이페이지']
   ];
 
   final List<Widget> _widgetOptions = <Widget>[
     InventoryComponents(),
-    RecommendedRecipeComponent(),
     Container(),
+    RecommendedRecipeComponent(),
     SearchRecipeComponent(),
     MyPageComponent()
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // 화면이 완전히 빌드된 후 가이드 표시
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      OnboardingGuide.showIfNeeded(context, guideContents);
+    });
+  }
+
+  DateTime? _lastPressedAt;
+  @override
   Widget build(BuildContext context) {
     final tabState = Provider.of<TabStatus>(context);
 
+    return PopScope(
+      canPop: false, // 기본적으로 pop 동작 방지
+      onPopInvoked: (didPop) async {
+        // didPop이 false인 경우에만 처리 (canPop이 false이므로 항상 false)
+        if (!didPop) {
+          if (_lastPressedAt == null ||
+              DateTime.now().difference(_lastPressedAt!) > Duration(seconds: 2)) {
+            _lastPressedAt = DateTime.now();
 
-    return Scaffold(
-      body: ScaffoldPaddingWidget(
-        child: IndexedStack(
-          index: tabState.selectedIndex,
-          children: _widgetOptions,
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20.0),
-            topRight: Radius.circular(20.0),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0xFF573E3E).withOpacity(0.33),
-              spreadRadius: 1,
-              blurRadius: 15, // 그림자 방향 조정
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('뒤로가기를 한 번 더 누르면 앱이 종료됩니다'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          } else {
+            // 2초 이내에 두 번째 클릭 시 앱 종료
+            SystemNavigator.pop(); // 앱 종료를 위해 SystemNavigator.pop() 사용
+          }
+        }
+      },
+      child: Scaffold(
+          body: ScaffoldPaddingWidget(
+            child: IndexedStack(
+              index: tabState.selectedIndex,
+              children: _widgetOptions,
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20.0),
-            topRight: Radius.circular(20.0),
           ),
-          child: BottomAppBar(
-            padding: EdgeInsets.zero,
-            color: Colors.white,
-            elevation: 0,
-            child: SizedBox(
-              height: 60.h,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(barList.length, (index) {
-                  final element = barList[index];
-                  final bool _selected = tabState.selectedIndex == index;
-
-                  return Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        if (index == 2) {
-                          context.read<SelectedFoodProvider>().clearSelection();
-                          context.push('/foodAdd');
-                        } else {
-                          tabState.setIndex(index);
-                        }
-                      },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            height: 30.h,
-                            child: ColorFiltered(
-                                colorFilter: ColorFilter.mode(
-                                    _selected ? Color(0xFF5E3009) : Color(0xFFAAAAAA),
-                                    BlendMode.srcIn
-                                ),
-                                child: Image(
-                                  image:AssetImage(element[0]),
-                                  width: 30.w,
-                                )
-                            ),
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20.0),
+                topRight: Radius.circular(20.0),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFF573E3E).withOpacity(0.33),
+                  spreadRadius: 1,
+                  blurRadius: 15,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20.0),
+                topRight: Radius.circular(20.0),
+              ),
+              child: BottomAppBar(
+                padding: EdgeInsets.zero,
+                color: Colors.white,
+                elevation: 0,
+                child: SizedBox(
+                  // 태블릿일 경우 적당한 높이로 조정
+                  height: isTablet(context) ? 70.h : 60.h,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(barList.length, (index) {
+                      final element = barList[index];
+                      final bool _selected = tabState.selectedIndex == index;
+      
+                      return Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            if (index == 1) {
+                              context.read<SelectedFoodProvider>().clearSelection();
+                              context.push('/foodAdd');
+                            } else {
+                              tabState.setIndex(index);
+                            }
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // 태블릿일 경우 위쪽 여백 약간만 추가
+                              SizedBox(height: isTablet(context) ? 8.h : 0),
+                              SizedBox(
+                                height: isTablet(context) ? 28.h : 30.h, // 아이콘 크기 약간만 증가
+                                child: ColorFiltered(
+                                    colorFilter: ColorFilter.mode(
+                                        _selected ? Color(0xFF5E3009) : Color(0xFFAAAAAA),
+                                        BlendMode.srcIn),
+                                    child: Image(
+                                      image: AssetImage(element[0]),
+                                      width: isTablet(context) ? 32.w : 30.w,
+                                    )),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                element[1],
+                                style: TextStyle(
+                                    color: _selected ? Color(0xFF5E3009) : Color(0xFFAAAAAA),
+                                    fontSize: isTablet(context) ? 8.sp : 12.sp // 텍스트 크기 약간만 증가
+                                    ),
+                              )
+                            ],
                           ),
-                          SizedBox(height: 4.h),
-                          Text(
-                            element[1],
-                            style: TextStyle(
-                                color: _selected ? Color(0xFF5E3009) : Color(0xFFAAAAAA),
-                                fontSize: 12.sp
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  );
-                }),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      ),
+          )),
     );
   }
 }
-

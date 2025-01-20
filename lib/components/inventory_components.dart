@@ -50,9 +50,13 @@ class _InventoryComponentsState extends State<InventoryComponents> {
         ),
         SizedBox(height: 2.h,),
         DottedBarWidget(),
+        if(isTablet(context))
+          SizedBox(height: 10.h,),
         CategoryWidget(onTabSelected: _onTabSelected),
+        if(isTablet(context))
+          SizedBox(height: 10.h,),
         FoodListWidget(
-          partCount: 7,
+          partCount: 6,
           categoryIndex: _selectedTabIndex,
           bkgColor: 0xFFBDD8D8,
           foodList: userFoodList, // 사용자의 식재료 리스트를 전달

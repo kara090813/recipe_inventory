@@ -53,6 +53,20 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
+    packagingOptions {
+        // 텍스트 인식 외의 모든 ML Kit 모델 제외
+        exclude 'lib/**/libdigitalink.so'           // 디지털 잉크 인식
+        exclude 'lib/**/libxeno_native.so'          // 기타
+        exclude 'lib/**/libbarhopper_v2.so'         // 바코드 스캔
+        exclude 'lib/**/libclassifier_jni.so'       // 이미지 분류
+        exclude 'lib/**/libpredictor_jni.so'        // 예측 모델
+        exclude 'lib/**/libtextclassifier3_jni_tclib.so' // 텍스트 분류
+        exclude 'lib/**/libface_detector_v2_jni.so' // 얼굴 인식
+        exclude 'lib/**/libtensorflowlite_jni.so'   // TensorFlow Lite
+        exclude 'lib/**/liblanguage_id_jni.so'      // 언어 감지
+        exclude 'lib/**/libtranslate_jni.so'        // 번역
+        exclude 'lib/**/libmlkit_pose.so'           // 포즈 인식
+    }
 
     buildTypes {
         release {
@@ -61,12 +75,18 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            aaptOptions {
+                ignoreAssetsPattern '!mlkit_text_recognition:' // 텍스트 인식만 포함
+            }
         }
         debug {
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            aaptOptions {
+                ignoreAssetsPattern '!mlkit_text_recognition:' // 텍스트 인식만 포함
+            }
         }
     }
 }
@@ -76,5 +96,6 @@ flutter {
 }
 
 dependencies {
+    implementation 'com.google.mlkit:text-recognition-korean:16.0.0'
     implementation "androidx.cardview:cardview:1.0.0"
 }

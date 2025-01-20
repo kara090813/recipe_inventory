@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:recipe_inventory/funcs/_funcs.dart';
 import 'package:recipe_inventory/status/_status.dart';
 import 'package:recipe_inventory/widgets/_widgets.dart';
 
@@ -65,25 +67,37 @@ class _RecipeFilterScreenState extends State<RecipeFilterScreen> {
                       ),
                       Text(
                         '전체 필터',
-                        style: TextStyle(color: Color(0xFF7D674B), fontSize: 20.sp),
+                        style: TextStyle(
+                            color: Color(0xFF7D674B), fontSize: isTablet(context) ? 14.sp : 20.sp),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 ),
-                SizedBox(
-                  width: 80.w,
-                  child: TextButton(
-                    onPressed: () {
-                      _resetFilters();
-                    },
-                    child: Text(
-                      '초기화',
-                      style: TextStyle(color: Color(0xFFDB2222)),
+                TextButton(
+                  onPressed: () async {
+                    _resetFilters();
+                  },
+                  style: TextButton.styleFrom(
+                    minimumSize: Size.zero,
+                    // 기본 최소 사이즈 제거
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    // 탭
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    backgroundColor: Color(0xFFD64545),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // 라운드 값은 조절 가능
                     ),
-                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   ),
-                )
+                  child: Text(
+                    '초기화',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:recipe_inventory/widgets/filterButtons_widget.dart';
+import '../funcs/_funcs.dart';
 import '../status/_status.dart';
 import '../widgets/_widgets.dart';
 
@@ -109,31 +110,36 @@ class _TopFullWidthPopupState extends State<TopFullWidthPopup> {
   Widget _buildSearchAndFilter() {
     return Column(
       children: [
-        Container(
-          height: 40.h,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10.r),
-            color: Colors.grey[200],
-            border: Border.all(width: 1, color: Color(0xFF707070)),
-          ),
-          child: TextField(
-            enabled: false,
-            onChanged: (value) {},
-            decoration: InputDecoration(
+        TextField(
+          enabled: false,
+          onChanged: (value) {},
+          decoration: InputDecoration(
+            filled: true,
+              fillColor: Color(0xFFe6e6e6),
               hintText: '레시피 검색',
+              hintStyle: TextStyle(
+                  color: Colors.grey,
+                  fontFamily: 'Mapo',
+                  fontSize: isTablet(context) ? 12.sp : 15.5.sp),
               prefixIcon: Icon(
                 Icons.search,
                 color: Color(0xFF5E3009),
-                size: 30.w,
+                size: isTablet(context) ? 20.w : 30.w,
               ),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
-            ),
-          ),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 15.w, vertical: isTablet(context) ? 5.h : 9.h),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.r),
+                borderSide: BorderSide(color: Color(0xFF707070)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                  borderSide: BorderSide(color: Color(0xFF5E3009)))),
         ),
         SizedBox(height: 8.h),
         Container(
-          height: 42.h,
+          height: isTablet(context) ? 50.h : 42.h,
           decoration: BoxDecoration(
             color: Color(0xFFEAE5DF),
             borderRadius: BorderRadius.circular(10.r),
@@ -263,7 +269,6 @@ class _TopFullWidthPopupState extends State<TopFullWidthPopup> {
 
   Widget _buildTypeButton(String text) {
     bool isSelected = selectedTypes.contains(text);
-    print(selectedTypes);
     return ElevatedButton(
       onPressed: () {
         setState(() {
@@ -290,6 +295,7 @@ class _TopFullWidthPopupState extends State<TopFullWidthPopup> {
         text,
         style: TextStyle(
           color: isSelected ? Colors.white : Color(0xFF505050),
+          fontFamily: 'Mapo',
           fontSize: 12.sp,
         ),
       ),
@@ -314,7 +320,7 @@ class _TopFullWidthPopupState extends State<TopFullWidthPopup> {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               "취소하기",
-              style: TextStyle(color: Colors.white, fontSize: 16.sp),
+              style: TextStyle(color: Colors.white, fontSize: 16.sp, fontFamily: 'Mapo'),
             ),
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
@@ -340,7 +346,7 @@ class _TopFullWidthPopupState extends State<TopFullWidthPopup> {
             },
             child: Text(
               "적용하기",
-              style: TextStyle(color: Colors.white, fontSize: 16.sp),
+              style: TextStyle(color: Colors.white, fontSize: 16.sp, fontFamily: 'Mapo'),
             ),
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(

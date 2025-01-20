@@ -20,7 +20,8 @@ Recipe _$RecipeFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Recipe {
-  String get id => throw _privateConstructorUsedError; // Firebase document ID
+  String get id => throw _privateConstructorUsedError;
+  String get link => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String get sub_title => throw _privateConstructorUsedError;
   String get thumbnail => throw _privateConstructorUsedError;
@@ -43,6 +44,7 @@ abstract class $RecipeCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
+      String link,
       String title,
       String sub_title,
       String thumbnail,
@@ -68,6 +70,7 @@ class _$RecipeCopyWithImpl<$Res, $Val extends Recipe>
   @override
   $Res call({
     Object? id = null,
+    Object? link = null,
     Object? title = null,
     Object? sub_title = null,
     Object? thumbnail = null,
@@ -82,6 +85,10 @@ class _$RecipeCopyWithImpl<$Res, $Val extends Recipe>
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      link: null == link
+          ? _value.link
+          : link // ignore: cast_nullable_to_non_nullable
               as String,
       title: null == title
           ? _value.title
@@ -132,6 +139,7 @@ abstract class _$$RecipeImplCopyWith<$Res> implements $RecipeCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
+      String link,
       String title,
       String sub_title,
       String thumbnail,
@@ -155,6 +163,7 @@ class __$$RecipeImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
+    Object? link = null,
     Object? title = null,
     Object? sub_title = null,
     Object? thumbnail = null,
@@ -169,6 +178,10 @@ class __$$RecipeImplCopyWithImpl<$Res>
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      link: null == link
+          ? _value.link
+          : link // ignore: cast_nullable_to_non_nullable
               as String,
       title: null == title
           ? _value.title
@@ -215,6 +228,7 @@ class __$$RecipeImplCopyWithImpl<$Res>
 class _$RecipeImpl implements _Recipe {
   _$RecipeImpl(
       {required this.id,
+      required this.link,
       required this.title,
       required this.sub_title,
       required this.thumbnail,
@@ -233,7 +247,8 @@ class _$RecipeImpl implements _Recipe {
 
   @override
   final String id;
-// Firebase document ID
+  @override
+  final String link;
   @override
   final String title;
   @override
@@ -272,7 +287,7 @@ class _$RecipeImpl implements _Recipe {
 
   @override
   String toString() {
-    return 'Recipe(id: $id, title: $title, sub_title: $sub_title, thumbnail: $thumbnail, recipe_type: $recipe_type, difficulty: $difficulty, ingredients_cnt: $ingredients_cnt, ingredients: $ingredients, recipe_method: $recipe_method, recipe_tags: $recipe_tags)';
+    return 'Recipe(id: $id, link: $link, title: $title, sub_title: $sub_title, thumbnail: $thumbnail, recipe_type: $recipe_type, difficulty: $difficulty, ingredients_cnt: $ingredients_cnt, ingredients: $ingredients, recipe_method: $recipe_method, recipe_tags: $recipe_tags)';
   }
 
   @override
@@ -281,6 +296,7 @@ class _$RecipeImpl implements _Recipe {
         (other.runtimeType == runtimeType &&
             other is _$RecipeImpl &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.link, link) || other.link == link) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.sub_title, sub_title) ||
                 other.sub_title == sub_title) &&
@@ -305,6 +321,7 @@ class _$RecipeImpl implements _Recipe {
   int get hashCode => Object.hash(
       runtimeType,
       id,
+      link,
       title,
       sub_title,
       thumbnail,
@@ -332,6 +349,7 @@ class _$RecipeImpl implements _Recipe {
 abstract class _Recipe implements Recipe {
   factory _Recipe(
       {required final String id,
+      required final String link,
       required final String title,
       required final String sub_title,
       required final String thumbnail,
@@ -346,7 +364,9 @@ abstract class _Recipe implements Recipe {
 
   @override
   String get id;
-  @override // Firebase document ID
+  @override
+  String get link;
+  @override
   String get title;
   @override
   String get sub_title;

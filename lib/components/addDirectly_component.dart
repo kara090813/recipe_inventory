@@ -94,6 +94,8 @@ class _AddDirectlyComponentState extends State<AddDirectlyComponent> with Single
             ],
           ),
         ),
+        if(isTablet(context))
+          SizedBox(height: 10.h,),
         Expanded(child: _widgetOptions[_selectedTabIndex]),
         SizedBox(height: 10.h,),
         Consumer<SelectedFoodProvider>(
@@ -125,7 +127,7 @@ class _AddDirectlyComponentState extends State<AddDirectlyComponent> with Single
           text,
           style: TextStyle(
             color: Color(0xFF5E3009),
-            fontSize: 13.sp,
+            fontSize: 14.sp,
             fontWeight: _selectedTabIndex == index ? FontWeight.bold : FontWeight.normal,
           ),
         ),

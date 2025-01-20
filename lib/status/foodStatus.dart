@@ -63,24 +63,13 @@ class FoodStatus extends ChangeNotifier {
     int matchCount = 0;
 
     for (var ingredient in ingredients) {
-      // 각 레시피 재료에 대해 사용자의 식재료와 매칭 여부 확인
-      for (var userFood in _userFood) {
-        // 1. 직접적인 이름 매칭
-        if (isIngredientMatched(ingredient.food, userFood.name)) {
-          matchCount++;
-          break;
-        }
-
-        // 2. similarNames와의 매칭 확인
-        bool matchedWithSimilarName = false;
-        for (var similarName in userFood.similarNames) {
-          if (isIngredientMatched(ingredient.food, similarName)) {
-            matchCount++;
-            matchedWithSimilarName = true;
-            break;
-          }
-        }
-        if (matchedWithSimilarName) break;
+      // 사용자의 식재료 중 하나라도 매칭되면 카운트
+      if (_userFood.any((userFood) =>
+      isIngredientMatched(ingredient.food, userFood.name) ||
+          userFood.similarNames.any((similarName) =>
+              isIngredientMatched(ingredient.food, similarName))
+      )) {
+        matchCount++;
       }
     }
 

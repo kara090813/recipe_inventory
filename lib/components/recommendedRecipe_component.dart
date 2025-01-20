@@ -12,6 +12,20 @@ import '../models/_models.dart';
 import '../status/_status.dart';
 import '../widgets/_widgets.dart';
 
+import 'dart:io';
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
+import '../funcs/_funcs.dart';
+import '../models/_models.dart';
+import '../status/_status.dart';
+import '../widgets/_widgets.dart';
+
 class RecommendedRecipeComponent extends StatefulWidget {
   const RecommendedRecipeComponent({Key? key}) : super(key: key);
 
@@ -21,17 +35,16 @@ class RecommendedRecipeComponent extends StatefulWidget {
 
 class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent> {
   late CardSwiperController _cardSwiperController;
-
-  final List<Recipe> _recipeItems = [];
+  List<Recipe> _recipeItems = [];
   int _recipeCardsSinceLastAd = 0;
 
-  // 광고 미리 로드 관련
-  static const int _maxPreloadAds = 3;
-  final List<bool> _isAdLoaded = List.filled(_maxPreloadAds, false);
-  final List<NativeAd?> _nativeAds = List.filled(_maxPreloadAds, null);
-  final List<NativeAd> _availableAds = [];
+  // 광고 관련 상수
+  static const int TARGET_AD_COUNT = 3; // 유지하려는 광고 개수
+  static const int SWIPE_COUNT_FOR_AD = 5; // 광고 표시까지 필요한 스와이프 횟수
 
-  // 광고 오버레이 표시 여부
+  // 광고 상태 관리
+  final List<NativeAd> _readyAds = []; // 로드 완료되어 사용 가능한 광고들
+  bool _isLoadingAd = false; // 현재 광고 로드 중인지 여부
   bool _showAdOverlay = false;
   NativeAd? _currentAd;
 
@@ -39,49 +52,92 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
   void initState() {
     super.initState();
     _cardSwiperController = CardSwiperController();
-    _loadAllNativeAds();
+    _initializeAds();
   }
 
-  // 광고 여러개 미리 로드
-  void _loadAllNativeAds() {
-    for (int i = 0; i < _maxPreloadAds; i++) {
-      _loadNativeAd(i);
+  // 초기 광고 로드
+  void _initializeAds() {
+    for (int i = 0; i < TARGET_AD_COUNT; i++) {
+      _loadNewAd();
     }
   }
 
-  void _loadNativeAd(int index) {
+  // 새로운 광고 로드
+  void _loadNewAd() {
+    if (_isLoadingAd) return;
+    if (_readyAds.length >= TARGET_AD_COUNT) return;
+
+    _isLoadingAd = true;
+
     final adUnitId = Platform.isAndroid
         ? 'ca-app-pub-3940256099942544/2247696110'
         : 'ca-app-pub-3940256099942544/3986624511';
 
-    _nativeAds[index]?.dispose();
-    _nativeAds[index] = null;
-    _isAdLoaded[index] = false;
-
-    final nativeAd = NativeAd(
+    NativeAd(
       adUnitId: adUnitId,
-      factoryId: 'adFactoryExample', // 반드시 안드/iOS에 등록해야 함
+      factoryId: 'adFactoryExample',
       request: const AdRequest(),
       listener: NativeAdListener(
         onAdLoaded: (ad) {
-          debugPrint('NativeAd #$index 로드 성공');
-          setState(() {
-            _nativeAds[index] = ad as NativeAd;
-            _isAdLoaded[index] = true;
-            _availableAds.add(ad as NativeAd);
-          });
+          if (mounted) {
+            setState(() {
+              _readyAds.add(ad as NativeAd);
+              _isLoadingAd = false;
+            });
+
+            // 아직 목표 개수에 도달하지 않았다면 다음 광고 로드
+            if (_readyAds.length < TARGET_AD_COUNT) {
+              _loadNewAd();
+            }
+          }
         },
         onAdFailedToLoad: (ad, error) {
-          debugPrint('NativeAd #$index 로드 실패: $error');
+          debugPrint('광고 로드 실패: $error');
           ad.dispose();
-          setState(() {
-            _nativeAds[index] = null;
-            _isAdLoaded[index] = false;
-          });
+          if (mounted) {
+            setState(() {
+              _isLoadingAd = false;
+            });
+          }
         },
       ),
-    );
-    nativeAd.load();
+    ).load();
+  }
+
+  // 광고 표시 시도
+  void _tryShowAd() {
+    if (_readyAds.isEmpty) {
+      // 준비된 광고가 없으면 새로 로드 시도
+      _loadNewAd();
+      return;
+    }
+
+    setState(() {
+      _currentAd = _readyAds.removeAt(0);
+      _showAdOverlay = true;
+      _recipeCardsSinceLastAd = 0;
+    });
+
+    // 사용한 광고 자리를 채우기 위해 새 광고 로드
+    _loadNewAd();
+  }
+
+  bool _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
+    _recipeCardsSinceLastAd++;
+
+    if (_recipeCardsSinceLastAd >= SWIPE_COUNT_FOR_AD) {
+      _tryShowAd();
+    }
+
+    return true;
+  }
+
+  void _handleAdDismissed() {
+    setState(() {
+      _showAdOverlay = false;
+      _currentAd?.dispose();
+      _currentAd = null;
+    });
   }
 
   @override
@@ -102,28 +158,25 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
                   );
                 }
 
-                // 레시피 불러오기
-                final recipes = RecipeRecommendationService().getRecommendedRecipes(
-                  Provider.of<UserStatus>(context, listen: false),
-                  Provider.of<FoodStatus>(context, listen: false),
-                  recipeStatus,
-                );
-                if (recipes.isEmpty) {
-                  return const Expanded(
-                    child: Center(child: Text('레시피가 없습니다')),
+                if (_recipeItems.isEmpty) {
+                  _recipeItems = RecipeRecommendationService().getRecommendedRecipes(
+                    Provider.of<UserStatus>(context, listen: false),
+                    Provider.of<FoodStatus>(context, listen: false),
+                    recipeStatus,
                   );
+                  if (_recipeItems.isEmpty) {
+                    return const Expanded(
+                      child: Center(child: Text('레시피가 없습니다')),
+                    );
+                  }
                 }
-
-                // 레시피 리스트 갱신
-                _recipeItems.clear();
-                _recipeItems.addAll(recipes);
 
                 return Expanded(
                   child: CardSwiper(
                     controller: _cardSwiperController,
                     cardsCount: _recipeItems.length,
                     onSwipe: _onSwipe,
-                    onUndo: _onUndo,
+                    onUndo: (_, __, ___) => true,
                     backCardOffset: const Offset(0, 40),
                     numberOfCardsDisplayed: 3,
                     cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
@@ -131,8 +184,8 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
                       return RecipeCard(
                         recipe: recipe,
                         onPrevious: () => _cardSwiperController.undo(),
-                        onNext:    () => _cardSwiperController.swipe(CardSwiperDirection.left),
-                        onLike:    () => _cardSwiperController.swipe(CardSwiperDirection.right),
+                        onNext: () => _cardSwiperController.swipe(CardSwiperDirection.left),
+                        onLike: () => _cardSwiperController.swipe(CardSwiperDirection.right),
                       );
                     },
                   ),
@@ -142,58 +195,23 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
             SizedBox(height: 40.h),
           ],
         ),
-
-        // 광고 오버레이 (카드처럼 디자인 & 스와이프)
         if (_showAdOverlay && _currentAd != null)
           Positioned.fill(
             child: SwipableAdCard(
               nativeAd: _currentAd!,
-              onDismissed: _handleAdDismissed, // 광고 카드 완전히 사라질 때 콜백
+              onDismissed: _handleAdDismissed,
             ),
           ),
       ],
     );
   }
 
-  // 레시피 카드 스와이프 완료
-  bool _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
-    final recipe = _recipeItems[previousIndex];
-    // 오른쪽 스와이프 => 즐겨찾기
-    if (direction == CardSwiperDirection.right) {
-      context.read<RecipeStatus>().toggleFavorite(recipe.id);
-    }
-    _recipeCardsSinceLastAd++;
-
-    // 5개 스와이프 후 광고 표시
-    if (_recipeCardsSinceLastAd >= 5 && _availableAds.isNotEmpty) {
-      final nextAd = _availableAds.removeAt(0);
-      setState(() {
-        _currentAd = nextAd;
-        _showAdOverlay = true;
-        _recipeCardsSinceLastAd = 0;
-      });
-    }
-
-    return true;
-  }
-
-  bool _onUndo(int? previousIndex, int currentIndex, CardSwiperDirection direction) {
-    return true;
-  }
-
-  void _handleAdDismissed() {
-    // 광고 카드를 완전히 스와이프/닫은 뒤 호출
-    setState(() {
-      _showAdOverlay = false;
-      _currentAd = null;
-    });
-  }
-
   @override
   void dispose() {
-    for (final ad in _nativeAds) {
-      ad?.dispose();
+    for (final ad in _readyAds) {
+      ad.dispose();
     }
+    _currentAd?.dispose();
     super.dispose();
   }
 }
@@ -214,10 +232,9 @@ class SwipableAdCard extends StatefulWidget {
   State<SwipableAdCard> createState() => _SwipableAdCardState();
 }
 
-class _SwipableAdCardState extends State<SwipableAdCard>
-    with SingleTickerProviderStateMixin {
+class _SwipableAdCardState extends State<SwipableAdCard> with SingleTickerProviderStateMixin {
   Offset _offset = Offset.zero; // 드래그 이동
-  double _rotation = 0.0;       // 회전(기울이기)
+  double _rotation = 0.0; // 회전(기울이기)
   late Size screenSize;
 
   AnimationController? _dismissController;
@@ -313,8 +330,6 @@ class _SwipableAdCardState extends State<SwipableAdCard>
   }
 }
 
-
-
 class RecipeCard extends StatelessWidget {
   final Recipe recipe;
   final VoidCallback onPrevious;
@@ -354,12 +369,14 @@ class RecipeCard extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Padding(
-              padding: EdgeInsets.all(16.w),
+              padding: isTablet(context)
+                  ? EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w)
+                  : EdgeInsets.all(16.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    height: 10.h,
+                    height: isTablet(context) ? 2.h : 10.h,
                   ),
                   Center(
                     child: Row(
@@ -371,7 +388,7 @@ class RecipeCard extends StatelessWidget {
                             children: [
                               Container(
                                 padding:
-                                EdgeInsets.only(left: 8.w, right: 8.w, top: 0, bottom: 4.h),
+                                    EdgeInsets.only(left: 8.w, right: 8.w, top: 0, bottom: 4.h),
                                 child: Text(
                                   recipe.title,
                                   style: TextStyle(
@@ -424,25 +441,25 @@ class RecipeCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  SizedBox(height: 28.h),
+                  SizedBox(height: isTablet(context) ? 14.h : 28.h),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: recipe.recipe_tags
                           .map((tag) => Padding(
-                        padding: EdgeInsets.only(right: 8.w),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFEAE5DF),
-                            borderRadius: BorderRadius.circular(15.r),
-                          ),
-                          child: Text(
-                            tag,
-                            style: TextStyle(fontSize: 12.sp, color: Color(0xFF5E3009)),
-                          ),
-                        ),
-                      ))
+                                padding: EdgeInsets.only(right: 8.w),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFFEAE5DF),
+                                    borderRadius: BorderRadius.circular(15.r),
+                                  ),
+                                  child: Text(
+                                    tag,
+                                    style: TextStyle(fontSize: 12.sp, color: Color(0xFF5E3009)),
+                                  ),
+                                ),
+                              ))
                           .toList(),
                     ),
                   ),
@@ -472,8 +489,8 @@ class RecipeCard extends StatelessWidget {
                       GestureDetector(
                         onTap: onPrevious,
                         child: Container(
-                            width: 50.w,
-                            height: 50.w,
+                            width: isTablet(context) ? 40.w : 50.w,
+                            height: isTablet(context) ? 40.w : 50.w,
                             decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
@@ -486,11 +503,11 @@ class RecipeCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: Icon(Icons.refresh,color: Color(0xFF9A9A9A),size:40.w)
-                        ),
+                            child: Icon(Icons.refresh,
+                                color: Color(0xFF9A9A9A), size: isTablet(context) ? 30.w : 40.w)),
                       ),
                       SizedBox(
-                        width: 20.w,
+                        width: isTablet(context) ? 10.w :  20.w,
                       ),
                       Consumer<UserStatus>(builder: (context, userStatus, child) {
                         return GestureDetector(
@@ -499,8 +516,8 @@ class RecipeCard extends StatelessWidget {
                             context.push('/recipeInfo', extra: recipe);
                           },
                           child: Container(
-                            width: 70.w,
-                            height: 70.w,
+                            width: isTablet(context) ? 60.w : 70.w,
+                            height: isTablet(context) ? 60.w : 70.w,
                             decoration: BoxDecoration(
                               color: const Color(0xFFFF8B27),
                               shape: BoxShape.circle,
@@ -515,7 +532,7 @@ class RecipeCard extends StatelessWidget {
                             ),
                             child: Center(
                               child: SizedBox(
-                                  width: 56.w,
+                                  width: isTablet(context) ? 46.w : 56.w,
                                   child: Image.asset('assets/imgs/items/cookStart'
                                       '.png')),
                             ),
@@ -523,13 +540,13 @@ class RecipeCard extends StatelessWidget {
                         );
                       }),
                       SizedBox(
-                        width: 20.w,
+                        width: isTablet(context) ? 10.w : 20.w,
                       ),
                       GestureDetector(
                         onTap: onNext,
                         child: Container(
-                          width: 50.w,
-                          height: 50.w,
+                          width: isTablet(context) ? 40.w : 50.w,
+                          height: isTablet(context) ? 40.w : 50.w,
                           decoration: BoxDecoration(
                             color: Color(0xFFEA0000),
                             shape: BoxShape.circle,
@@ -542,7 +559,11 @@ class RecipeCard extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: Icon(Icons.close,color: Colors.white,size: 38.w,),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: isTablet(context) ? 28.w : 38.w,
+                          ),
                         ),
                       ),
                     ],

@@ -22,7 +22,7 @@ class _AddReceiptComponentState extends State<AddReceiptComponent> {
       children: [
         Container(
           width: double.infinity,
-          height: 180.h,
+          height: isTablet(context) ? 240.h : 180.h,
           decoration: BoxDecoration(
               color: Color(0xFFF6E7DB),
               border: Border.all(width: 2, color: Color(0xFFA8927F)),

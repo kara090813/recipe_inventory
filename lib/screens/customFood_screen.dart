@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-import '../funcs/_funcs.dart';
-import '../models/_models.dart';
-import '../models/data.dart';
+import '_screens.dart';
 import '../widgets/_widgets.dart';
 
 class CustomFoodScreen extends StatefulWidget {
@@ -12,30 +10,69 @@ class CustomFoodScreen extends StatefulWidget {
   _CustomFoodScreenState createState() => _CustomFoodScreenState();
 }
 
-class _CustomFoodScreenState extends State<CustomFoodScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  String _selectedIcon = 'assets/imgs/food/unknownFood_a.png';
-  String _selectedCategory = '기타';
+class _CustomFoodScreenState extends State<CustomFoodScreen> with SingleTickerProviderStateMixin {
+  int _selectedTabIndex = 0;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
 
-  final Map<String, String> categoryIcons = {
-    '과일': 'assets/imgs/food/fruit.png',
-    '채소': 'assets/imgs/food/vegetable.png',
-    '육류': 'assets/imgs/food/meat.png',
-    '수산물': 'assets/imgs/food/seafood.png',
-    '조미료/향신료': 'assets/imgs/food/condiment.png',
-    '가공/유제품': 'assets/imgs/food/processed food.png',
-    '기타': 'assets/imgs/food/unknownFood.png',
-  };
-
-  final List<String> availableIcons = [
-    'assets/imgs/food/unknownFood_a.png',
-    'assets/imgs/food/unknownFood_b.png',
-    'assets/imgs/food/unknownFood_c.png',
+  final List<Widget> _widgetOptions = <Widget>[
+    CustomFoodAddTabScreen(),  // 커스텀 식재료 추가 탭
+    CustomFoodDeleteTabScreen(),  // 커스텀 식재료 삭제 탭
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 300),
+    );
+    _animation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onTabSelected(int index) {
+    setState(() {
+      _selectedTabIndex = index;
+    });
+    if (index == 0) {
+      _animationController.reverse();
+    } else {
+      _animationController.forward();
+    }
+  }
+
+  Widget _buildTab(String text, int index, double width) {
+    return GestureDetector(
+      onTap: () => _onTabSelected(index),
+      child: Container(
+        width: width,
+        height: 48.h,
+        alignment: Alignment.center,
+        color: Colors.transparent,
+        child: Text(
+          text,
+          style: TextStyle(
+            color: Color(0xFF5E3009),
+            fontSize: 13.sp,
+            fontWeight: _selectedTabIndex == index ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final double tabWidth = (MediaQuery.of(context).size.width - 44.w) / 2;
+
     return Scaffold(
       body: ScaffoldPaddingWidget(
         child: Column(
@@ -56,181 +93,57 @@ class _CustomFoodScreenState extends State<CustomFoodScreen> {
                 ),
                 Expanded(
                   child: Text(
-                    '커스텀 식재료 추가',
+                    '커스텀 식재료',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Color(0xFF7D674B), fontSize: 20.sp),
                   ),
                 ),
-                SizedBox(width: 40.w)
+                SizedBox(width: 40.w),
               ],
             ),
             SizedBox(height: 10.h),
             DottedBarWidget(),
-            SizedBox(height: 30.h),
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('아이콘 선택',
-                        style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF7D674B))),
-                    SizedBox(
-                      height: 6.h,
-                    ),
-                    _buildIconSelector(),
-                    SizedBox(height: 20.h),
-                    Text('식재료명',
-                        style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF7D674B))),
-                    SizedBox(
-                      height: 6.h,
-                    ),
-                    TextFormField(
-                      controller: _nameController,
-                      style: TextStyle(fontSize: 14.sp),
-                      decoration: InputDecoration(
-                        hintText: '식재료 이름을 입력하세요',
-                        contentPadding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 12.w),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20.r)),
-                      ),
-                      validator: (value) {
-                        if (value?.isEmpty ?? true) {
-                          return '식재료 이름을 입력해주세요';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20.h),
-                    Text('카테고리 선택',
-                        style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF7D674B))),
-                    SizedBox(
-                      height: 6.h,
-                    ),
-                    _buildCategorySelector(),
-                    SizedBox(height: 30.h),
-                    Expanded(child: SizedBox.shrink()),
-                    ElevatedButton(
-                      onPressed: _saveCustomFood,
-                      child: Text(
-                        '커스텀 식재료 추가하기',
-                        style: TextStyle(color: Colors.white, fontSize: 18.sp, fontFamily: 'Mapo'),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFFF8B27),
-                          minimumSize: Size(double.infinity, 50.h),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r))),
-                    ),
-                    SizedBox(
-                      height: 20.h,
-                    )
-                  ],
-                ),
+            SizedBox(height: 20.h),
+            Container(
+              height: 48.h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Color(0xFFEAE5DF),
               ),
+              child: Stack(
+                children: [
+                  AnimatedBuilder(
+                    animation: _animation,
+                    builder: (context, child) {
+                      return Positioned(
+                        left: 4.w + (tabWidth - 8.w) * _animation.value,
+                        top: 4.h,
+                        child: Container(
+                          width: tabWidth - 8.w,
+                          height: 40.h,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Row(
+                    children: [
+                      _buildTab('커스텀 식재료 추가', 0, tabWidth),
+                      _buildTab('커스텀 식재료 삭제', 1, tabWidth),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _widgetOptions[_selectedTabIndex],
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildIconSelector() {
-    return Wrap(
-      spacing: 10.w,
-      children: availableIcons
-          .map((icon) => GestureDetector(
-                onTap: () => setState(() => _selectedIcon = icon),
-                child: Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color: _selectedIcon == icon ? Color(0xFF5E3009) : Color(0xFFEAE5DF),
-                    border: Border.all(
-                      color: _selectedIcon == icon ? Color(0xFFFFEFAD) : Color(0xFFEAE5DF),
-                      width: 2.w,
-                    ),
-                    borderRadius: BorderRadius.circular(100.r),
-                  ),
-                  child: Image.asset(icon, width: 36.w, height: 36.w),
-                ),
-              ))
-          .toList(),
-    );
-  }
-
-  Widget _buildCategorySelector() {
-    return Wrap(
-      spacing: 10.w,  // 가로 간격
-      runSpacing: 10.h,  // 세로 간격 (줄 사이 간격)
-      alignment: WrapAlignment.start,  // 시작점부터 정렬
-      crossAxisAlignment: WrapCrossAlignment.center,  // 세로 정렬
-      children: categoryIcons.entries
-          .map((entry) => GestureDetector(
-        onTap: () => setState(() => _selectedCategory = entry.key),
-        child: Container(
-          margin: EdgeInsets.only(right: 10.w, bottom: 10.h),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,  // 필요한 만큼만 가로 공간 차지
-            children: [
-              Image.asset(entry.value, width: 30.w, height: 30.w),
-              SizedBox(width: 4.w),
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 10.w),
-                decoration: BoxDecoration(
-                  color: _selectedCategory == entry.key
-                      ? Color(0xFF5E3009)
-                      : Color(0xFFEAE5DF),
-                  border: Border.all(
-                    color: _selectedCategory == entry.key
-                        ? Color(0xFFFFEFAD)
-                        : Color(0xFFEAE5DF),
-                    width: 2.w,
-                  ),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Text(entry.key,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14.sp,
-                        color: _selectedCategory == entry.key
-                            ? Colors.white
-                            : Color(0xFF5E3009))),
-              ),
-            ],
-          ),
-        ),
-      ))
-          .toList(),
-    );
-  }
-
-  void _saveCustomFood() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final newFood = Food(
-        name: _nameController.text,
-        type: _selectedCategory,
-        img: _selectedIcon,
-        isCustom: true,
-      );
-
-      final customFoodService = CustomFoodService();
-      await customFoodService.addCustomFood(newFood);
-
-      // FOOD_LIST에 추가
-      FOOD_LIST.add(newFood);
-
-      Navigator.pop(context);
-      // foodAdd 화면도 닫아서 메인으로 돌아간 다음
-      Navigator.pop(context);
-      // 다시 foodAdd로 push
-      context.push('/foodAdd');
-    }
   }
 }

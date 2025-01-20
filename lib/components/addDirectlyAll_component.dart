@@ -28,6 +28,10 @@ class _AddDirectlyAllComponentState extends State<AddDirectlyAllComponent> {
       children: [
         CategoryWidget(onTabSelected: _onCategorySelected),
         SizedBox(height: 2.h),
+        if (isTablet(context))
+          SizedBox(
+            height: 10.h,
+          ),
         Row(
           children: [
             Expanded(
@@ -65,11 +69,13 @@ class _AddDirectlyAllComponentState extends State<AddDirectlyAllComponent> {
             Expanded(
                 flex: 30,
                 child: InkWell(
-                  onTap: (){
+                  onTap: () {
                     context.push('/customFood');
                   },
                   child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 6.h), // 패딩 추가하여 높이 통일
+                    padding: EdgeInsets.symmetric(vertical: 6.h), // 패딩
+                    // 추가하여
+                    // 높이 통일
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF8B27),
                       borderRadius: BorderRadius.circular(8.0),
@@ -82,24 +88,26 @@ class _AddDirectlyAllComponentState extends State<AddDirectlyAllComponent> {
                         ),
                       ],
                     ),
-                    child: Center( // 텍스트 중앙 정렬
+                    child: Center(
+                      // 텍스트 중앙 정렬
                       child: Text(
                         "커스텀 재료",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14.0,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                   ),
-                )
-            )
+                ))
           ],
         ),
         SizedBox(height: 4.h),
+        if(isTablet(context))
+          SizedBox(height: 10.h,),
         FoodListWidget(
-          partCount: 6,
+          partCount: 5,
           categoryIndex: _selectedCategoryIndex,
           foodList: hardCopyFoodList(FOOD_LIST),
           bkgColor: 0xFFBDD8D8,

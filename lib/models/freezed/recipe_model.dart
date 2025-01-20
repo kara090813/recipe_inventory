@@ -6,7 +6,8 @@ part 'recipe_model.g.dart';
 @freezed
 class Recipe with _$Recipe {
   factory Recipe({
-    required String id,  // Firebase document ID
+    required String id,
+    required String link,
     required String title,
     required String sub_title,
     required String thumbnail,

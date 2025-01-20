@@ -37,6 +37,7 @@ class FilterButtonsWidget extends StatelessWidget {
 
     return ElevatedButton(
       onPressed: () {
+        FocusScope.of(context).unfocus();
         if (ModalRoute.of(context)?.settings.name == 'filterPopup') {
           context.pop();
         }
@@ -45,6 +46,7 @@ class FilterButtonsWidget extends StatelessWidget {
       child: Text(
         displayText,
         style: TextStyle(
+          fontFamily: 'Mapo',
           color: isSelected ? Colors.white : Color(0xFF505050),
           fontSize: 12.sp,
         ),
@@ -68,12 +70,11 @@ class FilterButtonsWidget extends StatelessWidget {
     }
 
     if (filter.rangeValues != null) {
-      if(filterName == '재료 개수'){
+      if (filterName == '재료 개수') {
         return '${filter.rangeValues!.start.round()}~${filter.rangeValues!.end.round()} 개';
-      }else{
+      } else {
         return '${filter.rangeValues!.start.round()}~${filter.rangeValues!.end.round()} %';
       }
-
     } else {
       String selectedValues = filter.selectedValues.join(', ');
       return '$selectedValues';
@@ -91,7 +92,7 @@ class FilterButtonsWidget extends StatelessWidget {
         typeOptions = ['전체', '한식', '양식', '중식', '일식', '아시안', '기타'];
         break;
       case '조리 난이도':
-        typeOptions = ['전체', '쉬움', '보통', '어려움'];
+        typeOptions = ['전체', '매우 쉬움', '쉬움', '보통', '어려움', '매우 어려움'];
         break;
       case '재료 개수':
         typeOptions = ['1~5개', '5~10개', '10~15개', '15~20개', '20~25개', '25~30개', '제한없음'];

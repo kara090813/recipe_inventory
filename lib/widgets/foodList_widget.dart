@@ -108,7 +108,8 @@ class FoodListWidget extends StatelessWidget {
                               SizedBox(width: 10.w),
                               Text(
                                 foodContainerTitle,
-                                style: TextStyle(color: Color(0xFF3E3E3E), fontSize: 12.sp),
+                                style: TextStyle(color: Color(0xFF3E3E3E), fontSize: 12.sp,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -121,6 +122,7 @@ class FoodListWidget extends StatelessWidget {
                             partColor: Color(partColor),
                             checkColor: checkColor,
                             selectionMode: selectionMode,
+                            islabel:islabel
                           ),
                       ],
                     ),
@@ -171,6 +173,7 @@ class FoodListWidget extends StatelessWidget {
           )
         : Expanded(
             child: ListView(
+              cacheExtent: 2000,
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 5.h),
               children: _buildFoodListWidgets(),
             ),

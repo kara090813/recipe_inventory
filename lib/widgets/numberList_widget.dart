@@ -3,57 +3,134 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:numberpicker/numberpicker.dart';
 
+import '../models/_models.dart';
 class NumberListWidget extends StatelessWidget {
   final List<String> items;
+  final List<Ingredient> ingredients; // 레시피 식재료 리스트 추가
 
-  const NumberListWidget({Key? key, required this.items}) : super(key: key);
+  const NumberListWidget({
+    Key? key,
+    required this.items,
+    required this.ingredients,
+  }) : super(key: key);
+
+  // 텍스트에서 식재료를 하이라이트하는 함수
+  List<TextSpan> _highlightIngredients(String text) {
+    List<TextSpan> spans = [];
+    String remainingText = text;
+
+    while (remainingText.isNotEmpty) {
+      bool foundIngredient = false;
+
+      // 가장 긴 매칭을 먼저 찾기 위해 식재료 정렬
+      final sortedIngredients = [...ingredients]..sort(
+              (a, b) => b.food.length.compareTo(a.food.length)
+      );
+
+      for (var ingredient in sortedIngredients) {
+        int index = remainingText.toLowerCase().indexOf(ingredient.food.toLowerCase());
+        if (index == 0) {
+          // 식재료 발견 시 하이라이트 처리
+          spans.add(TextSpan(
+            text: remainingText.substring(0, ingredient.food.length),
+            style: TextStyle(
+              fontSize: 16.sp,
+              color:Colors.black,
+              fontFamily: 'Mapo',
+              backgroundColor: Color(0xFFFFD8B7),
+            ),
+          ));
+          remainingText = remainingText.substring(ingredient.food.length);
+          foundIngredient = true;
+          break;
+        }
+      }
+
+      if (!foundIngredient) {
+        // 일반 텍스트 처리
+        int nextIndex = remainingText.length;
+        for (var ingredient in ingredients) {
+          int index = remainingText.toLowerCase().indexOf(ingredient.food.toLowerCase());
+          if (index > 0 && index < nextIndex) {
+            nextIndex = index;
+          }
+        }
+        spans.add(TextSpan(
+          text: remainingText.substring(0, nextIndex),
+          style: TextStyle(fontSize: 16.sp,color: Colors.black,fontFamily: 'Mapo',),
+        ));
+        remainingText = remainingText.substring(nextIndex);
+      }
+    }
+
+    return spans;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 40.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(items.length, (index) {
-          final time = extractTime(items[index]);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List.generate(items.length, (index) {
+        final time = extractTime(items[index]);
+        return Container(
+          margin: EdgeInsets.only(bottom: 22.h),
+          decoration: BoxDecoration(
+            color: Color(0xFFF6F0E8),
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.3),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      width: 24.w,
+                    Container(
+                      width: 30.w,
                       child: Text(
                         '${index + 1}.',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.sp,
+                        ),
                       ),
                     ),
                     Expanded(
-                      child: Text(items[index],style: TextStyle(fontSize: 12.sp),),
+                      child: RichText(
+                        text: TextSpan(
+                          children: _highlightIngredients(items[index]),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              if (time != null)
-                Padding(
-                  padding: EdgeInsets.only(left: 20, bottom: 8),
-                  child: TimerWidget(minutes: time),
-                ),
-            ],
-          );
-        }),
-      ),
+                if (time != null) ...[
+                  SizedBox(height: 12.h),
+                  TimerWidget(durationInSeconds: time),
+                ],
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 }
 
 class TimerWidget extends StatefulWidget {
-  final int minutes;
+  final int durationInSeconds;
 
-  const TimerWidget({Key? key, required this.minutes}) : super(key: key);
+  const TimerWidget({Key? key, required this.durationInSeconds})
+      : super(key: key);
 
   @override
   _TimerWidgetState createState() => _TimerWidgetState();
@@ -67,10 +144,11 @@ class _TimerWidgetState extends State<TimerWidget> {
   @override
   void initState() {
     super.initState();
-    _secondsRemaining = widget.minutes * 60;
+    _secondsRemaining = widget.durationInSeconds;
   }
 
   void _startTimer() {
+    if (_secondsRemaining <= 0) return;
     setState(() {
       _isRunning = true;
     });
@@ -95,90 +173,215 @@ class _TimerWidgetState extends State<TimerWidget> {
   void _stopTimer() {
     setState(() {
       _isRunning = false;
-      _secondsRemaining = widget.minutes * 60;
+      _secondsRemaining = widget.durationInSeconds;
     });
     _timer?.cancel();
   }
 
   void _showTimePickerDialog() {
+    // 현재 값으로 초기화
+    int currentHours = _secondsRemaining ~/ 3600;
+    int currentMinutes = (_secondsRemaining % 3600) ~/ 60;
+    int currentSeconds = _secondsRemaining % 60;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        int minutes = _secondsRemaining ~/ 60;
-        int seconds = _secondsRemaining % 60;
-        return AlertDialog(
-          title: Text('타이머 설정'),
-          content: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildNumberPicker(
-                value: minutes,
-                minValue: 0,
-                maxValue: 59,
-                onChanged: (value) => minutes = value,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('타이머 설정'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildNumberPicker(
+                        label: '시간',
+                        value: currentHours,
+                        minValue: 0,
+                        maxValue: 23,
+                        onChanged: (value) => setState(() => currentHours = value),
+                      ),
+                      SizedBox(width: 10),
+                      _buildNumberPicker(
+                        label: '분',
+                        value: currentMinutes,
+                        minValue: 0,
+                        maxValue: 59,
+                        onChanged: (value) => setState(() => currentMinutes = value),
+                      ),
+                      SizedBox(width: 10),
+                      _buildNumberPicker(
+                        label: '초',
+                        value: currentSeconds,
+                        minValue: 0,
+                        maxValue: 59,
+                        onChanged: (value) => setState(() => currentSeconds = value),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              Text('분'),
-              SizedBox(width: 20),
-              _buildNumberPicker(
-                value: seconds,
-                minValue: 0,
-                maxValue: 59,
-                onChanged: (value) => seconds = value,
-              ),
-              Text('초'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text('취소'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: Text('확인'),
-              onPressed: () {
-                setState(() {
-                  _secondsRemaining = minutes * 60 + seconds;
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+              actions: [
+                TextButton(
+                  child: Text('취소'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: Text('확인'),
+                  onPressed: () {
+                    // 부모 위젯의 상태를 업데이트
+                    this.setState(() {
+                      _secondsRemaining = currentHours * 3600 +
+                          currentMinutes * 60 +
+                          currentSeconds;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildNumberPicker({
+    required String label,
     required int value,
     required int minValue,
     required int maxValue,
     required ValueChanged<int> onChanged,
   }) {
-    return NumberPicker(
-      value: value,
-      minValue: minValue,
-      maxValue: maxValue,
-      onChanged: onChanged,
-      itemHeight: 32,
-      itemWidth: 50,
-      textStyle: TextStyle(fontSize: 16),
-      selectedTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return Column(
+      children: [
+        Text(label),
+        NumberPicker(
+          value: value,
+          minValue: minValue,
+          maxValue: maxValue,
+          onChanged: onChanged,
+          itemHeight: 32,
+          itemWidth: 50,
+          textStyle: TextStyle(fontSize: 16, color: Colors.grey),
+          selectedTextStyle: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Colors.black26),
+              bottom: BorderSide(color: Colors.black26),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+
+
+  Widget _formatTimeWidget(int totalSeconds) {
+    int hours = totalSeconds ~/ 3600;
+    int minutes = (totalSeconds % 3600) ~/ 60;
+    int seconds = totalSeconds % 60;
+
+    List<Widget> parts = [];
+
+    // 시간이 있을 경우만 표시
+    if (hours > 0) {
+      parts.add(Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            hours.toString().padLeft(2, '0'),
+            style: TextStyle(
+              fontSize: 28.sp,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF6C3311),
+            ),
+          ),
+          Text(
+            '시간',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Color(0xFF707070),
+            ),
+          ),
+          SizedBox(width: 6.w),
+        ],
+      ));
+    }
+
+    // 분 표시
+    parts.add(Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          minutes.toString().padLeft(2, '0'),
+          style: TextStyle(
+            fontSize: 28.sp,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF6C3311),
+          ),
+        ),
+        Text(
+          '분',
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Color(0xFF707070),
+          ),
+        ),
+        SizedBox(width: 6.w),
+      ],
+    ));
+
+    // 초 표시
+    parts.add(Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          seconds.toString().padLeft(2, '0'),
+          style: TextStyle(
+            fontSize: 28.sp,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF6C3311),
+          ),
+        ),
+        Text(
+          '초',
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Color(0xFF707070),
+          ),
+        ),
+      ],
+    ));
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: parts,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    int minutes = _secondsRemaining ~/ 60;
-    int seconds = _secondsRemaining % 60;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Color(0xFFEAE5DF),
+        color: Color(0xFFF7F2ED),
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withOpacity(0.6),
             spreadRadius: 1,
             blurRadius: 5,
             offset: Offset(0, 3),
@@ -188,37 +391,20 @@ class _TimerWidgetState extends State<TimerWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(Icons.timer, size: 30.w, color: Color(0xFF6C3311)),
+          Icon(Icons.timer_outlined, size: 46.w, color: Color(0xFFFF8B27)),
           Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '요리타이머설정',
-                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Color(0xFF6C3311)),
+                '요리 타이머 설정',
+                style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF5E3009)),
               ),
-              SizedBox(height: 4.h),
               GestureDetector(
                 onTap: _showTimePickerDialog,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${minutes.toString().padLeft(2, '0')}',
-                      style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold, color: Color(0xFF6C3311)),
-                    ),
-                    Text(
-                      '분 ',
-                      style: TextStyle(fontSize: 14.sp, color: Color(0xFF6C3311)),
-                    ),
-                    Text(
-                      '${seconds.toString().padLeft(2, '0')}',
-                      style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold, color: Color(0xFF6C3311)),
-                    ),
-                    Text(
-                      '초',
-                      style: TextStyle(fontSize: 14.sp, color: Color(0xFF6C3311)),
-                    ),
-                  ],
-                ),
+                child: _formatTimeWidget(_secondsRemaining),
               ),
             ],
           ),
@@ -249,7 +435,7 @@ class _TimerWidgetState extends State<TimerWidget> {
   }) {
     return ElevatedButton(
       onPressed: onPressed,
-      child: Icon(icon, size: 20.w),
+      child: Icon(icon, size: 20.w,color: Colors.white,),
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         foregroundColor: Colors.white,
@@ -267,16 +453,31 @@ class _TimerWidgetState extends State<TimerWidget> {
   }
 }
 
-RegExp timeRegex = RegExp(r'(\d+)\s*(분|초)');
+// 수정된 정규표현식: '시간', '분', '초' 단위를 모두 인식
+RegExp timeRegex = RegExp(r'(\d+)\s*(시간|분|초)');
 
 int? extractTime(String text) {
-  final match = timeRegex.firstMatch(text);
-  if (match != null) {
-    int time = int.parse(match.group(1)!);
-    if (match.group(2) == '초') {
-      time = (time / 60).ceil(); // 초를 분으로 변환 (올림)
+  final matches = timeRegex.allMatches(text);
+  if (matches.isEmpty) return null;
+
+  int totalSeconds = 0;
+
+  for (final match in matches) {
+    int value = int.parse(match.group(1)!);
+    String unit = match.group(2)!;
+
+    switch (unit) {
+      case '시간':
+        totalSeconds += value * 3600;
+        break;
+      case '분':
+        totalSeconds += value * 60;
+        break;
+      case '초':
+        totalSeconds += value;
+        break;
     }
-    return time;
   }
-  return null;
+
+  return totalSeconds;
 }

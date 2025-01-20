@@ -80,6 +80,10 @@ class RecipeInfoScreen extends StatelessWidget {
                         },
                       ),
                     ),
+                    if (isTablet(context))
+                      SizedBox(
+                        height: 8.h,
+                      ),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -112,6 +116,10 @@ class RecipeInfoScreen extends StatelessWidget {
                             .toList(),
                       ),
                     ),
+                    if (isTablet(context))
+                      SizedBox(
+                        height: 4.h,
+                      ),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 4.w),
                       child: Align(
@@ -194,22 +202,23 @@ class RecipeInfoScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Consumer<RecipeStatus>(
-                      builder: (context, recipeStatus,child) {
-                        return IconButton(
-                          icon: Icon(
-                            recipeStatus.isFavorite(recipe.id)
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: Colors.red,size: 32.sp,
-                          ),
-                          onPressed: () {
-                            recipeStatus.toggleFavorite(recipe.id);
-                          },
-                        );
-                      }
-                    ),
-                    SizedBox(height: 5.h,)
+                    Consumer<RecipeStatus>(builder: (context, recipeStatus, child) {
+                      return IconButton(
+                        icon: Icon(
+                          recipeStatus.isFavorite(recipe.id)
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: Colors.red,
+                          size: 32.sp,
+                        ),
+                        onPressed: () {
+                          recipeStatus.toggleFavorite(recipe.id);
+                        },
+                      );
+                    }),
+                    SizedBox(
+                      height: 5.h,
+                    )
                   ],
                 ),
               ),
@@ -222,6 +231,7 @@ class RecipeInfoScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: isTablet(context) ? 6.h : 0),
                           foregroundColor: Colors.white,
                           backgroundColor: Color(0xFFFF8B27),
                           shape: RoundedRectangleBorder(
@@ -231,8 +241,10 @@ class RecipeInfoScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset('assets/imgs/icons/cook.png'),
-                            SizedBox(width: 14.w,),
+                            Image.asset('assets/imgs/icons/cook.png',width: 22.w,),
+                            SizedBox(
+                              width: isTablet(context) ? 6.w : 10.w,
+                            ),
                             Text(
                               '요리 시작하기',
                               style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),

@@ -50,6 +50,19 @@ dependencies:
   dotted_line: ^3.2.2
   flutter_card_swiper: ^7.0.2
   google_mobile_ads: ^5.2.0
+  cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
+  month_picker_dialog: ^2.12.0
+  path_provider: ^2.1.5
+  url_launcher: ^6.3.1
+  custom_refresh_indicator: ^4.0.1
+  google_mlkit_text_recognition: ^0.14.0
+  youtube_player_iframe: ^5.2.0
+  flutter_inappwebview: ^6.1.5
+  korean_levenshtein: ^0.0.1
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
+  package_info_plus: ^8.1.3
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -74,6 +87,31 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+
+flutter_native_splash:
+  # 스플래시 배경색 (hex 코드)
+  color: "#FFE8CB"
+  # 스플래시로 보여줄 이미지 (512x512 PNG)
+  image: assets/imgs/splash_icon.png
+  # Android에서 아이콘 정렬 방식
+  android_gravity: center
+  # iOS에서 아이콘 표시 방식
+  ios_content_mode: center
+  android: true
+  ios: true
+
+  android_12:
+    # 아이콘 주위 배경색 (Android 12 시스템 스플래시 API에서 사용)
+    icon_background_color: "#FFE8CB"
+
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/imgs/app_icon.png"
+  remove_alpha_ios: true
+
+
 flutter:
 
   # The following line ensures that the Material Icons font is
@@ -83,9 +121,16 @@ flutter:
 
   assets:
     - assets/imgs/food/
+    - assets/imgs/food/fruit/
+    - assets/imgs/food/meat/
+    - assets/imgs/food/pnd/
+    - assets/imgs/food/seafood/
+    - assets/imgs/food/seasoning/
+    - assets/imgs/food/vegetable/
     - assets/imgs/items/
     - assets/imgs/background/
     - assets/imgs/icons/
+    - assets/imgs/guide/
   fonts:
     - family: Mapo
       fonts:
