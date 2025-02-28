@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../funcs/isTablet_func.dart';
 import '../models/_models.dart';
 import '../status/_status.dart';
+import '_widgets.dart';
 
 class FoodPartWidget extends StatelessWidget {
   const FoodPartWidget({
@@ -134,41 +135,99 @@ class FoodPartWidget extends StatelessWidget {
                       GestureDetector(
                         onTap: selectionMode
                             ? () {
-                                Provider.of<SelectedFoodProvider>(context, listen: false)
-                                    .toggleFood(food);
-                              }
+                          Provider.of<SelectedFoodProvider>(context, listen: false)
+                              .toggleFood(food);
+                        }
                             : null,
                         child: !selectionMode
                             ? SizedBox(
-                                width: itemWidth,
-                                child: AutoSizeText(
-                                  food.name,
-                                  style: TextStyle(fontSize: 12.sp, color: Color(0xFF3E3E3E)),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  minFontSize: 6,
-                                  stepGranularity: 0.5,
-                                ),
-                              )
-                            : Consumer<SelectedFoodProvider>(builder: (context, provider, child) {
-                                return SizedBox(
-                                  width: itemWidth,
-                                  child: AutoSizeText(
-                                    food.name,
-                                    style: TextStyle(
+                          width: itemWidth,
+                          child: AutoSizeText(
+                            food.name,
+                            style: TextStyle(fontSize: 12.sp, color: Color(0xFF3E3E3E)),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            minFontSize: 6,
+                            stepGranularity: 0.5,
+                          ),
+                        )
+                            : Consumer<SelectedFoodProvider>(
+                          builder: (context, provider, child) {
+                            final isSelected = provider.isSelected(food);
+                            return SizedBox(
+                              width: itemWidth,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  if (isSelected)
+                                    Container(
+                                      margin: EdgeInsets.symmetric(horizontal: 4.w),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(4.r),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.2),
+                                            spreadRadius: 1,
+                                            blurRadius: 2,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Stack(
+                                        alignment: Alignment.centerLeft,
+                                        children: [
+                                          // 하이라이트 바
+                                          Container(
+                                            width: 5.w,
+                                            height: 18.h,
+                                            decoration: BoxDecoration(
+                                              color: checkColor.withOpacity(0.8),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(2.r),
+                                                bottomLeft: Radius.circular(2.r),
+                                              ),
+                                            ),
+                                          ),
+                                          // 텍스트
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                            child: Center(
+                                              child: AutoSizeText(
+                                                food.name,
+                                                style: TextStyle(
+                                                  fontSize: 13.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: checkColor,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 1,
+                                                minFontSize: 6,
+                                                stepGranularity: 0.5,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  else
+                                    AutoSizeText(
+                                      food.name,
+                                      style: TextStyle(
                                         fontSize: 13.sp,
-                                        fontWeight: provider.isSelected(food)
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        color: provider.isSelected(food) ? checkColor : Colors
-                                            .black),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    minFontSize: 6,
-                                    stepGranularity: 0.5,
-                                  ),
-                                );
-                              }),
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.black,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      minFontSize: 6,
+                                      stepGranularity: 0.5,
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     for (int i = 0; i < partCount - foods.length; i++) SizedBox(width: itemWidth),
                   ],

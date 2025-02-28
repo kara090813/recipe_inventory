@@ -126,7 +126,7 @@ class _MainScreenState extends State<MainScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               // 태블릿일 경우 위쪽 여백 약간만 추가
-                              SizedBox(height: isTablet(context) ? 8.h : 0),
+                              SizedBox(height: isTablet(context) ? 2.h : 0),
                               SizedBox(
                                 height: isTablet(context) ? 28.h : 30.h, // 아이콘 크기 약간만 증가
                                 child: ColorFiltered(

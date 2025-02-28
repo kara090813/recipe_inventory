@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:numberpicker/numberpicker.dart';
-
+import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
 import '../models/_models.dart';
+
 class NumberListWidget extends StatelessWidget {
   final List<String> items;
   final List<Ingredient> ingredients; // 레시피 식재료 리스트 추가
@@ -136,19 +139,42 @@ class TimerWidget extends StatefulWidget {
   _TimerWidgetState createState() => _TimerWidgetState();
 }
 
-class _TimerWidgetState extends State<TimerWidget> {
+class _TimerWidgetState extends State<TimerWidget> with TickerProviderStateMixin{
   late int _secondsRemaining;
   Timer? _timer;
   bool _isRunning = false;
+  bool _isCompleted = false;  // 타이머 완료 상태 추가
+  late AnimationController _flashingController;
+  late Animation<Color?> _colorAnimation;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
     _secondsRemaining = widget.durationInSeconds;
+
+    _flashingController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    )..addStatusListener((status) {
+      // 완료 상태에서만 반복 애니메이션 실행
+      if (_isCompleted) {
+        if (status == AnimationStatus.completed) {
+          _flashingController.reverse();
+        } else if (status == AnimationStatus.dismissed) {
+          _flashingController.forward();
+        }
+      }
+    });
+
+    _colorAnimation = ColorTween(
+      begin: Color(0xFFF7F2ED),
+      end: Color(0xFFFFD8A8),
+    ).animate(_flashingController);
   }
 
   void _startTimer() {
-    if (_secondsRemaining <= 0) return;
+    if (_secondsRemaining <= 0 || _isCompleted) return;  // 완료 상태에서는 시작 불가
     setState(() {
       _isRunning = true;
     });
@@ -156,14 +182,49 @@ class _TimerWidgetState extends State<TimerWidget> {
       setState(() {
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
-        } else {
-          _stopTimer();
+          if (_secondsRemaining == 0) {
+            _onTimerComplete();
+          }
         }
       });
     });
   }
 
+  void _onTimerComplete() async {
+    _timer?.cancel();
+    setState(() {
+      _isRunning = false;
+      _isCompleted = true;
+    });
+
+    try {
+      // 진동 패턴 설정 (밀리초 단위)
+      // [대기시간, 진동시간, 대기시간, 진동시간, ...]
+      final vibrationPattern = [0, 500, 200, 500];
+
+      // 진동 지원 여부 확인
+      if (await Vibration.hasVibrator() ?? false) {
+        if (await Vibration.hasCustomVibrationsSupport() ?? false) {
+          // 패턴 진동 지원시
+          Vibration.vibrate(pattern: vibrationPattern);
+        } else {
+          // 일반 진동만 지원시
+          Vibration.vibrate(duration: 1000);
+        }
+      }
+
+      // 알람 소리 재생
+      await _audioPlayer.play(AssetSource('data/alarm.mp3'));
+
+    } catch (e) {
+      print('피드백 재생 실패: $e');
+    }
+
+    _flashingController.forward();
+  }
+
   void _pauseTimer() {
+    if (_isCompleted) return;  // 완료 상태에서는 일시정지 불가
     setState(() {
       _isRunning = false;
     });
@@ -171,11 +232,20 @@ class _TimerWidgetState extends State<TimerWidget> {
   }
 
   void _stopTimer() {
+    _timer?.cancel();
+    _flashingController.stop();
+    _flashingController.reset();
     setState(() {
       _isRunning = false;
+      _isCompleted = false;
       _secondsRemaining = widget.durationInSeconds;
     });
-    _timer?.cancel();
+
+    // 배경색을 처음 상태로 강제 변경
+    _colorAnimation = ColorTween(
+      begin: Color(0xFFF7F2ED),
+      end: Color(0xFFF7F2ED),
+    ).animate(_flashingController);
   }
 
   void _showTimePickerDialog() {
@@ -237,6 +307,14 @@ class _TimerWidgetState extends State<TimerWidget> {
                       _secondsRemaining = currentHours * 3600 +
                           currentMinutes * 60 +
                           currentSeconds;
+                      _isCompleted = false;  // 완료 상태 초기화
+
+                      // 애니메이션 컨트롤러 초기화
+                      _flashingController.reset();
+                      _colorAnimation = ColorTween(
+                        begin: Color(0xFFF7F2ED),
+                        end: Color(0xFFFFD8A8),
+                      ).animate(_flashingController);
                     });
                     Navigator.of(context).pop();
                   },
@@ -373,69 +451,75 @@ class _TimerWidgetState extends State<TimerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: Color(0xFFF7F2ED),
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.6),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(Icons.timer_outlined, size: 46.w, color: Color(0xFFFF8B27)),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '요리 타이머 설정',
-                style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF5E3009)),
-              ),
-              GestureDetector(
-                onTap: _showTimePickerDialog,
-                child: _formatTimeWidget(_secondsRemaining),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              _buildTimerButton(
-                onPressed: _isRunning ? _pauseTimer : _startTimer,
-                icon: _isRunning ? Icons.pause : Icons.play_arrow,
-                color: Color(0xFFFF8B27),
-              ),
-              SizedBox(width: 8.w),
-              _buildTimerButton(
-                onPressed: _stopTimer,
-                icon: Icons.stop,
-                color: Color(0xFF6C3311),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return AnimatedBuilder(
+        animation: _colorAnimation,
+        builder: (context, child) {
+          return Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: _colorAnimation.value,
+              borderRadius: BorderRadius.circular(12.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.6),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(Icons.timer_outlined, size: 46.w, color: Color(0xFFFF8B27)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '요리 타이머 설정',
+                      style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF5E3009)),
+                    ),
+                    GestureDetector(
+                      onTap: _isCompleted ? null : _showTimePickerDialog,  // 완료 상태에서는 시간 설정 불가
+                      child: _formatTimeWidget(_secondsRemaining),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    // 완료 상태에서는 재생/일시정지 버튼 비활성화
+                    _buildTimerButton(
+                      onPressed: _isCompleted ? null : (_isRunning ? _pauseTimer : _startTimer),
+                      icon: _isRunning ? Icons.pause : Icons.play_arrow,
+                      color: _isCompleted ? Colors.grey : Color(0xFFFF8B27),
+                    ),
+                    SizedBox(width: 8.w),
+                    _buildTimerButton(
+                      onPressed: _stopTimer,  // 정지 버튼은 항상 활성화
+                      icon: Icons.stop,
+                      color: Color(0xFF6C3311),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
     );
   }
 
   Widget _buildTimerButton({
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,  // null 허용으로 변경
     required IconData icon,
     required Color color,
   }) {
     return ElevatedButton(
-      onPressed: onPressed,
-      child: Icon(icon, size: 20.w,color: Colors.white,),
+      onPressed: onPressed,  // null이면 버튼 자동 비활성화
+      child: Icon(icon, size: 20.w, color: Colors.white),
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         foregroundColor: Colors.white,
@@ -446,9 +530,12 @@ class _TimerWidgetState extends State<TimerWidget> {
     );
   }
 
+
   @override
   void dispose() {
     _timer?.cancel();
+    _flashingController.dispose();
+    _audioPlayer.dispose(); // AudioPlayer 정리
     super.dispose();
   }
 }

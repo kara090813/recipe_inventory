@@ -31,6 +31,7 @@ mixin _$Recipe {
   List<Ingredient> get ingredients => throw _privateConstructorUsedError;
   List<String> get recipe_method => throw _privateConstructorUsedError;
   List<String> get recipe_tags => throw _privateConstructorUsedError;
+  String get createdAt => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -53,7 +54,8 @@ abstract class $RecipeCopyWith<$Res> {
       int ingredients_cnt,
       List<Ingredient> ingredients,
       List<String> recipe_method,
-      List<String> recipe_tags});
+      List<String> recipe_tags,
+      String createdAt});
 }
 
 /// @nodoc
@@ -80,6 +82,7 @@ class _$RecipeCopyWithImpl<$Res, $Val extends Recipe>
     Object? ingredients = null,
     Object? recipe_method = null,
     Object? recipe_tags = null,
+    Object? createdAt = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -126,6 +129,10 @@ class _$RecipeCopyWithImpl<$Res, $Val extends Recipe>
           ? _value.recipe_tags
           : recipe_tags // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      createdAt: null == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as String,
     ) as $Val);
   }
 }
@@ -148,7 +155,8 @@ abstract class _$$RecipeImplCopyWith<$Res> implements $RecipeCopyWith<$Res> {
       int ingredients_cnt,
       List<Ingredient> ingredients,
       List<String> recipe_method,
-      List<String> recipe_tags});
+      List<String> recipe_tags,
+      String createdAt});
 }
 
 /// @nodoc
@@ -173,6 +181,7 @@ class __$$RecipeImplCopyWithImpl<$Res>
     Object? ingredients = null,
     Object? recipe_method = null,
     Object? recipe_tags = null,
+    Object? createdAt = null,
   }) {
     return _then(_$RecipeImpl(
       id: null == id
@@ -219,6 +228,10 @@ class __$$RecipeImplCopyWithImpl<$Res>
           ? _value._recipe_tags
           : recipe_tags // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      createdAt: null == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -237,7 +250,8 @@ class _$RecipeImpl implements _Recipe {
       required this.ingredients_cnt,
       required final List<Ingredient> ingredients,
       required final List<String> recipe_method,
-      required final List<String> recipe_tags})
+      required final List<String> recipe_tags,
+      this.createdAt = "20240204000000"})
       : _ingredients = ingredients,
         _recipe_method = recipe_method,
         _recipe_tags = recipe_tags;
@@ -286,8 +300,12 @@ class _$RecipeImpl implements _Recipe {
   }
 
   @override
+  @JsonKey()
+  final String createdAt;
+
+  @override
   String toString() {
-    return 'Recipe(id: $id, link: $link, title: $title, sub_title: $sub_title, thumbnail: $thumbnail, recipe_type: $recipe_type, difficulty: $difficulty, ingredients_cnt: $ingredients_cnt, ingredients: $ingredients, recipe_method: $recipe_method, recipe_tags: $recipe_tags)';
+    return 'Recipe(id: $id, link: $link, title: $title, sub_title: $sub_title, thumbnail: $thumbnail, recipe_type: $recipe_type, difficulty: $difficulty, ingredients_cnt: $ingredients_cnt, ingredients: $ingredients, recipe_method: $recipe_method, recipe_tags: $recipe_tags, createdAt: $createdAt)';
   }
 
   @override
@@ -313,7 +331,9 @@ class _$RecipeImpl implements _Recipe {
             const DeepCollectionEquality()
                 .equals(other._recipe_method, _recipe_method) &&
             const DeepCollectionEquality()
-                .equals(other._recipe_tags, _recipe_tags));
+                .equals(other._recipe_tags, _recipe_tags) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt));
   }
 
   @JsonKey(ignore: true)
@@ -330,7 +350,8 @@ class _$RecipeImpl implements _Recipe {
       ingredients_cnt,
       const DeepCollectionEquality().hash(_ingredients),
       const DeepCollectionEquality().hash(_recipe_method),
-      const DeepCollectionEquality().hash(_recipe_tags));
+      const DeepCollectionEquality().hash(_recipe_tags),
+      createdAt);
 
   @JsonKey(ignore: true)
   @override
@@ -358,7 +379,8 @@ abstract class _Recipe implements Recipe {
       required final int ingredients_cnt,
       required final List<Ingredient> ingredients,
       required final List<String> recipe_method,
-      required final List<String> recipe_tags}) = _$RecipeImpl;
+      required final List<String> recipe_tags,
+      final String createdAt}) = _$RecipeImpl;
 
   factory _Recipe.fromJson(Map<String, dynamic> json) = _$RecipeImpl.fromJson;
 
@@ -384,6 +406,8 @@ abstract class _Recipe implements Recipe {
   List<String> get recipe_method;
   @override
   List<String> get recipe_tags;
+  @override
+  String get createdAt;
   @override
   @JsonKey(ignore: true)
   _$$RecipeImplCopyWith<_$RecipeImpl> get copyWith =>

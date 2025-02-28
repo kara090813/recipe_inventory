@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:recipe_inventory/funcs/_funcs.dart';
 import '../models/_models.dart';
 
 class RecipeWishListWidget extends StatelessWidget {
@@ -14,7 +15,7 @@ class RecipeWishListWidget extends StatelessWidget {
     final displayRecipes = recipes.take(4).toList();
 
     return SizedBox(
-      height: 170.h, // 카드의 높이에 맞게 조정
+      height: isTablet(context) ? 200.h : 170.h, // 카드의 높이에 맞게 조정
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: displayRecipes.length,

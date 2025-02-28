@@ -1,7 +1,9 @@
 const FOOD_JSON = [
   {"name": "가지", "type": "채소", "img": "assets/imgs/food/vegetable/gaji.png"},
   {"name": "감자", "type": "채소", "img": "assets/imgs/food/vegetable/gamja.png"},
-  {"name": "버섯", "type": "채소", "img": "assets/imgs/food/vegetable/busut.png"},
+  {"name": "팽이버섯", "type": "채소", "img": "assets/imgs/food/vegetable/pangyi.png"},
+  {"name": "표고버섯", "type": "채소", "img": "assets/imgs/food/vegetable/pyogo.png"},
+  {"name": "양송이버섯", "type": "채소", "img": "assets/imgs/food/vegetable/yangsongyi.png"},
   {"name": "고구마", "type": "채소", "img": "assets/imgs/food/vegetable/goguma.png"},
   {"name": "고추", "type": "채소", "img": "assets/imgs/food/vegetable/gochu.png"},
   {"name": "깻잎", "type": "채소", "img": "assets/imgs/food/vegetable/ggatip.png"},
@@ -30,7 +32,8 @@ const FOOD_JSON = [
   {"name": "우엉", "type": "채소", "img": "assets/imgs/food/vegetable/woung.png"},
   {"name": "옥수수", "type": "채소", "img": "assets/imgs/food/vegetable/oksusu.png"},
   {"name": "콩나물", "type": "채소", "img": "assets/imgs/food/vegetable/kongnamul.png"},
-  {"name": "파", "type": "채소", "img": "assets/imgs/food/vegetable/pa.png"},
+  {"name": "대파", "type": "채소", "img": "assets/imgs/food/vegetable/pa.png"},
+  {"name": "쪽파", "type": "채소", "img": "assets/imgs/food/vegetable/jjokpa.png"},
   {"name": "부추", "type": "채소", "img": "assets/imgs/food/vegetable/buchu.png"},
   {"name": "파프리카", "type": "채소", "img": "assets/imgs/food/vegetable/pafrica.png"},
   {"name": "피망", "type": "채소", "img": "assets/imgs/food/vegetable/fimang.png"},
@@ -123,6 +126,7 @@ const FOOD_JSON = [
       "다시다",
     ]
   },
+  {"name": "미림", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/Mirim.png"},
   {"name": "쌈장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/Ssamjang.png"},
   {"name": "청국장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/soybean_paste.png"},
   {"name": "된장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/soybean_paste.png"},
@@ -135,7 +139,8 @@ const FOOD_JSON = [
   {"name": "굴소스", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/Oyster_sauce.png"},
   {"name": "초고추장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/srpepperpaste.png"},
   {"name": "고추장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/gochujang.png"},
-  {"name": "간장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/ganjang.png"},
+  {"name": "진간장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/jinganjang.png"},
+  {"name": "국간장", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/gukganjang.png"},
   {"name": "액젓", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/akjut.png"},
   {"name": "새우젓", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/saewoojut.png"},
   {"name": "간마늘", "type": "조미료/향신료", "img": "assets/imgs/food/seasoning/groundgarlic.png"},
@@ -146,7 +151,10 @@ const FOOD_JSON = [
   {"name": "떡", "type": "가공/유제품", "img": "assets/imgs/food/pnd/dduk.png"},
   {"name": "베이컨", "type": "가공/유제품", "img": "assets/imgs/food/pnd/bacon.png"},
   {"name": "햄", "type": "가공/유제품", "img": "assets/imgs/food/pnd/ham.png"},
-  {"name": "치즈", "type": "가공/유제품", "img": "assets/imgs/food/pnd/cheeze.png"},
+  {"name": "모짜렐라 치즈", "type": "가공/유제품", "img": "assets/imgs/food/pnd/Mozzarella.png"},
+  {"name": "체다치즈", "type": "가공/유제품", "img": "assets/imgs/food/pnd/Cheddar.png"},
+  {"name": "파마산치즈", "type": "가공/유제품", "img": "assets/imgs/food/pnd/parmesan.png"},
+  {"name": "리코타치즈", "type": "가공/유제품", "img": "assets/imgs/food/pnd/ricotta.png"},
   {"name": "참치", "type": "가공/유제품", "img": "assets/imgs/food/pnd/chamchi.png"},
   {"name": "밀가루", "type": "가공/유제품", "img": "assets/imgs/food/pnd/mealgaru.png"},
   {"name": "부침가루", "type": "가공/유제품", "img": "assets/imgs/food/pnd/buchimgaru.png"},
@@ -156,5 +164,17 @@ const FOOD_JSON = [
   {"name": "파스타", "type": "가공/유제품", "img": "assets/imgs/food/pnd/pasta.png"},
   {"name": "김치", "type": "가공/유제품", "img": "assets/imgs/food/pnd/gimchi.png"},
   {"name": "국수", "type": "가공/유제품", "img": "assets/imgs/food/pnd/guksoo.png"},
-  {"name": "김", "type": "가공/유제품", "img": "assets/imgs/food/pnd/gim.png"}
+  {"name": "김", "type": "가공/유제품", "img": "assets/imgs/food/pnd/gim.png"},
+  {"name": "소시지", "type": "가공/유제품", "img": "assets/imgs/food/pnd/sausage.png"},
+  {"name": "단무지", "type": "가공/유제품", "img": "assets/imgs/food/pnd/danmuji.png"},
+  {
+    "name": "밥",
+    "type": "기타",
+    "img": "assets/imgs/food/etc/rice.png",
+    "similarNames": [
+      "쌀",
+      "햇반"
+    ]
+  },
+  {"name": "물", "type": "기타", "img": "assets/imgs/food/etc/water.png"}
 ];

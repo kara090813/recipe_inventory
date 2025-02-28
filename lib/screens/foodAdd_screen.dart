@@ -29,7 +29,7 @@ class _FoodAddScreenState extends State<FoodAddScreen> with SingleTickerProvider
   Future<void> _loadLastTab() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _tabIndex = prefs.getInt('lastFoodAddTab') ?? 1;
+      _tabIndex = prefs.getInt('lastFoodAddTab') ?? 2;
       _isInitialLoad = true;
     });
   }

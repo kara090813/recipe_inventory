@@ -1,9 +1,7 @@
-# Uncomment this line to define a global platform for your project
-platform :ios, '15.5.0'
+platform :ios, '15.5'
 
-$iOSVersion = '15.5.0'
+$iOSVersion = '15.5'
 
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
@@ -30,42 +28,49 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
+  # `use_frameworks!`는 기본적으로 OK
   use_frameworks!
-  use_modular_headers!
+
+  # `use_modular_headers!`는 제거하거나, 꼭 필요한 경우만 사용
+  # use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
-  # Google MLKit 추가
+  # MLKit / Google Mobile Ads SDK
   pod 'GoogleMLKit/TextRecognitionKorean', '~> 7.0.0'
   pod 'Google-Mobile-Ads-SDK'
 
   post_install do |installer|
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
-
-        # iOS deployment target settings
+        # iOS Deployment Target
         if Gem::Version.new($iOSVersion) > Gem::Version.new(config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'])
           config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
         end
 
-        # 기타 필요한 설정들
+        # 기타 설정
         config.build_settings['ENABLE_BITCODE'] = 'NO'
         config.build_settings['SWIFT_VERSION'] = '5.0'
         config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
         config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
 
-        # Module 관련 추가 설정
-        config.build_settings['DEFINES_MODULE'] = 'YES'
+        # 필요하다면 모듈 설정
+        # config.build_settings['DEFINES_MODULE'] = 'YES'
       end
     end
 
-    # Build configuration settings
+    # Build configuration
     installer.pods_project.build_configurations.each do |config|
-      config.build_settings["EXCLUDED_ARCHS[sdk=*]"] = "arm64"
+      # 시뮬레이터에서만 arm64 제외
+      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+
+      # 실제 기기는 arm64 제외하지 말 것
+      # config.build_settings["EXCLUDED_ARCHS[sdk=iphoneos*]"] = ""
+
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
     end
 
-    # Flutter additional build settings
+    # Flutter 빌드 설정
     installer.pods_project.targets.each do |target|
       flutter_additional_ios_build_settings(target)
     end

@@ -12,20 +12,6 @@ import '../models/_models.dart';
 import '../status/_status.dart';
 import '../widgets/_widgets.dart';
 
-import 'dart:io';
-import 'dart:math' as math;
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_card_swiper/flutter_card_swiper.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-
-import '../funcs/_funcs.dart';
-import '../models/_models.dart';
-import '../status/_status.dart';
-import '../widgets/_widgets.dart';
-
 class RecommendedRecipeComponent extends StatefulWidget {
   const RecommendedRecipeComponent({Key? key}) : super(key: key);
 
@@ -70,8 +56,8 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
     _isLoadingAd = true;
 
     final adUnitId = Platform.isAndroid
-        ? 'ca-app-pub-3940256099942544/2247696110'
-        : 'ca-app-pub-3940256099942544/3986624511';
+        ? 'ca-app-pub-1961572115316398/5389842917'
+        : 'ca-app-pub-1961572115316398/2672719231';
 
     NativeAd(
       adUnitId: adUnitId,
@@ -275,21 +261,32 @@ class _SwipableAdCardState extends State<SwipableAdCard> with SingleTickerProvid
           ),
         );
       },
-      // 실제 카드 UI
       child: GestureDetector(
         onPanUpdate: (details) {
           setState(() {
+            // Y축 이동도 허용
             _offset += details.delta;
-            _rotation = _offset.dx * 0.0015;
+            // 회전 각도를 X축 이동에 따라 조절
+            _rotation = _offset.dx * 0.001; // 회전 각도 조절
           });
         },
         onPanEnd: (details) {
-          final threshold = (screenSize.width * 0.3);
-          if (_offset.dx.abs() > threshold) {
-            final endX = (_offset.dx > 0) ? screenSize.width : -screenSize.width;
-            _startDismissAnimation(endX);
+          // 레시피 카드와 동일한 threshold로 설정 (화면 너비의 15%)
+          final threshold = screenSize.width * 0.15;
+
+          // X축 또는 Y축 이동이 threshold를 넘으면 카드 제거
+          if (_offset.dx.abs() > threshold || _offset.dy.abs() > threshold) {
+            // 이동 방향에 따라 적절한 방향으로 날아가도록 설정
+            double endX = _offset.dx.abs() > _offset.dy.abs()
+                ? (_offset.dx > 0 ? screenSize.width : -screenSize.width)
+                : 0;
+            double endY = _offset.dx.abs() <= _offset.dy.abs()
+                ? (_offset.dy > 0 ? screenSize.height : -screenSize.height)
+                : _offset.dy;
+
+            _startDismissAnimation(endX, endY);
           } else {
-            // 제자리 복귀
+            // threshold를 넘지 않으면 원위치
             setState(() {
               _offset = Offset.zero;
               _rotation = 0;
@@ -314,10 +311,10 @@ class _SwipableAdCardState extends State<SwipableAdCard> with SingleTickerProvid
     );
   }
 
-  void _startDismissAnimation(double endX) {
+  void _startDismissAnimation(double endX, double endY) {
     _dismissAnimation = Tween<Offset>(
       begin: Offset.zero,
-      end: Offset(endX, _offset.dy * 0.5),
+      end: Offset(endX, endY),
     ).animate(CurvedAnimation(
       parent: _dismissController!,
       curve: Curves.easeInOut,

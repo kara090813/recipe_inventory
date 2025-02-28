@@ -7,6 +7,7 @@ class RecipeSyncService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String RECIPE_DATA_KEY = 'recipe_data';
   static const String LAST_SYNC_KEY = 'last_recipe_sync';
+  static const String LAST_RECIPE_DATE_KEY = 'last_recipe_date';
   static const int SYNC_INTERVAL_DAYS = 7;
 
   // 로컬에서 레시피 데이터 로드
@@ -16,7 +17,13 @@ class RecipeSyncService {
 
     if (recipeData != null) {
       final List<dynamic> jsonList = json.decode(recipeData);
-      return jsonList.map((json) => Recipe.fromJson(json)).toList();
+      return jsonList.map((json) {
+        // createdAt이 없는 경우 기본값 설정
+        if (!json.containsKey('createdAt')) {
+          json['createdAt'] = "20240204000000";
+        }
+        return Recipe.fromJson(json);
+      }).toList();
     }
     return [];
   }
@@ -27,6 +34,14 @@ class RecipeSyncService {
     final String jsonData = json.encode(recipes.map((recipe) => recipe.toJson()).toList());
     await prefs.setString(RECIPE_DATA_KEY, jsonData);
     await prefs.setInt(LAST_SYNC_KEY, DateTime.now().millisecondsSinceEpoch);
+
+    // 가장 최신 레시피의 createdAt 값을 저장
+    if (recipes.isNotEmpty) {
+      String latestDate = recipes
+          .map((r) => r.createdAt)
+          .reduce((a, b) => a.compareTo(b) > 0 ? a : b);
+      await prefs.setString(LAST_RECIPE_DATE_KEY, latestDate);
+    }
   }
 
   // Firebase에서 레시피 개수 가져오기
@@ -63,7 +78,38 @@ class RecipeSyncService {
     return false;
   }
 
+  // 새 레시피 확인 및 가져오기
+  Future<List<Recipe>> fetchNewRecipes(String lastDate) async {
+    try {
+      final QuerySnapshot snapshot = await _firestore
+          .collection('recipes')
+          .where('createdAt', isGreaterThan: lastDate)
+          .get();
 
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+
+        // Timestamp를 String으로 변환
+        if (data['createdAt'] is Timestamp) {
+          final timestamp = data['createdAt'] as Timestamp;
+          final date = timestamp.toDate();
+          // YYYYMMDDHHmmss 형식으로 변환
+          data['createdAt'] = date.year.toString() +
+              date.month.toString().padLeft(2, '0') +
+              date.day.toString().padLeft(2, '0') +
+              date.hour.toString().padLeft(2, '0') +
+              date.minute.toString().padLeft(2, '0') +
+              date.second.toString().padLeft(2, '0');
+        }
+
+        return Recipe.fromJson(data);
+      }).toList();
+    } catch (e) {
+      print('Error fetching new recipes: $e');
+      return [];
+    }
+  }
 
   // Firebase에서 모든 레시피 가져오기
   Future<List<Recipe>> fetchFirebaseRecipes() async {
@@ -72,6 +118,23 @@ class RecipeSyncService {
       final data = doc.data() as Map<String, dynamic>;
       // Firebase document ID 추가
       data['id'] = doc.id;
+
+      // Timestamp를 String으로 변환
+      if (data['createdAt'] is Timestamp) {
+        final timestamp = data['createdAt'] as Timestamp;
+        final date = timestamp.toDate();
+        // YYYYMMDDHHmmss 형식으로 변환
+        data['createdAt'] = date.year.toString() +
+            date.month.toString().padLeft(2, '0') +
+            date.day.toString().padLeft(2, '0') +
+            date.hour.toString().padLeft(2, '0') +
+            date.minute.toString().padLeft(2, '0') +
+            date.second.toString().padLeft(2, '0');
+      } else if (data['createdAt'] == null) {
+        // createdAt이 없는 경우 기본값 설정
+        data['createdAt'] = "20240204000000";
+      }
+
       return Recipe.fromJson(data);
     }).toList();
   }
@@ -79,14 +142,38 @@ class RecipeSyncService {
   // 메인 동기화 함수
   Future<List<Recipe>> syncRecipes() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+
       if (await needsSync()) {
+        // 전체 동기화 필요
         final recipes = await fetchFirebaseRecipes();
-        await saveLocalRecipes(recipes);
+        if (recipes.isNotEmpty) {
+          await saveLocalRecipes(recipes);
+        }
         return recipes;
+      } else {
+        // 증분 동기화 시도
+        final localRecipes = await loadLocalRecipes();
+        final lastDate = prefs.getString(LAST_RECIPE_DATE_KEY) ?? "20240204000000";
+        final newRecipes = await fetchNewRecipes(lastDate);
+
+        if (newRecipes.isNotEmpty) {
+          // 중복 방지를 위해 ID 기준으로 새 레시피만 추가
+          final existingIds = localRecipes.map((r) => r.id).toSet();
+          final uniqueNewRecipes = newRecipes.where((r) => !existingIds.contains(r.id)).toList();
+
+          if (uniqueNewRecipes.isNotEmpty) {
+            final mergedRecipes = [...localRecipes, ...uniqueNewRecipes];
+            await saveLocalRecipes(mergedRecipes);
+            return mergedRecipes;
+          }
+        }
+
+        return localRecipes;
       }
-      return await loadLocalRecipes();
     } catch (e) {
       print('Error syncing recipes: $e');
+      print('Stack trace: ${StackTrace.current}');
       return await loadLocalRecipes(); // 에러 발생시 로컬 데이터 반환
     }
   }

@@ -14,3 +14,4 @@ export 'ingredientTable_widget.dart';
 export 'recipeWishList_widget.dart';
 export 'mypageShrink_widget.dart';
 export 'matchRateIndicator_widget.dart';
+export 'ingredientList_widget.dart';

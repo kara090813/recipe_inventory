@@ -17,6 +17,7 @@ class Recipe with _$Recipe {
     required List<Ingredient> ingredients,
     required List<String> recipe_method,
     required List<String> recipe_tags,
+    @Default("20240204000000") String createdAt, // 기본값 설정
   }) = _Recipe;
 
   factory Recipe.fromJson(Map<String, dynamic> json) => _$RecipeFromJson(json);

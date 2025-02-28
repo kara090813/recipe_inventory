@@ -31,10 +31,46 @@
               "client_type": 3
             },
             {
-              "client_id": "992466273542-p8d26jagl9n5hppcjdro1q4bfa95oh1r.apps.googleusercontent.com",
+              "client_id": "992466273542-cac6mcap42k01tpu0rnqnunsv8a4b2ql.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.recipeInventory"
+                "bundle_id": "net.lamoss.recipeInventory"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992466273542:android:d01d7a6689613e70434a87",
+        "android_client_info": {
+          "package_name": "net.lamoss.recipe_inventory"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992466273542-1roufo5vjhn8ch8foji1m724p1gonevg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq9v_jowp1ma_bafqYEtjrU7gbSs1tHmE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992466273542-1roufo5vjhn8ch8foji1m724p1gonevg.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992466273542-cac6mcap42k01tpu0rnqnunsv8a4b2ql.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "net.lamoss.recipeInventory"
               }
             }
           ]

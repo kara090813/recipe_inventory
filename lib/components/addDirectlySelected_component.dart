@@ -16,7 +16,7 @@ class AddDirectlySelected_component extends StatelessWidget {
           children: [
             SizedBox(height: 8.h,),
             FoodListWidget(
-              partCount: 7,
+              partCount: 5,
               categoryIndex: 0,
               foodList: provider.selectedFoods,
               islabel: false,  // 라벨 제거

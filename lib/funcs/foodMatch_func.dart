@@ -42,9 +42,9 @@ bool isStrictMatched(String recipeIngredient, String userIngredient) {
   // 전처리
   recipeIngredient = recipeIngredient.trim().toLowerCase();
   userIngredient = userIngredient.trim().toLowerCase();
-
   // 정확히 일치
   if (recipeIngredient == userIngredient) return true;
+
 
   // 짧은 단어는 정확한 매칭만 허용
   if (recipeIngredient.length <= 1 || userIngredient.length <= 1) {
@@ -100,76 +100,115 @@ Map<String, List<Food>> classifyIngredients(Recipe recipe, List<Food> userFoods)
   for (var ingredient in recipe.ingredients) {
     bool found = false;
 
-    // 1단계: 엄격한 매칭
-    for (var userFood in userFoods) {
-      if (isStrictMatched(ingredient.food, userFood.name) ||
-          userFood.similarNames.any((name) => isStrictMatched(ingredient.food, name))) {
-        availableIngredients.add(Food(
-          name: ingredient.food,  // 레시피의 원래 식재료 이름 사용
-          type: userFood.type,
-          img: userFood.img,      // 매칭된 사용자 식재료의 이미지 사용
-        ));
-        found = true;
+    // 1단계: 전체 식재료 목록에서 100% 일치하는 것이 있는지 먼저 확인
+    Food? exactMatch;
+    for (var food in FOOD_LIST) {
+      if (food.name == ingredient.food ||
+          food.similarNames.contains(ingredient.food)) {
+        exactMatch = food;
         break;
       }
     }
 
-    // 2단계: 느슨한 매칭 (1단계에서 매칭되지 않은 경우)
+    if (exactMatch != null) {
+      // 100% 일치하는 식재료가 있다면, 사용자가 가지고 있는지 확인
+      bool userHasExactMatch = userFoods.any((food) =>
+      food.name == exactMatch!.name ||
+          food.similarNames.contains(exactMatch.name)
+      );
+
+      if (userHasExactMatch) {
+        // 사용자가 정확히 일치하는 식재료를 가지고 있음
+        availableIngredients.add(Food(
+          name: ingredient.food,
+          type: exactMatch.type,
+          img: exactMatch.img,
+        ));
+        found = true;
+      } else {
+        // 정확히 일치하는 식재료가 있지만 사용자가 가지고 있지 않음
+        missingIngredients.add(Food(
+          name: ingredient.food,
+          type: exactMatch.type,
+          img: exactMatch.img,
+        ));
+        found = true;
+      }
+    }
+
+    // 2단계: 정확히 일치하는 것이 없는 경우에만 유사도 매칭 시도
     if (!found) {
+      // 먼저 사용자의 식재료에서 유사도 높은 매칭 시도
       for (var userFood in userFoods) {
-        if (isLooseMatched(ingredient.food, userFood.name) ||
-            userFood.similarNames.any((name) => isLooseMatched(ingredient.food, name))) {
+        if (isStrictMatched(ingredient.food, userFood.name) ||
+            userFood.similarNames.any((name) => isStrictMatched(ingredient.food, name))) {
           availableIngredients.add(Food(
-            name: ingredient.food,  // 레시피의 원래 식재료 이름 사용
+            name: ingredient.food,
             type: userFood.type,
-            img: userFood.img,      // 매칭된 사용자 식재료의 이미지 사용
+            img: userFood.img,
           ));
           found = true;
           break;
         }
       }
-    }
 
-    // 3단계: 전체 식재료 목록에서 매칭 시도
-    if (!found) {
-      bool matchedInList = false;
-
-      // 엄격한 매칭 먼저 시도
-      for (var food in FOOD_LIST) {
-        if (isStrictMatched(ingredient.food, food.name) ||
-            food.similarNames.any((name) => isStrictMatched(ingredient.food, name))) {
-          missingIngredients.add(Food(
-            name: ingredient.food,  // 레시피의 원래 식재료 이름 사용
-            type: food.type,
-            img: food.img,         // 매칭된 FOOD_LIST 식재료의 이미지 사용
-          ));
-          matchedInList = true;
-          break;
+      // 엄격한 매칭 실패시 느슨한 매칭 시도
+      if (!found) {
+        for (var userFood in userFoods) {
+          if (isLooseMatched(ingredient.food, userFood.name) ||
+              userFood.similarNames.any((name) => isLooseMatched(ingredient.food, name))) {
+            availableIngredients.add(Food(
+              name: ingredient.food,
+              type: userFood.type,
+              img: userFood.img,
+            ));
+            found = true;
+            break;
+          }
         }
       }
 
-      // 엄격한 매칭 실패시 느슨한 매칭 시도
-      if (!matchedInList) {
+      // 3단계: 사용자 식재료에서 매칭 실패시 전체 리스트에서 이미지 찾기
+      if (!found) {
+        bool matchedInList = false;
+
+        // 전체 리스트에서 엄격한 매칭 시도
         for (var food in FOOD_LIST) {
-          if (isLooseMatched(ingredient.food, food.name) ||
-              food.similarNames.any((name) => isLooseMatched(ingredient.food, name))) {
+          if (isStrictMatched(ingredient.food, food.name) ||
+              food.similarNames.any((name) => isStrictMatched(ingredient.food, name))) {
             missingIngredients.add(Food(
-              name: ingredient.food,  // 레시피의 원래 식재료 이름 사용
+              name: ingredient.food,
               type: food.type,
-              img: food.img,         // 매칭된 FOOD_LIST 식재료의 이미지 사용
+              img: food.img,
             ));
             matchedInList = true;
             break;
           }
         }
 
-        // 매칭 실패시 기본 이미지로 추가
+        // 엄격한 매칭 실패시 느슨한 매칭 시도
         if (!matchedInList) {
-          missingIngredients.add(Food(
-            name: ingredient.food,  // 레시피의 원래 식재료 이름 사용
-            type: "기타",
-            img: "assets/imgs/food/unknownFood.png",
-          ));
+          for (var food in FOOD_LIST) {
+            if (isLooseMatched(ingredient.food, food.name) ||
+                food.similarNames.any((name) => isLooseMatched(ingredient.food, name))) {
+              missingIngredients.add(Food(
+                name: ingredient.food,
+                type: food.type,
+                img: food.img,
+              ));
+              matchedInList = true;
+              break;
+            }
+          }
+
+          // 매칭 실패시 기본 이미지로 추가
+          if (!matchedInList) {
+            missingIngredients.add(Food(
+              name: ingredient.food,
+              type: "기타",
+              img: "assets/imgs/food/unknownFood.png",
+            ));
+          }
         }
       }
     }

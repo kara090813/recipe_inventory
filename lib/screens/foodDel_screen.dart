@@ -72,6 +72,7 @@ class _FoodDelScreenState extends State<FoodDelScreen> {
               FoodListWidget(
                 categoryIndex: _selectedTabIndex,
                 foodList: userFoodList,
+                partCount: 5,
                 // 사용자의 식재료 리스트를 전달
                 bkgColor: 0xFFBFBFBF,
                 checkColor: Colors.red,
@@ -90,56 +91,59 @@ class _FoodDelScreenState extends State<FoodDelScreen> {
                       children: [
                         Expanded(
                             flex:58,
-                            child: Container(
-                              padding: EdgeInsets.only(left: 16.w, top: 4.w, right: 16.w),
-                              child: Row(
-                                children: List.generate(provider.selectedFoods.length, (index) {
-                                  Food clickItem = provider.selectedFoods[index];
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Container(
+                                padding: EdgeInsets.only(left: 16.w, top: 4.w, right: 16.w),
+                                child: Row(
+                                  children: List.generate(provider.selectedFoods.length, (index) {
+                                    Food clickItem = provider.selectedFoods[index];
 
-                                  return [
-                                    Stack(
-                                      children: [
-                                        Positioned(
-                                            top: 4.h,
-                                            child: InkWell(
-                                              onTap: () {
-                                                provider.toggleFood(clickItem);
-                                              },
-                                              child: Image.asset(
-                                                'assets/imgs/icons/red_x.png',
-                                                width: 12.w,
-                                              ),
-                                            )),
-                                        Center(
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              SizedBox(
-                                                height: 4.h,
-                                              ),
-                                              InkWell(
+                                    return [
+                                      Stack(
+                                        children: [
+                                          Positioned(
+                                              top: 4.h,
+                                              child: InkWell(
                                                 onTap: () {
                                                   provider.toggleFood(clickItem);
                                                 },
                                                 child: Image.asset(
-                                                  clickItem.img,
-                                                  width: 30.w,
+                                                  'assets/imgs/icons/red_x.png',
+                                                  width: 12.w,
                                                 ),
-                                              ),
-                                              Text(
-                                                clickItem.name,
-                                                style: TextStyle(fontSize: 12.sp),
-                                              )
-                                            ],
+                                              )),
+                                          Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                SizedBox(
+                                                  height: 4.h,
+                                                ),
+                                                InkWell(
+                                                  onTap: () {
+                                                    provider.toggleFood(clickItem);
+                                                  },
+                                                  child: Image.asset(
+                                                    clickItem.img,
+                                                    width: 30.w,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  clickItem.name,
+                                                  style: TextStyle(fontSize: 12.sp),
+                                                )
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      width: 12.w,
-                                    )
-                                  ];
-                                }).expand((element) => element).toList(),
+                                        ],
+                                      ),
+                                      SizedBox(
+                                        width: 12.w,
+                                      )
+                                    ];
+                                  }).expand((element) => element).toList(),
+                                ),
                               ),
                             )),
                         Expanded(

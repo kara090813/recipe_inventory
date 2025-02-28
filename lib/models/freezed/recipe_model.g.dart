@@ -24,6 +24,7 @@ _$RecipeImpl _$$RecipeImplFromJson(Map<String, dynamic> json) => _$RecipeImpl(
       recipe_tags: (json['recipe_tags'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
+      createdAt: json['createdAt'] as String? ?? "20240204000000",
     );
 
 Map<String, dynamic> _$$RecipeImplToJson(_$RecipeImpl instance) =>
@@ -39,6 +40,7 @@ Map<String, dynamic> _$$RecipeImplToJson(_$RecipeImpl instance) =>
       'ingredients': instance.ingredients,
       'recipe_method': instance.recipe_method,
       'recipe_tags': instance.recipe_tags,
+      'createdAt': instance.createdAt,
     };
 
 _$IngredientImpl _$$IngredientImplFromJson(Map<String, dynamic> json) =>

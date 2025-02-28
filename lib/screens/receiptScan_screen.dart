@@ -9,6 +9,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:korean_levenshtein/korean_levenshtein.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import '../funcs/_funcs.dart';
 import '../models/_models.dart';
 import '../status/_status.dart';
 import '../models/data.dart';
@@ -215,24 +216,36 @@ class _ReceiptScanScreenState extends State<ReceiptScanScreen> with TickerProvid
 
     final List<String> startKeywordList = ['상품명', '품명', '단가', '수량', '금액'];
     final List<String> endKeywordList = ['부가세', '합계', '총액', '결제'];
+    bool hasKeywords = false;
     bool startProcessing = false;
+
+    // 먼저 키워드 존재 여부 확인
+    for (var block in recognizedText.blocks) {
+      if (startKeywordList.any((keyword) => block.text.trim().contains(keyword))) {
+        hasKeywords = true;
+        break;
+      }
+    }
 
     for (var block in recognizedText.blocks) {
       String blockText = block.text.trim();
 
-      // 영수증 섹션 체크
-      if (!startProcessing) {
-        if (startKeywordList.any((keyword) => blockText.contains(keyword))) {
-          startProcessing = true;
-          continue; // 헤더 라인은 건너뛰기
+      if (hasKeywords) {
+        // 키워드가 있는 경우의 처리 로직
+        if (!startProcessing) {
+          if (startKeywordList.any((keyword) => blockText.contains(keyword))) {
+            startProcessing = true;
+            continue;
+          }
+          continue;
         }
-        continue;
+
+        if (endKeywordList.any((keyword) => blockText.contains(keyword))) {
+          break;
+        }
       }
 
-      if (endKeywordList.any((keyword) => blockText.contains(keyword))) {
-        break;
-      }
-
+      // 실제 매칭 로직
       for (var line in block.lines) {
         String lineText = line.text.trim();
 
@@ -244,10 +257,19 @@ class _ReceiptScanScreenState extends State<ReceiptScanScreen> with TickerProvid
           // 이미 매치된 식재료는 건너뛰기
           if (matchedFoodNames.contains(food.name)) continue;
 
-          if (_isTextMatched(lineText, food)) {
+          // 1단계: 엄격한 매칭
+          if (isStrictMatched(lineText, food.name) ||
+              food.similarNames.any((name) => isStrictMatched(lineText, name))) {
             matchedFoods.add(MatchedFood(food, line.boundingBox));
             matchedFoodNames.add(food.name);
-            print('Matched food: ${food.name} in line: ${lineText}');
+            break;
+          }
+
+          // 2단계: 느슨한 매칭
+          if (isLooseMatched(lineText, food.name) ||
+              food.similarNames.any((name) => isLooseMatched(lineText, name))) {
+            matchedFoods.add(MatchedFood(food, line.boundingBox));
+            matchedFoodNames.add(food.name);
             break;
           }
         }

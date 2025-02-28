@@ -16,6 +16,44 @@ class RecipeInfoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userFoods = context.watch<FoodStatus>().userFood;
     final classifiedIngredients = classifyIngredients(recipe, userFoods);
+    final combinedFoods = [
+      ...classifiedIngredients['available']!,
+      ...classifiedIngredients['missing']!,
+    ];
+    // 각 Ingredient에 대해, 이름이 일치하는 Food를 찾아서 DisplayIngredient 생성
+    List<DisplayIngredient> displayIngredients = recipe.ingredients.map((ingredient) {
+      // Food의 name은 ingredient.food와 같게 설정되어 있음
+      final matchedFood = combinedFoods.firstWhere(
+        (food) => food.name == ingredient.food,
+        orElse: () => Food(
+          name: ingredient.food,
+          type: '기타',
+          img: 'assets/imgs/food/unknownFood.png',
+        ),
+      );
+      return DisplayIngredient(
+        food: ingredient.food,
+        cnt: ingredient.cnt,
+        img: matchedFood.img,
+        type: matchedFood.type,
+      );
+    }).toList();
+    const List<String> customOrder = [
+      '육류',
+      '수산물',
+      '과일',
+      '채소',
+      '가공/유제품',
+      '조미료/향신료',
+      '기타',
+    ];
+
+// displayIngredients는 List<DisplayIngredient>라고 가정
+    displayIngredients.sort((a, b) {
+      final aIndex = customOrder.indexOf(a.type);
+      final bIndex = customOrder.indexOf(b.type);
+      return aIndex.compareTo(bIndex);
+    });
 
     return Scaffold(
       body: ScaffoldPaddingWidget(
@@ -131,7 +169,7 @@ class RecipeInfoScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 10.h),
-                    IngredientTableWidget(ingredients: recipe.ingredients),
+                    IngredientListWidget(ingredients: displayIngredients),
                     SizedBox(
                       height: 16.h,
                     ),
@@ -241,7 +279,10 @@ class RecipeInfoScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset('assets/imgs/icons/cook.png',width: 22.w,),
+                            Image.asset(
+                              'assets/imgs/icons/cook.png',
+                              width: 22.w,
+                            ),
                             SizedBox(
                               width: isTablet(context) ? 6.w : 10.w,
                             ),

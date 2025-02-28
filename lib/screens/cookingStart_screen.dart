@@ -31,8 +31,8 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
 
   /// Interstitial 광고 ID
   final String interstitialAdUnitId = Platform.isAndroid
-      ? 'ca-app-pub-3940256099942544/1033173712' // Android 테스트용 ID
-      : 'ca-app-pub-3940256099942544/4411468910'; // iOS 테스트용 ID
+      ? 'ca-app-pub-1961572115316398/5389842917' // Android 테스트용 ID
+      : 'ca-app-pub-1961572115316398/4302894479'; // iOS 테스트용 ID
   InterstitialAd? _interstitialAd;
 
   /// 광고 로드
@@ -51,37 +51,225 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
     );
   }
 
+  Future<void> _showIngredientRemovalDialog(BuildContext mainContext, Recipe recipe) async {
+    final matchedIngredients = classifyIngredients(recipe, Provider.of<FoodStatus>(mainContext, listen: false).userFood);
+    final availableIngredients = matchedIngredients['available'] ?? [];
+
+    if (availableIngredients.isEmpty) {
+      _showAdAndNavigateHome(mainContext);
+      return;
+    }
+
+    return showDialog<void>(
+      context: mainContext,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return ChangeNotifierProvider(
+          create: (_) => SelectedFoodProvider(),
+          child: Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal:20.w,vertical: 28.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '소진한 식재료가 있나요?',
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF7D674B),
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    '클릭하여 선택하기',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Color(0xFF707070),
+                    ),
+                  ),
+                  SizedBox(height: 28.h),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(dialogContext).size.height * 0.5,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 10.w,
+                        runSpacing: 10.h,
+                        children: availableIngredients.map((food) =>
+                            Consumer<SelectedFoodProvider>(
+                              builder: (context, provider, child) {
+                                final isSelected = provider.isSelected(food);
+                                return GestureDetector(
+                                  onTap: () => provider.toggleFood(food),
+                                  child: Container(
+                                    width: (MediaQuery.of(dialogContext).size.width - 80.w) / 3,
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? Color(0xFFFFF3E6) : Colors.white,
+                                      border: Border.all(
+                                        color: isSelected ? Color(0xFFFF8B27) : Color(0xFFE4E4E4),
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.r),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1), // 그림자 색상 (투명도 조절)
+                                          spreadRadius: 1, // 그림자 퍼짐 정도
+                                          blurRadius: 4, // 그림자 흐림 정도
+                                          offset: Offset(0, 1), // 그림자 위치 (x, y)
+                                        ),
+                                      ],
+                                    ),
+                                    padding: EdgeInsets.all(8.w),
+                                    child: Column(
+                                      children: [
+                                        Image.asset(
+                                          food.img,
+                                          width: 50.w,
+                                          height: 50.w,
+                                        ),
+                                        SizedBox(height: 4.h),
+                                        Text(
+                                          food.name,
+                                          style: TextStyle(fontSize: 12.sp),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                        ).toList(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 30.h),
+                  Consumer<SelectedFoodProvider>(
+                    builder: (context, provider, child) => Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                              _showAdAndNavigateHome(mainContext);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF5E3009),
+                              padding: EdgeInsets.symmetric(vertical: 12.h),
+                            ),
+                            child: Text(
+                              '건너뛰기',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (provider.selectedFoods.isNotEmpty) {
+                                // 소진한 식재료 처리를 위한 매칭 로직 적용
+                                final foodStatus = Provider.of<FoodStatus>(mainContext, listen: false);
+                                final userFoodList = foodStatus.userFood;
+
+                                // 실제 삭제할 사용자 식재료 목록
+                                List<Food> actualFoodsToRemove = [];
+
+                                // 선택된 각 식재료에 대해
+                                for (var selectedFood in provider.selectedFoods) {
+                                  // 사용자의 실제 식재료 중에서 매칭되는 것 찾기
+                                  for (var userFood in userFoodList) {
+                                    if (userFood.name == selectedFood.name ||
+                                        isIngredientMatched(userFood.name, selectedFood.name) ||
+                                        userFood.similarNames.any((name) => isIngredientMatched(name, selectedFood.name))) {
+                                      actualFoodsToRemove.add(userFood);
+                                      break;  // 한 번 매칭되면 다음 선택된 식재료로 이동
+                                    }
+                                  }
+                                }
+
+                                // 찾은 실제 사용자 식재료 삭제
+                                if (actualFoodsToRemove.isNotEmpty) {
+                                  foodStatus.removeFoods(actualFoodsToRemove);
+                                }
+                              }
+                              Navigator.pop(dialogContext);
+                              _showAdAndNavigateHome(mainContext);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFFFF8B27),
+                              padding: EdgeInsets.symmetric(vertical: 12.h),
+                            ),
+                            child: Text(
+                              '삭제하기(${provider.selectedFoods.length}개)',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 6.h,)
+                ],
+
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// 광고 표시 후 메인화면 이동
   void _showAdAndNavigateHome(BuildContext context) {
     if (_interstitialAd != null) {
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdDismissedFullScreenContent: (ad) {
           ad.dispose();
-          // 광고가 닫힐 때 메인으로 이동
-          context.read<UserStatus>().endCooking(widget.recipe);
+          if (!mounted) return;  // mounted 체크
+
+          // TabStatus 변경
           Provider.of<TabStatus>(context, listen: false).setIndex(4);
+          // UserStatus 변경
+          Provider.of<UserStatus>(context, listen: false).endCooking(widget.recipe);
+          // 네비게이션
           context.go('/');
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
           ad.dispose();
-          // 광고 표시 실패 시 바로 메인으로 이동
-          context.read<UserStatus>().endCooking(widget.recipe);
+          if (!mounted) return;  // mounted 체크
+
+          // TabStatus 변경
           Provider.of<TabStatus>(context, listen: false).setIndex(4);
+          // UserStatus 변경
+          Provider.of<UserStatus>(context, listen: false).endCooking(widget.recipe);
+          // 네비게이션
           context.go('/');
         },
       );
       _interstitialAd!.show();
     } else {
-      // 광고가 로드되지 않았을 때 바로 메인으로 이동
-      context.read<UserStatus>().endCooking(widget.recipe);
+      if (!mounted) return;  // mounted 체크
+
+      // TabStatus 변경
       Provider.of<TabStatus>(context, listen: false).setIndex(4);
+      // UserStatus 변경
+      Provider.of<UserStatus>(context, listen: false).endCooking(widget.recipe);
+      // 네비게이션
       context.go('/');
     }
   }
 
   /// 요리 종료 로직
   void _endCooking(BuildContext context) {
-    _showAdAndNavigateHome(context);
+    _showIngredientRemovalDialog(context, widget.recipe);
   }
 
   /// 유튜브 플레이어 위젯
@@ -110,6 +298,25 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildIOSVideoSection(Recipe recipe) {
+    return Column(
+      children: [
+        // 썸네일 이미지
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10.r),
+          child: Image.network(
+            recipe.thumbnail,
+            width: double.infinity,
+            height: 200.h,
+            fit: BoxFit.cover,
+          ),
+        ),
+
+        SizedBox(height: 10.h),
+      ],
     );
   }
 
@@ -256,7 +463,10 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                       child: Column(
                         children: [
                           // 유튜브 플레이어
-                          _buildYoutubePlayer(),
+                          if (Platform.isAndroid)
+                            _buildYoutubePlayer()
+                          else if (Platform.isIOS)
+                            _buildIOSVideoSection(widget.recipe),
                           SizedBox(height: 10.h),
                           Align(
                             alignment: Alignment.centerLeft,
