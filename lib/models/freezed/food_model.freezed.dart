@@ -20,11 +20,17 @@ Food _$FoodFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Food {
+  @HiveField(0)
   String get name => throw _privateConstructorUsedError;
+  @HiveField(1)
   String get type => throw _privateConstructorUsedError;
+  @HiveField(2)
   String get img => throw _privateConstructorUsedError;
+  @HiveField(3)
   int get order => throw _privateConstructorUsedError;
+  @HiveField(4)
   List<String> get similarNames => throw _privateConstructorUsedError;
+  @HiveField(5)
   bool get isCustom => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -38,12 +44,12 @@ abstract class $FoodCopyWith<$Res> {
       _$FoodCopyWithImpl<$Res, Food>;
   @useResult
   $Res call(
-      {String name,
-      String type,
-      String img,
-      int order,
-      List<String> similarNames,
-      bool isCustom});
+      {@HiveField(0) String name,
+      @HiveField(1) String type,
+      @HiveField(2) String img,
+      @HiveField(3) int order,
+      @HiveField(4) List<String> similarNames,
+      @HiveField(5) bool isCustom});
 }
 
 /// @nodoc
@@ -103,12 +109,12 @@ abstract class _$$FoodImplCopyWith<$Res> implements $FoodCopyWith<$Res> {
   @override
   @useResult
   $Res call(
-      {String name,
-      String type,
-      String img,
-      int order,
-      List<String> similarNames,
-      bool isCustom});
+      {@HiveField(0) String name,
+      @HiveField(1) String type,
+      @HiveField(2) String img,
+      @HiveField(3) int order,
+      @HiveField(4) List<String> similarNames,
+      @HiveField(5) bool isCustom});
 }
 
 /// @nodoc
@@ -161,29 +167,34 @@ class __$$FoodImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$FoodImpl implements _Food {
   const _$FoodImpl(
-      {required this.name,
-      required this.type,
-      required this.img,
-      this.order = 0,
-      final List<String> similarNames = const [],
-      this.isCustom = false})
+      {@HiveField(0) required this.name,
+      @HiveField(1) required this.type,
+      @HiveField(2) required this.img,
+      @HiveField(3) this.order = 0,
+      @HiveField(4) final List<String> similarNames = const [],
+      @HiveField(5) this.isCustom = false})
       : _similarNames = similarNames;
 
   factory _$FoodImpl.fromJson(Map<String, dynamic> json) =>
       _$$FoodImplFromJson(json);
 
   @override
+  @HiveField(0)
   final String name;
   @override
+  @HiveField(1)
   final String type;
   @override
+  @HiveField(2)
   final String img;
   @override
   @JsonKey()
+  @HiveField(3)
   final int order;
   final List<String> _similarNames;
   @override
   @JsonKey()
+  @HiveField(4)
   List<String> get similarNames {
     if (_similarNames is EqualUnmodifiableListView) return _similarNames;
     // ignore: implicit_dynamic_type
@@ -192,6 +203,7 @@ class _$FoodImpl implements _Food {
 
   @override
   @JsonKey()
+  @HiveField(5)
   final bool isCustom;
 
   @override
@@ -235,26 +247,32 @@ class _$FoodImpl implements _Food {
 
 abstract class _Food implements Food {
   const factory _Food(
-      {required final String name,
-      required final String type,
-      required final String img,
-      final int order,
-      final List<String> similarNames,
-      final bool isCustom}) = _$FoodImpl;
+      {@HiveField(0) required final String name,
+      @HiveField(1) required final String type,
+      @HiveField(2) required final String img,
+      @HiveField(3) final int order,
+      @HiveField(4) final List<String> similarNames,
+      @HiveField(5) final bool isCustom}) = _$FoodImpl;
 
   factory _Food.fromJson(Map<String, dynamic> json) = _$FoodImpl.fromJson;
 
   @override
+  @HiveField(0)
   String get name;
   @override
+  @HiveField(1)
   String get type;
   @override
+  @HiveField(2)
   String get img;
   @override
+  @HiveField(3)
   int get order;
   @override
+  @HiveField(4)
   List<String> get similarNames;
   @override
+  @HiveField(5)
   bool get isCustom;
   @override
   @JsonKey(ignore: true)

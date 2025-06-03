@@ -20,17 +20,29 @@ Recipe _$RecipeFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Recipe {
+  @HiveField(0)
   String get id => throw _privateConstructorUsedError;
+  @HiveField(1)
   String get link => throw _privateConstructorUsedError;
+  @HiveField(2)
   String get title => throw _privateConstructorUsedError;
+  @HiveField(3)
   String get sub_title => throw _privateConstructorUsedError;
+  @HiveField(4)
   String get thumbnail => throw _privateConstructorUsedError;
+  @HiveField(5)
   String get recipe_type => throw _privateConstructorUsedError;
+  @HiveField(6)
   String get difficulty => throw _privateConstructorUsedError;
+  @HiveField(7)
   int get ingredients_cnt => throw _privateConstructorUsedError;
+  @HiveField(8)
   List<Ingredient> get ingredients => throw _privateConstructorUsedError;
+  @HiveField(9)
   List<String> get recipe_method => throw _privateConstructorUsedError;
+  @HiveField(10)
   List<String> get recipe_tags => throw _privateConstructorUsedError;
+  @HiveField(11)
   String get createdAt => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -44,18 +56,18 @@ abstract class $RecipeCopyWith<$Res> {
       _$RecipeCopyWithImpl<$Res, Recipe>;
   @useResult
   $Res call(
-      {String id,
-      String link,
-      String title,
-      String sub_title,
-      String thumbnail,
-      String recipe_type,
-      String difficulty,
-      int ingredients_cnt,
-      List<Ingredient> ingredients,
-      List<String> recipe_method,
-      List<String> recipe_tags,
-      String createdAt});
+      {@HiveField(0) String id,
+      @HiveField(1) String link,
+      @HiveField(2) String title,
+      @HiveField(3) String sub_title,
+      @HiveField(4) String thumbnail,
+      @HiveField(5) String recipe_type,
+      @HiveField(6) String difficulty,
+      @HiveField(7) int ingredients_cnt,
+      @HiveField(8) List<Ingredient> ingredients,
+      @HiveField(9) List<String> recipe_method,
+      @HiveField(10) List<String> recipe_tags,
+      @HiveField(11) String createdAt});
 }
 
 /// @nodoc
@@ -145,18 +157,18 @@ abstract class _$$RecipeImplCopyWith<$Res> implements $RecipeCopyWith<$Res> {
   @override
   @useResult
   $Res call(
-      {String id,
-      String link,
-      String title,
-      String sub_title,
-      String thumbnail,
-      String recipe_type,
-      String difficulty,
-      int ingredients_cnt,
-      List<Ingredient> ingredients,
-      List<String> recipe_method,
-      List<String> recipe_tags,
-      String createdAt});
+      {@HiveField(0) String id,
+      @HiveField(1) String link,
+      @HiveField(2) String title,
+      @HiveField(3) String sub_title,
+      @HiveField(4) String thumbnail,
+      @HiveField(5) String recipe_type,
+      @HiveField(6) String difficulty,
+      @HiveField(7) int ingredients_cnt,
+      @HiveField(8) List<Ingredient> ingredients,
+      @HiveField(9) List<String> recipe_method,
+      @HiveField(10) List<String> recipe_tags,
+      @HiveField(11) String createdAt});
 }
 
 /// @nodoc
@@ -240,18 +252,18 @@ class __$$RecipeImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$RecipeImpl implements _Recipe {
   _$RecipeImpl(
-      {required this.id,
-      required this.link,
-      required this.title,
-      required this.sub_title,
-      required this.thumbnail,
-      required this.recipe_type,
-      required this.difficulty,
-      required this.ingredients_cnt,
-      required final List<Ingredient> ingredients,
-      required final List<String> recipe_method,
-      required final List<String> recipe_tags,
-      this.createdAt = "20240204000000"})
+      {@HiveField(0) required this.id,
+      @HiveField(1) required this.link,
+      @HiveField(2) required this.title,
+      @HiveField(3) required this.sub_title,
+      @HiveField(4) required this.thumbnail,
+      @HiveField(5) required this.recipe_type,
+      @HiveField(6) required this.difficulty,
+      @HiveField(7) required this.ingredients_cnt,
+      @HiveField(8) required final List<Ingredient> ingredients,
+      @HiveField(9) required final List<String> recipe_method,
+      @HiveField(10) required final List<String> recipe_tags,
+      @HiveField(11) this.createdAt = "20240204000000"})
       : _ingredients = ingredients,
         _recipe_method = recipe_method,
         _recipe_tags = recipe_tags;
@@ -260,23 +272,32 @@ class _$RecipeImpl implements _Recipe {
       _$$RecipeImplFromJson(json);
 
   @override
+  @HiveField(0)
   final String id;
   @override
+  @HiveField(1)
   final String link;
   @override
+  @HiveField(2)
   final String title;
   @override
+  @HiveField(3)
   final String sub_title;
   @override
+  @HiveField(4)
   final String thumbnail;
   @override
+  @HiveField(5)
   final String recipe_type;
   @override
+  @HiveField(6)
   final String difficulty;
   @override
+  @HiveField(7)
   final int ingredients_cnt;
   final List<Ingredient> _ingredients;
   @override
+  @HiveField(8)
   List<Ingredient> get ingredients {
     if (_ingredients is EqualUnmodifiableListView) return _ingredients;
     // ignore: implicit_dynamic_type
@@ -285,6 +306,7 @@ class _$RecipeImpl implements _Recipe {
 
   final List<String> _recipe_method;
   @override
+  @HiveField(9)
   List<String> get recipe_method {
     if (_recipe_method is EqualUnmodifiableListView) return _recipe_method;
     // ignore: implicit_dynamic_type
@@ -293,6 +315,7 @@ class _$RecipeImpl implements _Recipe {
 
   final List<String> _recipe_tags;
   @override
+  @HiveField(10)
   List<String> get recipe_tags {
     if (_recipe_tags is EqualUnmodifiableListView) return _recipe_tags;
     // ignore: implicit_dynamic_type
@@ -301,6 +324,7 @@ class _$RecipeImpl implements _Recipe {
 
   @override
   @JsonKey()
+  @HiveField(11)
   final String createdAt;
 
   @override
@@ -369,44 +393,56 @@ class _$RecipeImpl implements _Recipe {
 
 abstract class _Recipe implements Recipe {
   factory _Recipe(
-      {required final String id,
-      required final String link,
-      required final String title,
-      required final String sub_title,
-      required final String thumbnail,
-      required final String recipe_type,
-      required final String difficulty,
-      required final int ingredients_cnt,
-      required final List<Ingredient> ingredients,
-      required final List<String> recipe_method,
-      required final List<String> recipe_tags,
-      final String createdAt}) = _$RecipeImpl;
+      {@HiveField(0) required final String id,
+      @HiveField(1) required final String link,
+      @HiveField(2) required final String title,
+      @HiveField(3) required final String sub_title,
+      @HiveField(4) required final String thumbnail,
+      @HiveField(5) required final String recipe_type,
+      @HiveField(6) required final String difficulty,
+      @HiveField(7) required final int ingredients_cnt,
+      @HiveField(8) required final List<Ingredient> ingredients,
+      @HiveField(9) required final List<String> recipe_method,
+      @HiveField(10) required final List<String> recipe_tags,
+      @HiveField(11) final String createdAt}) = _$RecipeImpl;
 
   factory _Recipe.fromJson(Map<String, dynamic> json) = _$RecipeImpl.fromJson;
 
   @override
+  @HiveField(0)
   String get id;
   @override
+  @HiveField(1)
   String get link;
   @override
+  @HiveField(2)
   String get title;
   @override
+  @HiveField(3)
   String get sub_title;
   @override
+  @HiveField(4)
   String get thumbnail;
   @override
+  @HiveField(5)
   String get recipe_type;
   @override
+  @HiveField(6)
   String get difficulty;
   @override
+  @HiveField(7)
   int get ingredients_cnt;
   @override
+  @HiveField(8)
   List<Ingredient> get ingredients;
   @override
+  @HiveField(9)
   List<String> get recipe_method;
   @override
+  @HiveField(10)
   List<String> get recipe_tags;
   @override
+  @HiveField(11)
   String get createdAt;
   @override
   @JsonKey(ignore: true)
@@ -420,7 +456,9 @@ Ingredient _$IngredientFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Ingredient {
+  @HiveField(0)
   String get food => throw _privateConstructorUsedError;
+  @HiveField(1)
   String get cnt => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -435,7 +473,7 @@ abstract class $IngredientCopyWith<$Res> {
           Ingredient value, $Res Function(Ingredient) then) =
       _$IngredientCopyWithImpl<$Res, Ingredient>;
   @useResult
-  $Res call({String food, String cnt});
+  $Res call({@HiveField(0) String food, @HiveField(1) String cnt});
 }
 
 /// @nodoc
@@ -475,7 +513,7 @@ abstract class _$$IngredientImplCopyWith<$Res>
       __$$IngredientImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String food, String cnt});
+  $Res call({@HiveField(0) String food, @HiveField(1) String cnt});
 }
 
 /// @nodoc
@@ -508,14 +546,17 @@ class __$$IngredientImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$IngredientImpl implements _Ingredient {
-  _$IngredientImpl({required this.food, required this.cnt});
+  _$IngredientImpl(
+      {@HiveField(0) required this.food, @HiveField(1) required this.cnt});
 
   factory _$IngredientImpl.fromJson(Map<String, dynamic> json) =>
       _$$IngredientImplFromJson(json);
 
   @override
+  @HiveField(0)
   final String food;
   @override
+  @HiveField(1)
   final String cnt;
 
   @override
@@ -551,15 +592,18 @@ class _$IngredientImpl implements _Ingredient {
 }
 
 abstract class _Ingredient implements Ingredient {
-  factory _Ingredient({required final String food, required final String cnt}) =
-      _$IngredientImpl;
+  factory _Ingredient(
+      {@HiveField(0) required final String food,
+      @HiveField(1) required final String cnt}) = _$IngredientImpl;
 
   factory _Ingredient.fromJson(Map<String, dynamic> json) =
       _$IngredientImpl.fromJson;
 
   @override
+  @HiveField(0)
   String get food;
   @override
+  @HiveField(1)
   String get cnt;
   @override
   @JsonKey(ignore: true)

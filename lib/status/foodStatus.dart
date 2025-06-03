@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../funcs/_funcs.dart';
 import '../models/_models.dart';
+import '../services/hive_service.dart';
 
 class FoodStatus extends ChangeNotifier {
   FoodStatus() {
@@ -14,47 +13,53 @@ class FoodStatus extends ChangeNotifier {
 
   Future<void> loadFoods() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? foodListString = prefs.getString('foodList');
-      if (foodListString != null) {
-        final List<dynamic> jsonList = json.decode(foodListString) as List<dynamic>;
-        _userFood = jsonList.map((jsonItem) => Food.fromJson(jsonItem as Map<String, dynamic>)).toList();
-        notifyListeners();
-      }
+      _userFood = HiveService.getFoods();
+      notifyListeners();
     } catch (e) {
-      print('Error loading foods: $e');
+      print('Error loading foods from Hive: $e');
+      notifyListeners();
     }
   }
 
   Future<void> saveFoods() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String jsonList = json.encode(_userFood.map((food) => food.toJson()).toList());
-      await prefs.setString('foodList', jsonList);
+      await HiveService.saveFoods(_userFood);
     } catch (e) {
-      print('Error saving foods: $e');
+      print('Error saving foods to Hive: $e');
     }
   }
 
   Future<void> addFoods(List<Food> value) async {
-    final Set<Food> uniqueFoods = Set.from(_userFood);
-    uniqueFoods.addAll(value);
-    _userFood = uniqueFoods.toList();
-    await saveFoods();
-    notifyListeners();
+    try {
+      final Set<Food> uniqueFoods = Set.from(_userFood);
+      uniqueFoods.addAll(value);
+      _userFood = uniqueFoods.toList();
+      await saveFoods();
+      notifyListeners();
+    } catch (e) {
+      print('Error adding foods: $e');
+    }
   }
 
   Future<void> removeFoods(List<Food> value) async {
-    final Set<Food> foodsToRemove = Set.from(value);
-    _userFood.removeWhere((food) => foodsToRemove.contains(food));
-    await saveFoods();
-    notifyListeners();
+    try {
+      final Set<Food> foodsToRemove = Set.from(value);
+      _userFood.removeWhere((food) => foodsToRemove.contains(food));
+      await saveFoods();
+      notifyListeners();
+    } catch (e) {
+      print('Error removing foods: $e');
+    }
   }
 
   Future<void> clearFoods() async {
-    _userFood.clear();
-    await saveFoods();
-    notifyListeners();
+    try {
+      _userFood.clear();
+      await saveFoods();
+      notifyListeners();
+    } catch (e) {
+      print('Error clearing foods: $e');
+    }
   }
 
   int calculateMatchRate(List<Ingredient> ingredients) {

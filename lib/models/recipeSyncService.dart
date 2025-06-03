@@ -2,45 +2,42 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/_models.dart';
+import '../services/hive_service.dart';
 
 class RecipeSyncService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static const String RECIPE_DATA_KEY = 'recipe_data';
   static const String LAST_SYNC_KEY = 'last_recipe_sync';
   static const String LAST_RECIPE_DATE_KEY = 'last_recipe_date';
   static const int SYNC_INTERVAL_DAYS = 7;
 
-  // 로컬에서 레시피 데이터 로드
+  // 로컬에서 레시피 데이터 로드 (Hive 사용)
   Future<List<Recipe>> loadLocalRecipes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? recipeData = prefs.getString(RECIPE_DATA_KEY);
-
-    if (recipeData != null) {
-      final List<dynamic> jsonList = json.decode(recipeData);
-      return jsonList.map((json) {
-        // createdAt이 없는 경우 기본값 설정
-        if (!json.containsKey('createdAt')) {
-          json['createdAt'] = "20240204000000";
-        }
-        return Recipe.fromJson(json);
-      }).toList();
+    try {
+      return HiveService.getRecipes();
+    } catch (e) {
+      print('Error loading local recipes from Hive: $e');
+      return [];
     }
-    return [];
   }
 
-  // 로컬에 레시피 데이터 저장
+  // 로컬에 레시피 데이터 저장 (Hive 사용)
   Future<void> saveLocalRecipes(List<Recipe> recipes) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String jsonData = json.encode(recipes.map((recipe) => recipe.toJson()).toList());
-    await prefs.setString(RECIPE_DATA_KEY, jsonData);
-    await prefs.setInt(LAST_SYNC_KEY, DateTime.now().millisecondsSinceEpoch);
+    try {
+      await HiveService.saveRecipes(recipes);
 
-    // 가장 최신 레시피의 createdAt 값을 저장
-    if (recipes.isNotEmpty) {
-      String latestDate = recipes
-          .map((r) => r.createdAt)
-          .reduce((a, b) => a.compareTo(b) > 0 ? a : b);
-      await prefs.setString(LAST_RECIPE_DATE_KEY, latestDate);
+      // 동기화 시간과 최신 레시피 날짜는 여전히 SharedPreferences 사용 (가벼운 메타데이터)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(LAST_SYNC_KEY, DateTime.now().millisecondsSinceEpoch);
+
+      // 가장 최신 레시피의 createdAt 값을 저장
+      if (recipes.isNotEmpty) {
+        String latestDate = recipes
+            .map((r) => r.createdAt)
+            .reduce((a, b) => a.compareTo(b) > 0 ? a : b);
+        await prefs.setString(LAST_RECIPE_DATE_KEY, latestDate);
+      }
+    } catch (e) {
+      print('Error saving local recipes to Hive: $e');
     }
   }
 

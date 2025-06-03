@@ -1,42 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import '../models/_models.dart';
+import '../services/hive_service.dart';
 import 'dart:math';
-
-class CookingHistory {
-  final Recipe recipe;
-  final DateTime dateTime;
-
-  CookingHistory({required this.recipe, required this.dateTime});
-
-  Map<String, dynamic> toJson() => {
-    'recipe': recipe.toJson(),
-    'dateTime': dateTime.toIso8601String(),
-  };
-
-  factory CookingHistory.fromJson(Map<String, dynamic> json) => CookingHistory(
-    recipe: Recipe.fromJson(json['recipe']),
-    dateTime: DateTime.parse(json['dateTime']),
-  );
-}
-
-class OngoingCooking {
-  final Recipe recipe;
-  final DateTime startTime;
-
-  OngoingCooking({required this.recipe, required this.startTime});
-
-  Map<String, dynamic> toJson() => {
-    'recipe': recipe.toJson(),
-    'startTime': startTime.toIso8601String(),
-  };
-
-  factory OngoingCooking.fromJson(Map<String, dynamic> json) => OngoingCooking(
-    recipe: Recipe.fromJson(json['recipe']),
-    startTime: DateTime.parse(json['startTime']),
-  );
-}
 
 class UserStatus extends ChangeNotifier {
   List<CookingHistory> _cookingHistory = [];
@@ -58,62 +24,70 @@ class UserStatus extends ChangeNotifier {
   }
 
   Future<void> loadUserStatus() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      // Hive에서 데이터 로드
+      _cookingHistory = HiveService.getCookingHistory();
+      _ongoingCooking = HiveService.getOngoingCooking();
+      _userProfile = HiveService.getUserProfile();
 
-    final historyJson = prefs.getString('cookingHistory');
-    if (historyJson != null) {
-      final historyList = json.decode(historyJson) as List;
-      _cookingHistory =
-          historyList.map((item) => CookingHistory.fromJson(item)).toList();
+      if (_userProfile != null) {
+        _nickname = _userProfile?.name ?? generateRandomNickname();
+        _profileImage = _userProfile?.photoURL;
+      } else {
+        // SharedPreferences에서 기존 닉네임 가져오기 (호환성을 위해)
+        final prefs = await SharedPreferences.getInstance();
+        _nickname = prefs.getString('nickname') ?? generateRandomNickname();
+      }
+
+      // 초기화 상태는 여전히 SharedPreferences 사용 (가벼운 설정값)
+      final prefs = await SharedPreferences.getInstance();
+      _isInitialized = prefs.getBool('isInitialized') ?? false;
+
+      notifyListeners();
+    } catch (e) {
+      print('Error loading user status: $e');
+      notifyListeners();
     }
-
-    final userProfileJson = prefs.getString('userProfile');
-    if (userProfileJson != null) {
-      _userProfile = UserProfile.fromJson(json.decode(userProfileJson));
-      _nickname = _userProfile?.name ?? generateRandomNickname();
-      _profileImage = _userProfile?.photoURL;
-    } else {
-      _nickname = prefs.getString('nickname') ?? generateRandomNickname();
-    }
-
-    _isInitialized = prefs.getBool('isInitialized') ?? false;
-    notifyListeners();
   }
 
   Future<void> updateUserProfile(UserProfile profile) async {
-    _userProfile = profile;
-    _nickname = profile.name;
-    _profileImage = profile.photoURL;
+    try {
+      _userProfile = profile;
+      _nickname = profile.name;
+      _profileImage = profile.photoURL;
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('userProfile', json.encode(profile.toJson()));
-
-    notifyListeners();
+      await HiveService.saveUserProfile(profile);
+      notifyListeners();
+    } catch (e) {
+      print('Error updating user profile: $e');
+    }
   }
 
   Future<void> clearUserProfile() async {
-    _userProfile = null;
-    _nickname = generateRandomNickname();
-    _profileImage = null;
+    try {
+      _userProfile = null;
+      _nickname = generateRandomNickname();
+      _profileImage = null;
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('userProfile');
-
-    notifyListeners();
+      await HiveService.clearUserProfile();
+      notifyListeners();
+    } catch (e) {
+      print('Error clearing user profile: $e');
+    }
   }
 
   Future<void> saveUserStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      'cookingHistory',
-      json.encode(_cookingHistory.map((h) => h.toJson()).toList()),
-    );
-    await prefs.setString(
-      'ongoingCooking',
-      json.encode(_ongoingCooking.map((o) => o.toJson()).toList()),
-    );
-    await prefs.setString('nickname', _nickname);
-    await prefs.setBool('isInitialized', _isInitialized);
+    try {
+      await HiveService.saveCookingHistory(_cookingHistory);
+      await HiveService.saveOngoingCooking(_ongoingCooking);
+
+      // 닉네임과 초기화 상태는 SharedPreferences에 저장 (호환성)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('nickname', _nickname);
+      await prefs.setBool('isInitialized', _isInitialized);
+    } catch (e) {
+      print('Error saving user status: $e');
+    }
   }
 
   String generateRandomNickname() {
@@ -133,7 +107,6 @@ class UserStatus extends ChangeNotifier {
     notifyListeners();
   }
 
-
   void startCooking(Recipe recipe) {
     _ongoingCooking.insert(0, OngoingCooking(recipe: recipe, startTime: DateTime.now()));
     if (_ongoingCooking.length > 2) {
@@ -144,13 +117,13 @@ class UserStatus extends ChangeNotifier {
   }
 
   void endCooking(Recipe recipe) {
-    _ongoingCooking.removeWhere((cooking) => cooking.recipe == recipe);
+    _ongoingCooking.removeWhere((cooking) => cooking.recipe.id == recipe.id);
     addCookingHistory(recipe);
     saveUserStatus();
     notifyListeners();
   }
 
-  void clearOngoingCooking(){
+  void clearOngoingCooking() {
     _ongoingCooking.clear();
     saveUserStatus();
     notifyListeners();

@@ -20,10 +20,15 @@ UserProfile _$UserProfileFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$UserProfile {
+  @HiveField(0)
   String get uid => throw _privateConstructorUsedError;
+  @HiveField(1)
   String get email => throw _privateConstructorUsedError;
+  @HiveField(2)
   String get name => throw _privateConstructorUsedError;
+  @HiveField(3)
   String? get photoURL => throw _privateConstructorUsedError;
+  @HiveField(4)
   LoginProvider get provider => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -39,11 +44,11 @@ abstract class $UserProfileCopyWith<$Res> {
       _$UserProfileCopyWithImpl<$Res, UserProfile>;
   @useResult
   $Res call(
-      {String uid,
-      String email,
-      String name,
-      String? photoURL,
-      LoginProvider provider});
+      {@HiveField(0) String uid,
+      @HiveField(1) String email,
+      @HiveField(2) String name,
+      @HiveField(3) String? photoURL,
+      @HiveField(4) LoginProvider provider});
 }
 
 /// @nodoc
@@ -99,11 +104,11 @@ abstract class _$$UserProfileImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String uid,
-      String email,
-      String name,
-      String? photoURL,
-      LoginProvider provider});
+      {@HiveField(0) String uid,
+      @HiveField(1) String email,
+      @HiveField(2) String name,
+      @HiveField(3) String? photoURL,
+      @HiveField(4) LoginProvider provider});
 }
 
 /// @nodoc
@@ -152,24 +157,29 @@ class __$$UserProfileImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$UserProfileImpl implements _UserProfile {
   _$UserProfileImpl(
-      {required this.uid,
-      required this.email,
-      required this.name,
-      this.photoURL,
-      required this.provider});
+      {@HiveField(0) required this.uid,
+      @HiveField(1) required this.email,
+      @HiveField(2) required this.name,
+      @HiveField(3) this.photoURL,
+      @HiveField(4) required this.provider});
 
   factory _$UserProfileImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserProfileImplFromJson(json);
 
   @override
+  @HiveField(0)
   final String uid;
   @override
+  @HiveField(1)
   final String email;
   @override
+  @HiveField(2)
   final String name;
   @override
+  @HiveField(3)
   final String? photoURL;
   @override
+  @HiveField(4)
   final LoginProvider provider;
 
   @override
@@ -212,24 +222,29 @@ class _$UserProfileImpl implements _UserProfile {
 
 abstract class _UserProfile implements UserProfile {
   factory _UserProfile(
-      {required final String uid,
-      required final String email,
-      required final String name,
-      final String? photoURL,
-      required final LoginProvider provider}) = _$UserProfileImpl;
+      {@HiveField(0) required final String uid,
+      @HiveField(1) required final String email,
+      @HiveField(2) required final String name,
+      @HiveField(3) final String? photoURL,
+      @HiveField(4) required final LoginProvider provider}) = _$UserProfileImpl;
 
   factory _UserProfile.fromJson(Map<String, dynamic> json) =
       _$UserProfileImpl.fromJson;
 
   @override
+  @HiveField(0)
   String get uid;
   @override
+  @HiveField(1)
   String get email;
   @override
+  @HiveField(2)
   String get name;
   @override
+  @HiveField(3)
   String? get photoURL;
   @override
+  @HiveField(4)
   LoginProvider get provider;
   @override
   @JsonKey(ignore: true)

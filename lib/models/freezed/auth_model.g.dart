@@ -3,6 +3,100 @@
 part of 'auth_model.dart';
 
 // **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
+
+class UserProfileAdapter extends TypeAdapter<UserProfile> {
+  @override
+  final int typeId = 5;
+
+  @override
+  UserProfile read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return UserProfile(
+      uid: fields[0] as String,
+      email: fields[1] as String,
+      name: fields[2] as String,
+      photoURL: fields[3] as String?,
+      provider: fields[4] as LoginProvider,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, UserProfile obj) {
+    writer
+      ..writeByte(5)
+      ..writeByte(0)
+      ..write(obj.uid)
+      ..writeByte(1)
+      ..write(obj.email)
+      ..writeByte(2)
+      ..write(obj.name)
+      ..writeByte(3)
+      ..write(obj.photoURL)
+      ..writeByte(4)
+      ..write(obj.provider);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserProfileAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class LoginProviderAdapter extends TypeAdapter<LoginProvider> {
+  @override
+  final int typeId = 6;
+
+  @override
+  LoginProvider read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return LoginProvider.google;
+      case 1:
+        return LoginProvider.kakao;
+      case 2:
+        return LoginProvider.none;
+      default:
+        return LoginProvider.google;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, LoginProvider obj) {
+    switch (obj) {
+      case LoginProvider.google:
+        writer.writeByte(0);
+        break;
+      case LoginProvider.kakao:
+        writer.writeByte(1);
+        break;
+      case LoginProvider.none:
+        writer.writeByte(2);
+        break;
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoginProviderAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+// **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 

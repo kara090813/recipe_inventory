@@ -12,6 +12,8 @@ import 'funcs/_funcs.dart';
 import 'models/data.dart';
 import 'router.dart';
 import 'status/_status.dart';
+import 'services/hive_service.dart'; // Hive 서비스 추가
+import 'services/migration_service.dart'; // 마이그레이션 서비스 추가
 import 'package:flutter/services.dart';
 
 // AppLinks 인스턴스
@@ -144,6 +146,17 @@ Future<void> initDeepLinks() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Hive 초기화 (가장 먼저)
+  try {
+    await HiveService.init();
+    print('Hive 초기화 성공');
+
+    // 데이터 마이그레이션 실행
+    await MigrationService.migrateToHive();
+  } catch (e) {
+    print('Hive 초기화 또는 마이그레이션 실패: $e');
+  }
 
   // 알림 서비스 초기화
   try {

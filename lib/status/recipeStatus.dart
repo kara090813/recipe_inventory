@@ -1,12 +1,11 @@
 import 'dart:math';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../funcs/_funcs.dart';
 import '../models/_models.dart';
 import '../models/recipeSyncService.dart';
+import '../services/hive_service.dart';
 import '_status.dart';
 
 class RecipeStatus extends ChangeNotifier {
@@ -20,6 +19,7 @@ class RecipeStatus extends ChangeNotifier {
   String _searchQuery = '';
   bool _hasMore = true;
   int _currentPage = 0;
+
   Recipe getRandomRecommendedRecipe(FoodStatus foodStatus, UserStatus userStatus, int count) {
     // 추천 알고리즘을 사용하여 상위 레시피 가져오기
     final recommendedRecipes = RecipeRecommendationService().getRecommendedRecipes(
@@ -39,7 +39,6 @@ class RecipeStatus extends ChangeNotifier {
 
   List<Recipe> get loadedRecipes => _loadedRecipes;
   bool get hasMore => _hasMore;
-  // 페이지 단위로 레시피 로드
 
   // 레시피 ID로 레시피 찾기
   Recipe? findRecipeById(String id) {
@@ -102,8 +101,6 @@ class RecipeStatus extends ChangeNotifier {
     notifyListeners();
   }
 
-  static const String FAVORITE_RECIPES_KEY = 'favorite_recipes';
-
   RecipeStatus() {
     _initializeRecipes();
   }
@@ -148,7 +145,6 @@ class RecipeStatus extends ChangeNotifier {
 
   // Getters
   List<Recipe> get recipes => _recipes;
-
   bool get isLoading => _isLoading;
 
   List<Recipe> get favoriteRecipes =>
@@ -177,37 +173,41 @@ class RecipeStatus extends ChangeNotifier {
       notifyListeners();
     }
   }
-  // 좋아요 상태 불러오기
+
+  // 좋아요 상태 불러오기 (Hive 사용)
   Future<void> _loadFavoriteRecipes() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final favoriteList = prefs.getStringList(FAVORITE_RECIPES_KEY) ?? [];
+      final favoriteList = HiveService.getFavoriteRecipes();
       _favoriteRecipeIds = Set.from(favoriteList);
       notifyListeners();
     } catch (e) {
-      print('Error loading favorite recipes: $e');
+      print('Error loading favorite recipes from Hive: $e');
     }
   }
 
-  // 좋아요 상태 저장
+  // 좋아요 상태 저장 (Hive 사용)
   Future<void> _saveFavoriteRecipes() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(FAVORITE_RECIPES_KEY, _favoriteRecipeIds.toList());
+      await HiveService.saveFavoriteRecipes(_favoriteRecipeIds.toList());
     } catch (e) {
-      print('Error saving favorite recipes: $e');
+      print('Error saving favorite recipes to Hive: $e');
     }
   }
 
   // 좋아요 토글
   Future<void> toggleFavorite(String recipeId) async {
-    if (_favoriteRecipeIds.contains(recipeId)) {
-      _favoriteRecipeIds.remove(recipeId);
-    } else {
-      _favoriteRecipeIds.add(recipeId);
+    try {
+      if (_favoriteRecipeIds.contains(recipeId)) {
+        _favoriteRecipeIds.remove(recipeId);
+        await HiveService.removeFavoriteRecipe(recipeId);
+      } else {
+        _favoriteRecipeIds.add(recipeId);
+        await HiveService.addFavoriteRecipe(recipeId);
+      }
+      notifyListeners(); // 좋아요 상태 변경만 알림
+    } catch (e) {
+      print('Error toggling favorite: $e');
     }
-    await _saveFavoriteRecipes();
-    notifyListeners(); // 좋아요 상태 변경만 알림
   }
 
   // 좋아요 상태 확인
@@ -217,9 +217,8 @@ class RecipeStatus extends ChangeNotifier {
 
   Future<void> clearAllFavorites() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(FAVORITE_RECIPES_KEY); // SharedPreferences에서 데이터 삭제
-      _favoriteRecipeIds.clear(); // Set 초기화
+      await HiveService.clearFavoriteRecipes();
+      _favoriteRecipeIds.clear();
       notifyListeners();
     } catch (e) {
       print('Error clearing favorite recipes: $e');
@@ -235,15 +234,15 @@ class RecipeStatus extends ChangeNotifier {
     RangeValues? matchRate,
   }) {
     final foodStatus = Provider.of<FoodStatus>(context, listen: false);
-    
+
     return _recipes.where((recipe) {
       // 검색어 매칭 (제목과 서브타이틀 모두 검색)
       bool matchesSearch = searchQuery == null
           ? true
           : recipe.title.toLowerCase().contains(searchQuery!.toLowerCase()) ||
-              recipe.sub_title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              recipe.recipe_tags
-                  .any((tag) => tag.toLowerCase().contains(searchQuery.toLowerCase()));
+          recipe.sub_title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          recipe.recipe_tags
+              .any((tag) => tag.toLowerCase().contains(searchQuery.toLowerCase()));
 
       // 음식 종류 필터링
       bool matchesType = recipeType == null ||
