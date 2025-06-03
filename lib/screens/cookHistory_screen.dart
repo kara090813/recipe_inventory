@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:recipe_inventory/widgets/_widgets.dart';
 
+import '../models/_models.dart';
 import '../status/_status.dart';
 import '../funcs/_funcs.dart';
 

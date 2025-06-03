@@ -58,7 +58,6 @@ dependencies:
   custom_refresh_indicator: ^4.0.1
   google_mlkit_text_recognition: ^0.14.0
   youtube_player_iframe: ^5.2.0
-  flutter_inappwebview: ^6.1.5
   korean_levenshtein: ^0.0.1
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.4
