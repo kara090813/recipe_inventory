@@ -197,94 +197,148 @@ class MyPageComponent extends StatelessWidget {
   }
 
   // 🆕 퀘스트 & 뱃지 섹션 (심플한 티저 카드)
+  // 🆕 완전히 다른 방식 - 심플한 리스트 스타일
   Widget _buildQuestAndBadgeSection(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        // 퀘스트 카드
-        Expanded(
-          child: GestureDetector(
-            onTap: () => context.push('/quest'),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10.r),
-                border: Border.all(color: Color(0xFFBB885E), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 0,
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Text('🏆', style: TextStyle(fontSize: 32.sp)),
-                  SizedBox(height: 8.h),
-                  Text('퀘스트', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: Color(0xFF7D674B))),
-                  SizedBox(height: 8.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF8B27),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Text('3개 완료!', style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold, color: Colors.white)),
-                  ),
-                ],
-              ),
+        // 퀘스트 항목
+        InkWell(
+          onTap: () => context.push('/quest'),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(color: Color(0xFFBB885E), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 0,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
+              ],
             ),
-          ),
-        ),
-
-        SizedBox(width: 12.w),
-
-        // 뱃지 카드
-        Expanded(
-          child: GestureDetector(
-            onTap: () => context.push('/badge'),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10.r),
-                border: Border.all(color: Color(0xFFBB885E), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 0,
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Stack(
+            child: Row(
+              children: [
+                Text('🏆', style: TextStyle(fontSize: 20.sp)),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('⭐', style: TextStyle(fontSize: 32.sp)),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                          width: 8.w,
-                          height: 8.w,
-                          decoration: BoxDecoration(
-                            color: Color(0xFFFF8B27),
-                            shape: BoxShape.circle,
-                          ),
+                      Text(
+                        '퀘스트',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7D674B),
+                        ),
+                      ),
+                      Text(
+                        '완료된 보상 3개 수령 가능',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: Color(0xFF999999),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 8.h),
-                  Text('뱃지', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: Color(0xFF7D674B))),
-                  SizedBox(height: 8.h),
-                  Text('15/30', style: TextStyle(fontSize: 13.sp, color: Color(0xFF7D674B))),
-                ],
-              ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFF8B27),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Text(
+                    'NEW',
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14.w,
+                  color: Color(0xFFBB885E),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        SizedBox(height: 8.h),
+
+        // 뱃지 항목
+        InkWell(
+          onTap: () => context.push('/badge'),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(color: Color(0xFFBB885E), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 0,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Stack(
+                  children: [
+                    Text('⭐', style: TextStyle(fontSize: 20.sp)),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        width: 6.w,
+                        height: 6.w,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF3333),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '뱃지 컬렉션',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7D674B),
+                        ),
+                      ),
+                      Text(
+                        '새 뱃지가 있어요! (15/30)',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: Color(0xFF999999),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14.w,
+                  color: Color(0xFFBB885E),
+                ),
+              ],
             ),
           ),
         ),
