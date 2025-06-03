@@ -13,3 +13,4 @@ export 'recipeWishList_screen.dart';
 export 'customFood_screen.dart';
 export 'customFoodAddTab_screen.dart';
 export 'customFoodDeleteTab_screen.dart';
+export 'notificationRedirect_screen.dart';

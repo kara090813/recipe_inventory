@@ -207,6 +207,14 @@ class _RecipeFilterScreenState extends State<RecipeFilterScreen> {
             List<String> currentValues = _tempFilters[filterName]?.selectedValues ?? [];
             if (isSelected) {
               currentValues.remove(option);
+              // 모든 옵션이 선택 취소된 경우 '전체' 또는 '제한없음'을 자동으로 선택
+              if (currentValues.isEmpty) {
+                if (filterName == '재료 개수' || filterName == '내 식재료 매치도') {
+                  currentValues.add('제한없음');
+                } else {
+                  currentValues.add('전체');
+                }
+              }
             } else {
               currentValues.remove('전체');
               currentValues.remove('제한없음');

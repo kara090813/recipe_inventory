@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:in_app_review/in_app_review.dart';
 import 'package:recipe_inventory/funcs/_funcs.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,15 +19,20 @@ import '../status/_status.dart';
 import '../widgets/_widgets.dart';
 
 class CookingStartScreen extends StatefulWidget {
-  final Recipe recipe;
+  final Recipe? recipe;
+  final String? recipeId;
 
-  const CookingStartScreen({Key? key, required this.recipe}) : super(key: key);
+  const CookingStartScreen({Key? key, this.recipe, this.recipeId}) : super(key: key);
 
   @override
   State<CookingStartScreen> createState() => _CookingStartScreenState();
 }
 
 class _CookingStartScreenState extends State<CookingStartScreen> {
+  Recipe? _loadedRecipe;
+  bool _isLoading = false;
+  String? _error;
+
   /// (5.x) YoutubePlayerController
   late YoutubePlayerController _youtubeController;
 
@@ -34,6 +41,79 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
       ? 'ca-app-pub-1961572115316398/5389842917' // Android 테스트용 ID
       : 'ca-app-pub-1961572115316398/4302894479'; // iOS 테스트용 ID
   InterstitialAd? _interstitialAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipe();
+  }
+
+  Future<void> _loadRecipe() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 직접 Recipe 객체가 전달된 경우
+      if (widget.recipe != null) {
+        setState(() {
+          _loadedRecipe = widget.recipe;
+          _isLoading = false;
+        });
+        _initializeYoutubePlayer();
+        _loadInterstitialAd();
+        return;
+      }
+
+      // recipeId가 전달된 경우
+      if (widget.recipeId != null && widget.recipeId!.isNotEmpty) {
+        final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
+        final recipe = recipeStatus.findRecipeById(widget.recipeId!);
+
+        if (recipe != null) {
+          setState(() {
+            _loadedRecipe = recipe;
+            _isLoading = false;
+          });
+          _initializeYoutubePlayer();
+          _loadInterstitialAd();
+        } else {
+          setState(() {
+            _error = '레시피를 찾을 수 없습니다: ${widget.recipeId}';
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _error = '레시피 정보가 없습니다';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = '레시피 로드 중 오류 발생: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _initializeYoutubePlayer() {
+    if (_loadedRecipe == null) return;
+
+    // 링크에서 videoId 추출
+    final videoId = YoutubePlayerController.convertUrlToId(_loadedRecipe!.link) ?? '';
+
+    // (5.x) YoutubePlayerController.fromVideoId(...) 사용
+    _youtubeController = YoutubePlayerController.fromVideoId(
+      videoId: videoId,
+      autoPlay: false,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
+        mute: false,
+      ),
+    );
+  }
 
   /// 광고 로드
   void _loadInterstitialAd() {
@@ -56,7 +136,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
     final availableIngredients = matchedIngredients['available'] ?? [];
 
     if (availableIngredients.isEmpty) {
-      _showAdAndNavigateHome(mainContext);
+      _checkCookCountAndNavigate(mainContext);
       return;
     }
 
@@ -157,7 +237,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.pop(dialogContext);
-                              _showAdAndNavigateHome(mainContext);
+                              _checkCookCountAndNavigate(mainContext);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Color(0xFF5E3009),
@@ -200,7 +280,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                                 }
                               }
                               Navigator.pop(dialogContext);
-                              _showAdAndNavigateHome(mainContext);
+                              _checkCookCountAndNavigate(mainContext);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Color(0xFFFF8B27),
@@ -212,19 +292,167 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                             ),
                           ),
                         ),
-
                       ],
                     ),
                   ),
                   SizedBox(height: 6.h,)
                 ],
-
               ),
             ),
           ),
         );
       },
     );
+  }
+
+  /// 요리 횟수를 확인하고 적절한 액션 수행 (광고 또는 리뷰 요청)
+  Future<void> _checkCookCountAndNavigate(BuildContext context) async {
+    final userStatus = Provider.of<UserStatus>(context, listen: false);
+    userStatus.endCooking(_loadedRecipe!);
+    final cookCount = userStatus.cookingHistory.length;
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasReviewed = prefs.getBool('has_reviewed') ?? false;
+
+    final shouldRequestReview = !hasReviewed &&
+        (cookCount == 3 || ((cookCount - 3) % 5 == 0 && cookCount > 3));
+
+    if (shouldRequestReview) {
+      _showPreReviewNoticeDialog(context, cookCount);
+    } else {
+      _showAdAndNavigateHome(context);
+    }
+  }
+
+
+
+  /// 리뷰 요청 다이얼로그
+  void _showPreReviewNoticeDialog(BuildContext context, int cookCount) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 16.h),
+              Image.asset(
+                'assets/imgs/items/cookLoading.png',
+                width: 80.w,
+                height: 80.w,
+              ),
+              SizedBox(height: 20.h),
+              Text(
+                '냉장고 털이 어떠셨나요?',
+                style: TextStyle(
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF7D674B),
+                ),
+              ),
+              SizedBox(height: 10.h),
+              Text(
+                '앱을 자주 사용해주셔서\n정말 감사합니다!\n간단한 평가를 남겨주시면 \n저희에게 큰 도움이 됩니다 🙏',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  color: const Color(0xFF707070),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _navigateToHome(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE8E8E8),
+                        minimumSize: Size(double.infinity, 48.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                      child: Text(
+                        '다음에 하기',
+                        style: TextStyle(
+                          color: const Color(0xFF7D674B),
+                          fontFamily: 'Mapo',
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(context); // 다이얼로그 닫기
+                        final inAppReview = InAppReview.instance;
+                        final prefs = await SharedPreferences.getInstance();
+
+                        try {
+                          if (await inAppReview.isAvailable()) {
+                            await inAppReview.requestReview();
+                            await prefs.setBool('has_reviewed', true);
+                          } else {
+                            final storeUrl = Platform.isAndroid
+                                ? Uri.parse('https://play.google.com/store/apps/details?id=net.lamoss.recipe_inventory')
+                                : Uri.parse('https://apps.apple.com/app/id6740774474?action=write-review');
+
+                            if (await canLaunchUrl(storeUrl)) {
+                              await launchUrl(storeUrl, mode: LaunchMode.externalApplication);
+                              await prefs.setBool('has_reviewed', true);
+                            }
+                          }
+                        } catch (e) {
+                          debugPrint('리뷰 요청 실패: $e');
+                        }
+
+                        _navigateToHome(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF8B27),
+                        minimumSize: Size(double.infinity, 48.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                      child: Text(
+                        '리뷰 남기기',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Mapo',
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  // 홈으로 이동하는 함수
+  void _navigateToHome(BuildContext context) {
+    if (!mounted) return;
+    // TabStatus 변경
+    Provider.of<TabStatus>(context, listen: false).setIndex(4);
+    // 네비게이션
+    context.go('/');
   }
 
   /// 광고 표시 후 메인화면 이동
@@ -234,22 +462,16 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
         onAdDismissedFullScreenContent: (ad) {
           ad.dispose();
           if (!mounted) return;  // mounted 체크
-
           // TabStatus 변경
           Provider.of<TabStatus>(context, listen: false).setIndex(4);
-          // UserStatus 변경
-          Provider.of<UserStatus>(context, listen: false).endCooking(widget.recipe);
           // 네비게이션
           context.go('/');
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
           ad.dispose();
           if (!mounted) return;  // mounted 체크
-
           // TabStatus 변경
           Provider.of<TabStatus>(context, listen: false).setIndex(4);
-          // UserStatus 변경
-          Provider.of<UserStatus>(context, listen: false).endCooking(widget.recipe);
           // 네비게이션
           context.go('/');
         },
@@ -257,11 +479,8 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
       _interstitialAd!.show();
     } else {
       if (!mounted) return;  // mounted 체크
-
       // TabStatus 변경
       Provider.of<TabStatus>(context, listen: false).setIndex(4);
-      // UserStatus 변경
-      Provider.of<UserStatus>(context, listen: false).endCooking(widget.recipe);
       // 네비게이션
       context.go('/');
     }
@@ -269,7 +488,8 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
 
   /// 요리 종료 로직
   void _endCooking(BuildContext context) {
-    _showIngredientRemovalDialog(context, widget.recipe);
+    if (_loadedRecipe == null) return;
+    _showIngredientRemovalDialog(context, _loadedRecipe!);
   }
 
   /// 유튜브 플레이어 위젯
@@ -314,45 +534,66 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
             fit: BoxFit.cover,
           ),
         ),
-
         SizedBox(height: 10.h),
       ],
     );
   }
 
   @override
-  void initState() {
-    super.initState();
-
-    // 링크에서 videoId 추출
-    final videoId = YoutubePlayerController.convertUrlToId(widget.recipe.link) ?? '';
-
-    // (5.x) YoutubePlayerController.fromVideoId(...) 사용
-    // autoPlay / showControls / showFullscreenButton 등은 params에서 지정
-    _youtubeController = YoutubePlayerController.fromVideoId(
-      videoId: videoId,
-      autoPlay: false,
-      params: const YoutubePlayerParams(
-        showControls: true,
-        showFullscreenButton: true,
-        mute: false,
-      ),
-    );
-
-    // 인터스티셜 광고 미리 로드
-    _loadInterstitialAd();
-  }
-
-  @override
   void dispose() {
     _interstitialAd?.dispose();
     // (5.x) iFrame 컨트롤러는 close() 사용
-    _youtubeController.close();
+    if (_loadedRecipe != null) {
+      _youtubeController.close();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // 로딩 중이거나 에러가 있는 경우
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF8B27),
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: ScaffoldPaddingWidget(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              BackButtonWidget(context),
+              SizedBox(height: 20.h),
+              Center(
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_loadedRecipe == null) {
+      Future.microtask(() => context.go('/'));
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF8B27),
+          ),
+        ),
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
@@ -466,7 +707,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                           if (Platform.isAndroid)
                             _buildYoutubePlayer()
                           else if (Platform.isIOS)
-                            _buildIOSVideoSection(widget.recipe),
+                            _buildIOSVideoSection(_loadedRecipe!),
                           SizedBox(height: 10.h),
                           Align(
                             alignment: Alignment.centerLeft,
@@ -482,7 +723,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                                   ),
                                 ),
                                 Text(
-                                  widget.recipe.title,
+                                  _loadedRecipe!.title,
                                   style: TextStyle(
                                     fontSize: 22.sp,
                                     color: Colors.black,
@@ -496,7 +737,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                             alignment: Alignment.centerLeft,
                             child: InkWell(
                               onTap: () async {
-                                final Uri youtubeUrl = Uri.parse(widget.recipe.link);
+                                final Uri youtubeUrl = Uri.parse(_loadedRecipe!.link);
                                 try {
                                   // 유튜브 앱(설치 시) → 없으면 웹브라우저
                                   await launchUrl(
@@ -545,7 +786,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                             ],
                           ),
                           SizedBox(height: 8.h),
-                          IngredientTableWidget(ingredients: widget.recipe.ingredients),
+                          IngredientTableWidget(ingredients: _loadedRecipe!.ingredients),
                           SizedBox(height: 20.h),
                           Row(
                             children: [
@@ -562,8 +803,8 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                           ),
                           SizedBox(height: 8.h),
                           NumberListWidget(
-                            items: widget.recipe.recipe_method,
-                            ingredients: widget.recipe.ingredients,
+                            items: _loadedRecipe!.recipe_method,
+                            ingredients: _loadedRecipe!.ingredients,
                           ),
                           SizedBox(height: 8.h),
                           ElevatedButton(

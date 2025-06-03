@@ -8,7 +8,7 @@ class TabStatus extends ChangeNotifier {
   void setIndex(int index) {
     if (_selectedIndex != index) {
       _selectedIndex = index;
-      print('Index set to: $_selectedIndex');
+      print('Tab Index set to: $_selectedIndex');
       notifyListeners();
     }
   }

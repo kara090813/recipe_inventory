@@ -279,6 +279,15 @@ class _TopFullWidthPopupState extends State<TopFullWidthPopup> {
           } else {
             if (isSelected) {
               selectedTypes.remove(text);
+              // 여기서 수정: 모든 옵션이 선택 취소되면 기본값으로 돌아가도록 함
+              if (selectedTypes.isEmpty) {
+                if (widget.categoryTitle == '재료 개수' || widget.categoryTitle == '내 식재료 매치도') {
+                  selectedTypes.add('제한없음');
+                } else {
+                  selectedTypes.add('전체');
+                }
+                isAllSelected = true;
+              }
             } else {
               selectedTypes.remove('전체');
               selectedTypes.remove('제한없음');
@@ -337,12 +346,12 @@ class _TopFullWidthPopupState extends State<TopFullWidthPopup> {
           flex: 48,
           child: ElevatedButton(
             onPressed: () {
-              context.pop();
 
               final filterStatus = context.read<FilterStatus>();
 
               filterStatus.updateFilter(widget.categoryTitle, selectedTypes,
                   rangeValues: _currentRangeValues);
+              context.pop();
             },
             child: Text(
               "적용하기",

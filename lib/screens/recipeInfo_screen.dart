@@ -7,24 +7,131 @@ import '../widgets/_widgets.dart';
 import '../models/_models.dart';
 import '../funcs/_funcs.dart';
 
-class RecipeInfoScreen extends StatelessWidget {
-  final Recipe recipe;
+class RecipeInfoScreen extends StatefulWidget {
+  final Recipe? recipe;
+  final String? recipeId;
 
-  const RecipeInfoScreen({super.key, required this.recipe});
+  const RecipeInfoScreen({super.key, this.recipe, this.recipeId});
+
+  @override
+  State<RecipeInfoScreen> createState() => _RecipeInfoScreenState();
+}
+
+class _RecipeInfoScreenState extends State<RecipeInfoScreen> {
+  Recipe? _loadedRecipe;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipeData();
+  }
+
+  Future<void> _loadRecipeData() async {
+    // 이미 레시피 객체가 전달된 경우
+    if (widget.recipe != null) {
+      setState(() {
+        _loadedRecipe = widget.recipe;
+      });
+      return;
+    }
+
+    // recipeId가 전달된 경우 레시피 로드
+    if (widget.recipeId != null && widget.recipeId!.isNotEmpty) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        // RecipeStatus에서 ID로 레시피 찾기
+        final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
+        final recipe = recipeStatus.findRecipeById(widget.recipeId!);
+
+        if (recipe != null) {
+          setState(() {
+            _loadedRecipe = recipe;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _error = '레시피를 찾을 수 없습니다: ${widget.recipeId}';
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _error = '레시피 로드 중 오류 발생: $e';
+          _isLoading = false;
+        });
+      }
+    } else if (widget.recipe == null && widget.recipeId == null) {
+      setState(() {
+        _error = '레시피 정보가 없습니다';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // 로딩 상태 표시
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF8B27),
+          ),
+        ),
+      );
+    }
+
+    // 에러 상태 표시
+    if (_error != null) {
+      return Scaffold(
+        body: ScaffoldPaddingWidget(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              BackButtonWidget(context),
+              SizedBox(height: 20.h),
+              Center(
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 레시피가 로드되지 않은 경우, 메인 화면으로 리다이렉트
+    if (_loadedRecipe == null) {
+      Future.microtask(() => context.go('/'));
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF8B27),
+          ),
+        ),
+      );
+    }
+
+    // 실제 레시피 정보 화면
     final userFoods = context.watch<FoodStatus>().userFood;
-    final classifiedIngredients = classifyIngredients(recipe, userFoods);
+    final classifiedIngredients = classifyIngredients(_loadedRecipe!, userFoods);
     final combinedFoods = [
       ...classifiedIngredients['available']!,
       ...classifiedIngredients['missing']!,
     ];
+
     // 각 Ingredient에 대해, 이름이 일치하는 Food를 찾아서 DisplayIngredient 생성
-    List<DisplayIngredient> displayIngredients = recipe.ingredients.map((ingredient) {
+    List<DisplayIngredient> displayIngredients = _loadedRecipe!.ingredients.map((ingredient) {
       // Food의 name은 ingredient.food와 같게 설정되어 있음
       final matchedFood = combinedFoods.firstWhere(
-        (food) => food.name == ingredient.food,
+            (food) => food.name == ingredient.food,
         orElse: () => Food(
           name: ingredient.food,
           type: '기타',
@@ -38,6 +145,7 @@ class RecipeInfoScreen extends StatelessWidget {
         type: matchedFood.type,
       );
     }).toList();
+
     const List<String> customOrder = [
       '육류',
       '수산물',
@@ -48,7 +156,7 @@ class RecipeInfoScreen extends StatelessWidget {
       '기타',
     ];
 
-// displayIngredients는 List<DisplayIngredient>라고 가정
+    // displayIngredients는 List<DisplayIngredient>라고 가정
     displayIngredients.sort((a, b) {
       final aIndex = customOrder.indexOf(a.type);
       final bIndex = customOrder.indexOf(b.type);
@@ -92,7 +200,7 @@ class RecipeInfoScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            recipe.title,
+                            _loadedRecipe!.title,
                             style: TextStyle(
                               fontSize: 24.sp,
                               color: Colors.black,
@@ -105,7 +213,7 @@ class RecipeInfoScreen extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10.r),
                       child: Image.network(
-                        recipe.thumbnail,
+                        _loadedRecipe!.thumbnail,
                         fit: BoxFit.cover,
                         height: 200.h,
                         width: double.infinity,
@@ -127,30 +235,30 @@ class RecipeInfoScreen extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: recipe.recipe_tags
+                        children: _loadedRecipe!.recipe_tags
                             .map((tag) => Padding(
-                                  padding: EdgeInsets.only(right: 8.w),
-                                  child: ElevatedButton(
-                                    onPressed: () {},
-                                    child: Text(
-                                      tag,
-                                      style: TextStyle(
-                                        color: Color(0xFF5E3009),
-                                        fontSize: 12.sp,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      backgroundColor: Color(0xFFEAE5DF),
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
-                                      minimumSize: Size.zero,
-                                    ),
-                                  ),
-                                ))
+                          padding: EdgeInsets.only(right: 8.w),
+                          child: ElevatedButton(
+                            onPressed: () {},
+                            child: Text(
+                              tag,
+                              style: TextStyle(
+                                color: Color(0xFF5E3009),
+                                fontSize: 12.sp,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              backgroundColor: Color(0xFFEAE5DF),
+                              padding:
+                              EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
+                              minimumSize: Size.zero,
+                            ),
+                          ),
+                        ))
                             .toList(),
                       ),
                     ),
@@ -163,7 +271,7 @@ class RecipeInfoScreen extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.topLeft,
                         child: Text(
-                          recipe.sub_title,
+                          _loadedRecipe!.sub_title,
                           style: TextStyle(color: Color(0xFF707070), fontSize: 12.sp),
                         ),
                       ),
@@ -243,14 +351,14 @@ class RecipeInfoScreen extends StatelessWidget {
                     Consumer<RecipeStatus>(builder: (context, recipeStatus, child) {
                       return IconButton(
                         icon: Icon(
-                          recipeStatus.isFavorite(recipe.id)
+                          recipeStatus.isFavorite(_loadedRecipe!.id)
                               ? Icons.favorite
                               : Icons.favorite_border,
                           color: Colors.red,
                           size: 32.sp,
                         ),
                         onPressed: () {
-                          recipeStatus.toggleFavorite(recipe.id);
+                          recipeStatus.toggleFavorite(_loadedRecipe!.id);
                         },
                       );
                     }),
@@ -293,8 +401,8 @@ class RecipeInfoScreen extends StatelessWidget {
                           ],
                         ),
                         onPressed: () {
-                          context.read<UserStatus>().startCooking(recipe);
-                          context.push('/cookingStart', extra: recipe);
+                          context.read<UserStatus>().startCooking(_loadedRecipe!);
+                          context.push('/cookingStart', extra: _loadedRecipe);
                         },
                       ),
                     ),

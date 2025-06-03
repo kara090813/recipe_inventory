@@ -338,14 +338,45 @@ class _ProfileSetScreenState extends State<ProfileSetScreen> {
                           style: TextStyle(fontSize: 12.sp),
                         ),
                         Expanded(child: SizedBox()),
-                        Text(
-                          '업데이트 없음',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Colors.redAccent,
-                          ),
-                        ),
                       ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12.h),
+              Container(
+                width: double.infinity,
+                color: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "라이선스",
+                        style: TextStyle(
+                          color: Color(0xFFFF8B27),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    Text(
+                      '© 2025 LaMoss Tech. All rights reserved.',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Color(0xFF707070),
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      '이 앱은 서울시 "마포 브랜드 서체"를 사용하고 있습니다.',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Color(0xFF707070),
+                      ),
                     ),
                   ],
                 ),

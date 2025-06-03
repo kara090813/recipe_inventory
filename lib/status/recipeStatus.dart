@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../funcs/_funcs.dart';
 import '../models/_models.dart';
 import '../models/recipeSyncService.dart';
 import '_status.dart';
@@ -19,11 +20,37 @@ class RecipeStatus extends ChangeNotifier {
   String _searchQuery = '';
   bool _hasMore = true;
   int _currentPage = 0;
+  Recipe getRandomRecommendedRecipe(FoodStatus foodStatus, UserStatus userStatus, int count) {
+    // 추천 알고리즘을 사용하여 상위 레시피 가져오기
+    final recommendedRecipes = RecipeRecommendationService().getRecommendedRecipes(
+      userStatus,
+      foodStatus,
+      this,
+    );
 
+    // 상위 5개 또는 전체 레시피 중 더 작은 숫자 선택
+    final maxCount = min(count, recommendedRecipes.length);
+    final topRecipes = recommendedRecipes.take(maxCount).toList();
+
+    // 랜덤하게 하나 선택
+    final random = Random();
+    return topRecipes[random.nextInt(topRecipes.length)];
+  }
 
   List<Recipe> get loadedRecipes => _loadedRecipes;
   bool get hasMore => _hasMore;
   // 페이지 단위로 레시피 로드
+
+  // 레시피 ID로 레시피 찾기
+  Recipe? findRecipeById(String id) {
+    try {
+      return _recipes.firstWhere((recipe) => recipe.id == id);
+    } catch (e) {
+      print('레시피를 찾을 수 없습니다: $id');
+      return null;
+    }
+  }
+
   Future<List<Recipe>> loadMoreRecipes() async {
     if (_isLoading || !_hasMore) return _loadedRecipes;
 

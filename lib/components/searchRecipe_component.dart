@@ -222,7 +222,11 @@ class _SearchRecipeComponentState extends State<SearchRecipeComponent> {
                       onTap: () {
                         searchFocusNode.unfocus();
                       },
-                      child: RecipeListWidget(recipes: filteredRecipes, node: searchFocusNode)),
+                      child:AdSupportedRecipeListWidget(
+                        recipes: filteredRecipes,
+                        node: searchFocusNode,
+                        adFrequency: 4, // 5개의 레시피마다 광고 표시 (필요에 따라 조정)
+                      )),
                 ),
               ),
             ],

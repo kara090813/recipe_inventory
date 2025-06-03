@@ -56,7 +56,7 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
     _isLoadingAd = true;
 
     final adUnitId = Platform.isAndroid
-        ? 'ca-app-pub-1961572115316398/5389842917'
+        ? 'ca-app-pub-1961572115316398/3369086750'
         : 'ca-app-pub-1961572115316398/2672719231';
 
     NativeAd(
