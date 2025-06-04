@@ -108,6 +108,12 @@ class AppRouter {
           return CustomFoodScreen();
         },
       ),
+      GoRoute(
+        path: '/quest',
+        builder: (context, state) {
+          return QuestScreen();
+        },
+      ),
     ],
     // 라우트를 찾을 수 없을 때 메인 화면으로 리다이렉트
     errorBuilder: (context, state) {
