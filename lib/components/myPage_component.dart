@@ -196,155 +196,209 @@ class MyPageComponent extends StatelessWidget {
     );
   }
 
-  // 🆕 퀘스트 & 뱃지 섹션 (심플한 티저 카드)
-  // 🆕 완전히 다른 방식 - 심플한 리스트 스타일
+  // 버전 5: 그라데이션 카드 스타일
   Widget _buildQuestAndBadgeSection(BuildContext context) {
     return Column(
       children: [
-        // 퀘스트 항목
-        InkWell(
-          onTap: () => context.push('/quest'),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: Color(0xFFBB885E), width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 0,
-                  blurRadius: 4,
-                  offset: Offset(0, 1),
-                ),
-              ],
+        // 퀘스트 그라데이션 카드
+        Container(
+          margin: EdgeInsets.only(bottom: 12.h),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFFFE0B2), Color(0xFFFFF3E6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Row(
-              children: [
-                Text('🏆', style: TextStyle(fontSize: 20.sp)),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '퀘스트',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF7D674B),
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: Color(0xFFFF8B27), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFFFF8B27).withOpacity(0.2),
+                spreadRadius: 0,
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: () => context.push('/quest'),
+            borderRadius: BorderRadius.circular(16.r),
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50.w,
+                    height: 50.w,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFF8B27),
+                      borderRadius: BorderRadius.circular(12.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFFFF8B27).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
-                      ),
-                      Text(
-                        '완료된 보상 3개 수령 가능',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: Color(0xFF999999),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFF8B27),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Text(
-                    'NEW',
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      ],
+                    ),
+                    child: Center(
+                      child: Text('🏆', style: TextStyle(fontSize: 22.sp)),
                     ),
                   ),
-                ),
-                SizedBox(width: 8.w),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14.w,
-                  color: Color(0xFFBB885E),
-                ),
-              ],
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '냉털이 퀘스트',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7D674B),
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          // '새로운 도전이 기다리고 있어요!',
+                          "3개의 보상을 수령할 수 있어요!",
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Color(0xFF8D6E63),
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFF8B27),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text(
+                      '3',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Mapo',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
 
-        SizedBox(height: 8.h),
-
-        // 뱃지 항목
-        InkWell(
-          onTap: () => context.push('/badge'),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: Color(0xFFBB885E), width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 0,
-                  blurRadius: 4,
-                  offset: Offset(0, 1),
-                ),
-              ],
+        // 뱃지 그라데이션 카드
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFEFEBE7), Color(0xFFF5F0E8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Row(
-              children: [
-                Stack(
-                  children: [
-                    Text('⭐', style: TextStyle(fontSize: 20.sp)),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width: 6.w,
-                        height: 6.w,
-                        decoration: BoxDecoration(
-                          color: Color(0xFFFF3333),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: Color(0xFF7D674B), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFF7D674B).withOpacity(0.2),
+                spreadRadius: 0,
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: () => context.push('/badge'),
+            borderRadius: BorderRadius.circular(16.r),
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Row(
+                children: [
+                  Stack(
                     children: [
-                      Text(
-                        '뱃지 컬렉션',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        width: 50.w,
+                        height: 50.w,
+                        decoration: BoxDecoration(
                           color: Color(0xFF7D674B),
+                          borderRadius: BorderRadius.circular(12.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF7D674B).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text('⭐', style: TextStyle(fontSize: 22.sp)),
                         ),
                       ),
-                      Text(
-                        '새 뱃지가 있어요! (15/30)',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: Color(0xFF999999),
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 12.w,
+                          height: 12.w,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFF3333),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14.w,
-                  color: Color(0xFFBB885E),
-                ),
-              ],
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '뱃지 컬렉션',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7D674B),
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          '새로운 뱃지를 획득했어요!',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Color(0xFF8D6E63),
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '15/30',
+                    style: TextStyle(
+                      color: Color(0xFF7D674B),
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Mapo',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ],
     );
   }
+
 
   Widget _buildMiniBadge(String emoji, bool isUnlocked, bool isNew) {
     return Stack(
