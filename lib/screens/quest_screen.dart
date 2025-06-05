@@ -23,35 +23,35 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
       status: QuestStatus.inProgress,
     ),
     QuestData(
-      title: "한식 10회 도전",
+      title: "양식 5회 도전",
       progress: 5,
       maxProgress: 10,
       reward: 20,
       status: QuestStatus.inProgress,
     ),
     QuestData(
-      title: "한식 10회 도전",
+      title: "중식 8회 도전",
       progress: 9,
       maxProgress: 10,
       reward: 30,
       status: QuestStatus.canReceive,
     ),
     QuestData(
-      title: "한식 10회 도전",
+      title: "일식 완주하기",
       progress: 10,
       maxProgress: 10,
       reward: 10,
       status: QuestStatus.completed,
     ),
     QuestData(
-      title: "한식 10회 도전",
+      title: "아시안 요리 마스터",
       progress: 10,
       maxProgress: 10,
       reward: 10,
       status: QuestStatus.received,
     ),
     QuestData(
-      title: "한식 10회 도전",
+      title: "초보 요리사",
       progress: 0,
       maxProgress: 10,
       reward: 20,
@@ -95,219 +95,256 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F5F5),
-      body: ScaffoldPaddingWidget(
+      body: SafeArea(
         child: Column(
           children: [
-            SizedBox(height: 4.h),
-            // 헤더
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => context.pop(),
-                  child: Container(
-                    padding: EdgeInsets.all(10.w),
-                    color: Colors.transparent,
-                    child: Image.asset(
-                      'assets/imgs/icons/back_arrow.png',
-                      width: 26.w,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    '요리퀘스트',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFF7D674B),
-                      fontSize: 20.sp,
-                      fontFamily: 'Mapo',
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 24.w,
-                      height: 24.w,
-                      decoration: BoxDecoration(
-                        color: Color(0xFF6BB6FF),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Center(
+            // 고정 헤더 영역
+            Container(
+              color: Color(0xFFF5F5F5),
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Column(
+                children: [
+                  SizedBox(height: 4.h),
+                  // 헤더
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.pop(),
                         child: Container(
-                          width: 16.w,
-                          height: 16.w,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF4A9EFF),
-                            borderRadius: BorderRadius.circular(2.r),
+                          padding: EdgeInsets.all(10.w),
+                          color: Colors.transparent,
+                          child: Image.asset(
+                            'assets/imgs/icons/back_arrow.png',
+                            width: 26.w,
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      '120',
-                      style: TextStyle(
-                        color: Color(0xFF7D674B),
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Mapo',
+                      Expanded(
+                        child: Text(
+                          '요리퀘스트',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFF7D674B),
+                            fontSize: 20.sp,
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 10.w),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 10.h),
-            DottedBarWidget(),
-            SizedBox(height: 16.h),
-
-            // 광고 시청 카드
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: Color(0xFFFFF3E6),
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: Color(0xFFBB885E), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    spreadRadius: 1,
-                    blurRadius: 5,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Image.asset(
-                    'assets/imgs/items/tv.png',
-                    width: 60.w,
-                    height: 40.h,
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 20.w,
-                              height: 20.w,
-                              decoration: BoxDecoration(
-                                color: Color(0xFF6BB6FF),
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                              child: Center(
-                                child: Container(
-                                  width: 14.w,
-                                  height: 14.w,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFF4A9EFF),
-                                    borderRadius: BorderRadius.circular(2.r),
-                                  ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 24.w,
+                            height: 24.w,
+                            decoration: BoxDecoration(
+                              color: Color(0xFF6BB6FF),
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                            child: Center(
+                              child: Container(
+                                width: 16.w,
+                                height: 16.w,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF4A9EFF),
+                                  borderRadius: BorderRadius.circular(2.r),
                                 ),
                               ),
                             ),
-                            Text(
-                              ' x5',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Mapo',
-                              ),
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            '120',
+                            style: TextStyle(
+                              color: Color(0xFF7D674B),
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Mapo',
                             ),
-                          ],
+                          ),
+                          SizedBox(width: 10.w),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10.h),
+                  DottedBarWidget(),
+                  SizedBox(height: 16.h),
+
+                  // 광고 시청 카드
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFFF3E6),
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(color: Color(0xFFBB885E), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
                         ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          '광고를 시청하고 얻을 포인트를 얻어온!',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Color(0xFF666666),
-                            fontFamily: 'Mapo',
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/imgs/items/tv.png',
+                          width: 60.w,
+                          height: 40.h,
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 20.w,
+                                    height: 20.w,
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF6BB6FF),
+                                      borderRadius: BorderRadius.circular(4.r),
+                                    ),
+                                    child: Center(
+                                      child: Container(
+                                        width: 14.w,
+                                        height: 14.w,
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFF4A9EFF),
+                                          borderRadius: BorderRadius.circular(2.r),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    ' x5',
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Mapo',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                '광고를 시청하고 포인트를 얻어보세요!',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: Color(0xFF666666),
+                                  fontFamily: 'Mapo',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                          decoration: BoxDecoration(
+                            color: Color(0xFF8B4513),
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Text(
+                            '10 / 10',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Mapo',
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+
+                  SizedBox(height: 20.h),
+
+                  // 개선된 탭바
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                    height: 44.h,
                     decoration: BoxDecoration(
-                      color: Color(0xFF8B4513),
-                      borderRadius: BorderRadius.circular(20.r),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22.r),
+                      border: Border.all(color: Color(0xFFE0E0E0), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      '10 / 10',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.sp,
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: Color(0xFF7D674B),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      indicatorPadding: EdgeInsets.all(2.w),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Color(0xFF999999),
+                      labelStyle: TextStyle(
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Mapo',
                       ),
+                      unselectedLabelStyle: TextStyle(
+                        fontSize: 13.sp,
+                        fontFamily: 'Mapo',
+                      ),
+                      tabs: [
+                        Tab(text: '전체'),
+                        Tab(text: '진행 중'),
+                        Tab(text: '보상 가능'),
+                        Tab(text: '보상 수령'),
+                      ],
                     ),
                   ),
+
+                  SizedBox(height: 16.h),
                 ],
               ),
             ),
 
-            SizedBox(height: 20.h),
-
-            // 탭바
-            Container(
-              height: 48.h,
-              decoration: BoxDecoration(
-                color: Color(0xFFF0F0F0),
-                borderRadius: BorderRadius.circular(24.r),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                indicatorPadding: EdgeInsets.all(4.w),
-                labelColor: Color(0xFF7D674B),
-                unselectedLabelColor: Color(0xFF999999),
-                labelStyle: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Mapo',
-                ),
-                unselectedLabelStyle: TextStyle(
-                  fontSize: 14.sp,
-                  fontFamily: 'Mapo',
-                ),
-                tabs: [
-                  Tab(text: '전체'),
-                  Tab(text: '진행 중'),
-                  Tab(text: '보상 가능'),
-                  Tab(text: '보상 수령'),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 16.h),
-
-            // 퀘스트 리스트
+            // 스크롤 가능한 퀘스트 리스트 영역
             Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: filteredQuests.length,
-                itemBuilder: (context, index) {
-                  final quest = filteredQuests[index];
-                  return _buildQuestCard(quest);
-                },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: filteredQuests.isEmpty
+                    ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/imgs/items/empty_logo.png',
+                        width: 80.w,
+                        color: Colors.grey[400],
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        '해당하는 퀘스트가 없습니다',
+                        style: TextStyle(
+                          color: Color(0xFF999999),
+                          fontSize: 14.sp,
+                          fontFamily: 'Mapo',
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                    : ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: filteredQuests.length,
+                  itemBuilder: (context, index) {
+                    final quest = filteredQuests[index];
+                    return _buildQuestCard(quest);
+                  },
+                ),
               ),
             ),
           ],
@@ -317,7 +354,9 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
   }
 
   Widget _buildQuestCard(QuestData quest) {
-    final progressPercentage = (quest.progress / quest.maxProgress * 100).round();
+    final progressPercentage = quest.maxProgress > 0
+        ? (quest.progress / quest.maxProgress * 100).round()
+        : 0;
 
     // 배경 이미지 선택
     String backgroundImage;
@@ -349,8 +388,8 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
         backgroundImage = 'assets/imgs/background/ticket_default.png';
         progressColor = Color(0xFFFF0000);
         pointerImage = 'assets/imgs/items/point_pink.png';
-        statusText = '받을 보상';
-        statusTextColor = Color(0xFF999999);
+        statusText = '보상 가능';
+        statusTextColor = Color(0xFFFF8B27);
         statusBackgroundColor = Colors.transparent;
         break;
       case QuestStatus.completed:
@@ -365,7 +404,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
         backgroundImage = 'assets/imgs/background/ticket_done.png';
         progressColor = Color(0xFFCCCCCC);
         pointerImage = 'assets/imgs/items/point_yellow.png';
-        statusText = '진행중';
+        statusText = '완료됨';
         statusTextColor = Color(0xFF999999);
         statusBackgroundColor = Colors.transparent;
         break;
@@ -373,7 +412,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
-      height: 120.h,
+      height: 110.h, // 높이를 약간 줄임
       child: Stack(
         children: [
           // 배경 티켓 이미지
@@ -388,89 +427,88 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
 
           // 컨텐츠
           Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h),
+            padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, 14.h),
             child: Row(
               children: [
                 // 왼쪽 퀘스트 정보
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         quest.title,
                         style: TextStyle(
-                          fontSize: 16.sp,
+                          fontSize: 15.sp,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF5E3009),
                           fontFamily: 'Mapo',
                         ),
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 8.h),
 
-                      // 진행률 표시
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                        decoration: BoxDecoration(
-                          color: Color(0xFF8B4513),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Text(
-                          '${progressPercentage}%',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontFamily: 'Mapo',
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: 12.h),
-
-                      // 프로그레스 바
-                      Stack(
+                      // 진행률과 프로그레스 바를 한 줄에
+                      Row(
                         children: [
                           Container(
-                            height: 8.h,
-                            width: 200.w,
+                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                             decoration: BoxDecoration(
-                              color: Color(0xFFE0E0E0),
-                              borderRadius: BorderRadius.circular(4.r),
+                              color: Color(0xFF8B4513),
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                            child: Text(
+                              '${progressPercentage}%',
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontFamily: 'Mapo',
+                              ),
                             ),
                           ),
-                          Container(
-                            height: 8.h,
-                            width: 200.w * (quest.progress / quest.maxProgress),
-                            decoration: BoxDecoration(
-                              color: progressColor,
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                          ),
-                          Positioned(
-                            left: (200.w * (quest.progress / quest.maxProgress)) - 8.w,
-                            top: -4.h,
-                            child: Image.asset(
-                              pointerImage,
-                              width: 16.w,
-                              height: 16.w,
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                Container(
+                                  height: 6.h,
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFFE0E0E0),
+                                    borderRadius: BorderRadius.circular(3.r),
+                                  ),
+                                ),
+                                Container(
+                                  height: 6.h,
+                                  width: double.infinity,
+                                  child: FractionallySizedBox(
+                                    widthFactor: quest.progress / quest.maxProgress,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: progressColor,
+                                        borderRadius: BorderRadius.circular(3.r),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
 
-                      SizedBox(height: 8.h),
+                      SizedBox(height: 4.h),
 
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '0',
+                            '${quest.progress}',
                             style: TextStyle(
                               fontSize: 10.sp,
                               color: Color(0xFF666666),
                               fontFamily: 'Mapo',
                             ),
                           ),
-                          SizedBox(width: 185.w),
                           Text(
                             '${quest.maxProgress}',
                             style: TextStyle(
@@ -485,41 +523,51 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                   ),
                 ),
 
+                SizedBox(width: 16.w),
+
                 // 오른쪽 보상 섹션
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
                       'assets/imgs/items/ice.png',
-                      width: 32.w,
-                      height: 32.w,
+                      width: 28.w,
+                      height: 28.w,
                       color: isReceived ? Colors.grey : null,
                     ),
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 2.h),
                     Text(
                       '${quest.reward}',
                       style: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.bold,
                         color: isReceived ? Color(0xFF999999) : Color(0xFF5E3009),
                         fontFamily: 'Mapo',
                       ),
                     ),
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 2.h),
                     if (quest.status == QuestStatus.completed)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                        decoration: BoxDecoration(
-                          color: statusBackgroundColor,
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Text(
-                          statusText,
-                          style: TextStyle(
-                            color: statusTextColor,
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Mapo',
+                      GestureDetector(
+                        onTap: () {
+                          // 보상 받기 로직
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('보상을 받았습니다!')),
+                          );
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: statusBackgroundColor,
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          child: Text(
+                            statusText,
+                            style: TextStyle(
+                              color: statusTextColor,
+                              fontSize: 9.sp,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Mapo',
+                            ),
                           ),
                         ),
                       )
@@ -528,7 +576,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                         statusText,
                         style: TextStyle(
                           color: statusTextColor,
-                          fontSize: 10.sp,
+                          fontSize: 9.sp,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Mapo',
                         ),
