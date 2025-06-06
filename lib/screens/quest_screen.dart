@@ -358,9 +358,8 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
         ? (quest.progress / quest.maxProgress * 100).round()
         : 0;
 
-    // 배경 이미지 선택
-    String backgroundImage;
-    String pointerImage;
+    // 우측 이미지 선택
+    String rightTicketImage;
     Color progressColor;
     String statusText;
     Color statusTextColor;
@@ -369,41 +368,35 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
 
     switch (quest.status) {
       case QuestStatus.inProgress:
-        backgroundImage = 'assets/imgs/background/ticket_default.png';
+        rightTicketImage = 'assets/imgs/background/ticketRight_default.png';
         if (progressPercentage <= 30) {
           progressColor = Color(0xFFFFD700);
-          pointerImage = 'assets/imgs/items/point_yellow.png';
         } else if (progressPercentage <= 60) {
           progressColor = Color(0xFFFF8C00);
-          pointerImage = 'assets/imgs/items/point_orange.png';
         } else {
           progressColor = Color(0xFFFF6347);
-          pointerImage = 'assets/imgs/items/point_orange.png';
         }
         statusText = '진행중';
         statusTextColor = Color(0xFFFF8B27);
         statusBackgroundColor = Colors.transparent;
         break;
       case QuestStatus.canReceive:
-        backgroundImage = 'assets/imgs/background/ticket_default.png';
+        rightTicketImage = 'assets/imgs/background/ticketRight_active.png';
         progressColor = Color(0xFFFF0000);
-        pointerImage = 'assets/imgs/items/point_pink.png';
         statusText = '보상 가능';
         statusTextColor = Color(0xFFFF8B27);
         statusBackgroundColor = Colors.transparent;
         break;
       case QuestStatus.completed:
-        backgroundImage = 'assets/imgs/background/ticket_reward.png';
+        rightTicketImage = 'assets/imgs/background/ticketRight_active.png';
         progressColor = Color(0xFFFF0000);
-        pointerImage = 'assets/imgs/items/point_pink.png';
         statusText = '보상받기';
         statusTextColor = Colors.white;
         statusBackgroundColor = Color(0xFFFF8B27);
         break;
       case QuestStatus.received:
-        backgroundImage = 'assets/imgs/background/ticket_done.png';
+        rightTicketImage = 'assets/imgs/background/ticketRight_done.png';
         progressColor = Color(0xFFCCCCCC);
-        pointerImage = 'assets/imgs/items/point_yellow.png';
         statusText = '완료됨';
         statusTextColor = Color(0xFF999999);
         statusBackgroundColor = Colors.transparent;
@@ -412,121 +405,104 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
-      height: 110.h, // 높이를 약간 줄임
-      child: Stack(
+      height: 110.h,
+      child: Row(
         children: [
-          // 배경 티켓 이미지
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(backgroundImage),
-                fit: BoxFit.fill,
+          // 좌측 티켓 (퀘스트 정보 영역)
+          Expanded(
+            flex: 78, // 78% 비율
+            child: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/imgs/background/ticketLeft.png'),
+                  fit: BoxFit.fill,
+                ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(20.w, 14.h, 10.w, 14.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      quest.title,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5E3009),
+                        fontFamily: 'Mapo',
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+
+                    // 진행률과 프로그레스 바를 한 줄에
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                          decoration: BoxDecoration(
+                            color: Color(0xFF8B4513),
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          child: Text(
+                            '${progressPercentage}%',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: 'Mapo',
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: _buildProgressBarWithPointer(quest, progressColor),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 4.h),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${quest.progress}',
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: Color(0xFF666666),
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                        Text(
+                          '${quest.maxProgress}',
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: Color(0xFF666666),
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
 
-          // 컨텐츠
-          Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, 14.h),
-            child: Row(
-              children: [
-                // 왼쪽 퀘스트 정보
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        quest.title,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF5E3009),
-                          fontFamily: 'Mapo',
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-
-                      // 진행률과 프로그레스 바를 한 줄에
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF8B4513),
-                              borderRadius: BorderRadius.circular(10.r),
-                            ),
-                            child: Text(
-                              '${progressPercentage}%',
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontFamily: 'Mapo',
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 8.w),
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                Container(
-                                  height: 6.h,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFE0E0E0),
-                                    borderRadius: BorderRadius.circular(3.r),
-                                  ),
-                                ),
-                                Container(
-                                  height: 6.h,
-                                  width: double.infinity,
-                                  child: FractionallySizedBox(
-                                    widthFactor: quest.progress / quest.maxProgress,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: progressColor,
-                                        borderRadius: BorderRadius.circular(3.r),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 4.h),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${quest.progress}',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: Color(0xFF666666),
-                              fontFamily: 'Mapo',
-                            ),
-                          ),
-                          Text(
-                            '${quest.maxProgress}',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: Color(0xFF666666),
-                              fontFamily: 'Mapo',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+          // 우측 티켓 (보상 영역)
+          Expanded(
+            flex: 22, // 22% 비율
+            child: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(rightTicketImage),
+                  fit: BoxFit.fill,
                 ),
-
-                SizedBox(width: 16.w),
-
-                // 오른쪽 보상 섹션
-                Column(
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(10.w, 14.h, 20.w, 14.h),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
@@ -555,7 +531,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                           );
                         },
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                           decoration: BoxDecoration(
                             color: statusBackgroundColor,
                             borderRadius: BorderRadius.circular(10.r),
@@ -583,11 +559,91 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                       ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+// 포인터가 있는 프로그레스 바 위젯
+  Widget _buildProgressBarWithPointer(QuestData quest, Color progressColor) {
+    final double progressRatio = quest.maxProgress > 0
+        ? (quest.progress / quest.maxProgress).clamp(0.0, 1.0)
+        : 0.0;
+
+    // 진행도에 따른 포인터 이미지 선택
+    String pointerImage;
+    if (quest.status == QuestStatus.received) {
+      pointerImage = 'assets/imgs/items/point_yellow.png';
+    } else if (progressRatio >= 0.8) {
+      pointerImage = 'assets/imgs/items/point_pink.png';
+    } else if (progressRatio >= 0.4) {
+      pointerImage = 'assets/imgs/items/point_orange.png';
+    } else {
+      pointerImage = 'assets/imgs/items/point_yellow.png';
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double barWidth = constraints.maxWidth;
+        final double pointerSize = 12.w;
+        // 포인터가 바 영역을 벗어나지 않도록 위치 계산
+        final double maxPointerPosition = barWidth - pointerSize;
+        final double pointerPosition = (progressRatio * maxPointerPosition).clamp(0.0, maxPointerPosition);
+
+        return Container(
+          height: 16.h, // 포인터를 포함할 수 있도록 높이 증가
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 배경 프로그레스 바
+              Container(
+                height: 6.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(3.r),
+                ),
+              ),
+              // 진행된 프로그레스 바
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  height: 6.h,
+                  width: barWidth * progressRatio,
+                  decoration: BoxDecoration(
+                    color: progressColor,
+                    borderRadius: BorderRadius.circular(3.r),
+                  ),
+                ),
+              ),
+              // 포인터 이미지
+              Positioned(
+                left: pointerPosition,
+                child: Image.asset(
+                  pointerImage,
+                  width: pointerSize,
+                  height: pointerSize,
+                  errorBuilder: (context, error, stackTrace) {
+                    // 이미지 로드 실패 시 기본 원형 포인터
+                    return Container(
+                      width: pointerSize,
+                      height: pointerSize,
+                      decoration: BoxDecoration(
+                        color: progressColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.w),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
