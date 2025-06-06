@@ -9,6 +9,7 @@ class HiveService {
   static const String USER_PROFILE_BOX = 'user_profile';
   static const String FAVORITE_RECIPES_BOX = 'favorite_recipes';
   static const String APP_SETTINGS_BOX = 'app_settings';
+  static const String QUEST_BOX = 'quests';
 
   static late Box<Recipe> _recipeBox;
   static late Box<Food> _foodBox;
@@ -17,6 +18,7 @@ class HiveService {
   static late Box<UserProfile> _userProfileBox;
   static late Box<String> _favoriteRecipesBox;
   static late Box _appSettingsBox;
+  static late Box<Quest> _questBox;
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -43,6 +45,15 @@ class HiveService {
     if (!Hive.isAdapterRegistered(6)) {
       Hive.registerAdapter(LoginProviderAdapter());
     }
+    if (!Hive.isAdapterRegistered(7)) {
+      Hive.registerAdapter(QuestAdapter());
+    }
+    if (!Hive.isAdapterRegistered(8)) {
+      Hive.registerAdapter(QuestConditionAdapter());
+    }
+    if (!Hive.isAdapterRegistered(9)) {
+      Hive.registerAdapter(QuestTypeAdapter());
+    }
 
     // Box 열기
     _recipeBox = await Hive.openBox<Recipe>(RECIPE_BOX);
@@ -52,6 +63,7 @@ class HiveService {
     _userProfileBox = await Hive.openBox<UserProfile>(USER_PROFILE_BOX);
     _favoriteRecipesBox = await Hive.openBox<String>(FAVORITE_RECIPES_BOX);
     _appSettingsBox = await Hive.openBox(APP_SETTINGS_BOX);
+    _questBox = await Hive.openBox<Quest>(QUEST_BOX);
   }
 
   // Recipe 관련 메서드
