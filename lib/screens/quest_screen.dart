@@ -31,7 +31,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
     ),
     QuestData(
       title: "중식 8회 도전",
-      progress: 9,
+      progress: 10,
       maxProgress: 10,
       reward: 30,
       status: QuestStatus.canReceive,
@@ -48,7 +48,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
       progress: 10,
       maxProgress: 10,
       reward: 10,
-      status: QuestStatus.received,
+      status: QuestStatus.completed,
     ),
     QuestData(
       title: "초보 요리사",
@@ -62,7 +62,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _selectedTabIndex = _tabController.index;
@@ -78,14 +78,12 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
 
   List<QuestData> get filteredQuests {
     switch (_selectedTabIndex) {
-      case 0: // 전체
-        return quests;
-      case 1: // 진행 중
+      case 0: // 진행 중
         return quests.where((q) => q.status == QuestStatus.inProgress).toList();
-      case 2: // 보상 가능
+      case 1: // 보상 수령 대기
         return quests.where((q) => q.status == QuestStatus.canReceive).toList();
-      case 3: // 보상 수령
-        return quests.where((q) => q.status == QuestStatus.received).toList();
+      case 2: // 완료
+        return quests.where((q) => q.status == QuestStatus.completed).toList();
       default:
         return quests;
     }
@@ -262,7 +260,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
 
                   SizedBox(height: 20.h),
 
-                  // 개선된 탭바
+                  // 3개 탭바로 수정
                   Container(
                     height: 44.h,
                     decoration: BoxDecoration(
@@ -298,10 +296,9 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                         fontFamily: 'Mapo',
                       ),
                       tabs: [
-                        Tab(text: '전체'),
                         Tab(text: '진행 중'),
-                        Tab(text: '보상 가능'),
-                        Tab(text: '보상 수령'),
+                        Tab(text: '보상 수령 대기'),
+                        Tab(text: '완료'),
                       ],
                     ),
                   ),
@@ -358,13 +355,12 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
         ? (quest.progress / quest.maxProgress * 100).round()
         : 0;
 
-    // 우측 이미지 선택
+    // 3개 상태에 따른 설정
     String rightTicketImage;
     Color progressColor;
     String statusText;
     Color statusTextColor;
-    Color statusBackgroundColor;
-    bool isReceived = quest.status == QuestStatus.received;
+    bool isCompleted = quest.status == QuestStatus.completed;
 
     switch (quest.status) {
       case QuestStatus.inProgress:
@@ -378,34 +374,24 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
         }
         statusText = '진행중';
         statusTextColor = Color(0xFFFF8B27);
-        statusBackgroundColor = Colors.transparent;
         break;
       case QuestStatus.canReceive:
         rightTicketImage = 'assets/imgs/background/ticketRight_active.png';
         progressColor = Color(0xFFFF0000);
-        statusText = '보상 가능';
-        statusTextColor = Color(0xFFFF8B27);
-        statusBackgroundColor = Colors.transparent;
-        break;
-      case QuestStatus.completed:
-        rightTicketImage = 'assets/imgs/background/ticketRight_active.png';
-        progressColor = Color(0xFFFF0000);
         statusText = '보상받기';
         statusTextColor = Colors.white;
-        statusBackgroundColor = Color(0xFFFF8B27);
         break;
-      case QuestStatus.received:
+      case QuestStatus.completed:
         rightTicketImage = 'assets/imgs/background/ticketRight_done.png';
         progressColor = Color(0xFFCCCCCC);
         statusText = '완료됨';
         statusTextColor = Color(0xFF999999);
-        statusBackgroundColor = Colors.transparent;
         break;
     }
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
-      height: 110.h,
+      height: 120.h,
       child: Row(
         children: [
           // 좌측 티켓 (퀘스트 정보 영역)
@@ -424,20 +410,21 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      quest.title,
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF5E3009),
-                        fontFamily: 'Mapo',
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
-
-                    // 진행률과 프로그레스 바를 한 줄에
+                    // 제목과 퍼센티지를 한 줄에 배치
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        Expanded(
+                          child: Text(
+                            quest.title,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF5E3009),
+                              fontFamily: 'Mapo',
+                            ),
+                          ),
+                        ),
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                           decoration: BoxDecoration(
@@ -454,20 +441,22 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                             ),
                           ),
                         ),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: _buildProgressBarWithPointer(quest, progressColor),
-                        ),
                       ],
                     ),
 
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 8.h),
 
+                    // 프로그레스 바 (전체 너비 차지)
+                    _buildProgressBarWithPointer(quest, progressColor),
+
+                    SizedBox(height: 2.h),
+
+                    // 프로그레스 바 아래 숫자 (0부터 maxProgress까지)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${quest.progress}',
+                          '0',
                           style: TextStyle(
                             fontSize: 10.sp,
                             color: Color(0xFF666666),
@@ -500,65 +489,76 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                   fit: BoxFit.fill,
                 ),
               ),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(10.w, 14.h, 20.w, 14.h),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/imgs/items/ice.png',
-                      width: 28.w,
-                      height: 28.w,
-                      color: isReceived ? Colors.grey : null,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/imgs/items/ice.png',
+                    width: 28.w,
+                    height: 28.w,
+                    color: isCompleted ? Colors.grey : null,
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    '${quest.reward}',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                      color: isCompleted ? Color(0xFF999999) : Color(0xFF5E3009),
+                      fontFamily: 'Mapo',
                     ),
-                    SizedBox(height: 2.h),
+                  ),
+                  SizedBox(height: 2.h),
+                  if (quest.status == QuestStatus.canReceive)
+                    GestureDetector(
+                      onTap: () {
+                        // 보상 받기 로직 - 상태를 completed로 변경
+                        setState(() {
+                          quest.status = QuestStatus.completed;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('보상을 받았습니다!')),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10.r),
+                          border: Border.all(
+                            color: Color(0xFFFF8B27),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              offset: Offset(0, 1),
+                              blurRadius: 3,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          statusText,
+                          style: TextStyle(
+                            color: Color(0xFFFF8B27),
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                      ),
+                    )
+                  else
                     Text(
-                      '${quest.reward}',
+                      statusText,
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        color: statusTextColor,
+                        fontSize: 9.sp,
                         fontWeight: FontWeight.bold,
-                        color: isReceived ? Color(0xFF999999) : Color(0xFF5E3009),
                         fontFamily: 'Mapo',
                       ),
                     ),
-                    SizedBox(height: 2.h),
-                    if (quest.status == QuestStatus.completed)
-                      GestureDetector(
-                        onTap: () {
-                          // 보상 받기 로직
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('보상을 받았습니다!')),
-                          );
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                          decoration: BoxDecoration(
-                            color: statusBackgroundColor,
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                          child: Text(
-                            statusText,
-                            style: TextStyle(
-                              color: statusTextColor,
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Mapo',
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      Text(
-                        statusText,
-                        style: TextStyle(
-                          color: statusTextColor,
-                          fontSize: 9.sp,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Mapo',
-                        ),
-                      ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
@@ -567,7 +567,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
     );
   }
 
-// 포인터가 있는 프로그레스 바 위젯
+  // 포인터가 있는 프로그레스 바 위젯
   Widget _buildProgressBarWithPointer(QuestData quest, Color progressColor) {
     final double progressRatio = quest.maxProgress > 0
         ? (quest.progress / quest.maxProgress).clamp(0.0, 1.0)
@@ -575,7 +575,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
 
     // 진행도에 따른 포인터 이미지 선택
     String pointerImage;
-    if (quest.status == QuestStatus.received) {
+    if (quest.status == QuestStatus.completed) {
       pointerImage = 'assets/imgs/items/point_yellow.png';
     } else if (progressRatio >= 0.8) {
       pointerImage = 'assets/imgs/items/point_pink.png';
@@ -588,34 +588,42 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
     return LayoutBuilder(
       builder: (context, constraints) {
         final double barWidth = constraints.maxWidth;
-        final double pointerSize = 12.w;
+        final double pointerSize = 20.w;
         // 포인터가 바 영역을 벗어나지 않도록 위치 계산
         final double maxPointerPosition = barWidth - pointerSize;
         final double pointerPosition = (progressRatio * maxPointerPosition).clamp(0.0, maxPointerPosition);
 
         return Container(
-          height: 16.h, // 포인터를 포함할 수 있도록 높이 증가
+          height: 20.h, // 포인터를 포함할 수 있도록 높이 증가
           child: Stack(
             alignment: Alignment.center,
             children: [
               // 배경 프로그레스 바
               Container(
-                height: 6.h,
+                height: 9.h,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Color(0xFFE0E0E0),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(3.r),
+                  border: Border.all(
+                    color: Color(0xFF707070), // 보더 색상
+                    width: 1.0,               // 보더 두께
+                  ),
                 ),
               ),
               // 진행된 프로그레스 바
               Align(
                 alignment: Alignment.centerLeft,
                 child: Container(
-                  height: 6.h,
+                  height: 9.h,
                   width: barWidth * progressRatio,
                   decoration: BoxDecoration(
                     color: progressColor,
                     borderRadius: BorderRadius.circular(3.r),
+                    border: Border.all(
+                      color: Color(0xFF707070), // 보더 색상
+                      width: 1.0,               // 보더 두께
+                    ),
                   ),
                 ),
               ),
@@ -648,11 +656,11 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
   }
 }
 
+// 3개 상태로 간소화
 enum QuestStatus {
-  inProgress,
-  canReceive,
-  completed,
-  received,
+  inProgress,     // 진행중 - ticketRight_default.png
+  canReceive,     // 보상 수령 대기 - ticketRight_active.png
+  completed,      // 완료 (보상까지 완전 수령) - ticketRight_done.png
 }
 
 class QuestData {
@@ -660,7 +668,7 @@ class QuestData {
   final int progress;
   final int maxProgress;
   final int reward;
-  final QuestStatus status;
+  QuestStatus status; // mutable로 변경하여 보상 받기 후 상태 변경 가능
 
   QuestData({
     required this.title,
