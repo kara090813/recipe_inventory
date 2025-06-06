@@ -5,6 +5,7 @@ import 'hive_service.dart';
 
 class MigrationService {
   static const String MIGRATION_COMPLETED_KEY = 'hive_migration_completed';
+  static const String USER_PROFILE_MIGRATION_KEY = 'user_profile_migration_v2';
 
   static Future<void> migrateToHive() async {
     final prefs = await SharedPreferences.getInstance();
@@ -12,6 +13,9 @@ class MigrationService {
     // 이미 마이그레이션이 완료된 경우 스킵
     if (prefs.getBool(MIGRATION_COMPLETED_KEY) ?? false) {
       print('Hive 마이그레이션이 이미 완료됨');
+
+      // UserProfile 추가 필드 마이그레이션 체크
+      await _migrateUserProfileFields(prefs);
       return;
     }
 
@@ -43,6 +47,35 @@ class MigrationService {
     } catch (e) {
       print('마이그레이션 중 오류 발생: $e');
       // 마이그레이션 실패시에도 계속 진행하도록 함
+    }
+  }
+
+  /// UserProfile에 새로 추가된 필드들(points, experience, level) 마이그레이션
+  static Future<void> _migrateUserProfileFields(SharedPreferences prefs) async {
+    try {
+      // 이미 필드 마이그레이션이 완료된 경우 스킵
+      if (prefs.getBool(USER_PROFILE_MIGRATION_KEY) ?? false) {
+        return;
+      }
+
+      print('UserProfile 필드 마이그레이션 시작...');
+
+      final userProfile = HiveService.getUserProfile();
+      if (userProfile != null) {
+        // 기존 UserProfile에 새 필드가 없는 경우 기본값으로 업데이트
+        final updatedProfile = userProfile.copyWith(
+          points: userProfile.points, // 이미 있으면 유지, 없으면 기본값(0) 적용
+          experience: userProfile.experience, // 이미 있으면 유지, 없으면 기본값(0) 적용
+          level: userProfile.level, // 이미 있으면 유지, 없으면 기본값(1) 적용
+        );
+
+        await HiveService.saveUserProfile(updatedProfile);
+        print('UserProfile 필드 마이그레이션 완료');
+      }
+
+      await prefs.setBool(USER_PROFILE_MIGRATION_KEY, true);
+    } catch (e) {
+      print('UserProfile 필드 마이그레이션 오류: $e');
     }
   }
 
@@ -129,7 +162,20 @@ class MigrationService {
     try {
       final String? userProfileJson = prefs.getString('userProfile');
       if (userProfileJson != null) {
-        final userProfile = UserProfile.fromJson(json.decode(userProfileJson));
+        final Map<String, dynamic> profileData = json.decode(userProfileJson);
+
+        // 새로 추가된 필드들에 기본값 설정
+        if (!profileData.containsKey('points')) {
+          profileData['points'] = 0;
+        }
+        if (!profileData.containsKey('experience')) {
+          profileData['experience'] = 0;
+        }
+        if (!profileData.containsKey('level')) {
+          profileData['level'] = 1;
+        }
+
+        final userProfile = UserProfile.fromJson(profileData);
         await HiveService.saveUserProfile(userProfile);
         print('사용자 프로필 마이그레이션 완료');
       }

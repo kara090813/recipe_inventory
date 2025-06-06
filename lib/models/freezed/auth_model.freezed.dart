@@ -30,6 +30,12 @@ mixin _$UserProfile {
   String? get photoURL => throw _privateConstructorUsedError;
   @HiveField(4)
   LoginProvider get provider => throw _privateConstructorUsedError;
+  @HiveField(5)
+  int get points => throw _privateConstructorUsedError; // 포인트 (상점 화폐)
+  @HiveField(6)
+  int get experience => throw _privateConstructorUsedError; // 총 경험치
+  @HiveField(7)
+  int get level => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -48,7 +54,10 @@ abstract class $UserProfileCopyWith<$Res> {
       @HiveField(1) String email,
       @HiveField(2) String name,
       @HiveField(3) String? photoURL,
-      @HiveField(4) LoginProvider provider});
+      @HiveField(4) LoginProvider provider,
+      @HiveField(5) int points,
+      @HiveField(6) int experience,
+      @HiveField(7) int level});
 }
 
 /// @nodoc
@@ -69,6 +78,9 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? name = null,
     Object? photoURL = freezed,
     Object? provider = null,
+    Object? points = null,
+    Object? experience = null,
+    Object? level = null,
   }) {
     return _then(_value.copyWith(
       uid: null == uid
@@ -91,6 +103,18 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
           ? _value.provider
           : provider // ignore: cast_nullable_to_non_nullable
               as LoginProvider,
+      points: null == points
+          ? _value.points
+          : points // ignore: cast_nullable_to_non_nullable
+              as int,
+      experience: null == experience
+          ? _value.experience
+          : experience // ignore: cast_nullable_to_non_nullable
+              as int,
+      level: null == level
+          ? _value.level
+          : level // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -108,7 +132,10 @@ abstract class _$$UserProfileImplCopyWith<$Res>
       @HiveField(1) String email,
       @HiveField(2) String name,
       @HiveField(3) String? photoURL,
-      @HiveField(4) LoginProvider provider});
+      @HiveField(4) LoginProvider provider,
+      @HiveField(5) int points,
+      @HiveField(6) int experience,
+      @HiveField(7) int level});
 }
 
 /// @nodoc
@@ -127,6 +154,9 @@ class __$$UserProfileImplCopyWithImpl<$Res>
     Object? name = null,
     Object? photoURL = freezed,
     Object? provider = null,
+    Object? points = null,
+    Object? experience = null,
+    Object? level = null,
   }) {
     return _then(_$UserProfileImpl(
       uid: null == uid
@@ -149,6 +179,18 @@ class __$$UserProfileImplCopyWithImpl<$Res>
           ? _value.provider
           : provider // ignore: cast_nullable_to_non_nullable
               as LoginProvider,
+      points: null == points
+          ? _value.points
+          : points // ignore: cast_nullable_to_non_nullable
+              as int,
+      experience: null == experience
+          ? _value.experience
+          : experience // ignore: cast_nullable_to_non_nullable
+              as int,
+      level: null == level
+          ? _value.level
+          : level // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -161,7 +203,10 @@ class _$UserProfileImpl implements _UserProfile {
       @HiveField(1) required this.email,
       @HiveField(2) required this.name,
       @HiveField(3) this.photoURL,
-      @HiveField(4) required this.provider});
+      @HiveField(4) required this.provider,
+      @HiveField(5) this.points = 0,
+      @HiveField(6) this.experience = 0,
+      @HiveField(7) this.level = 1});
 
   factory _$UserProfileImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserProfileImplFromJson(json);
@@ -181,10 +226,24 @@ class _$UserProfileImpl implements _UserProfile {
   @override
   @HiveField(4)
   final LoginProvider provider;
+  @override
+  @JsonKey()
+  @HiveField(5)
+  final int points;
+// 포인트 (상점 화폐)
+  @override
+  @JsonKey()
+  @HiveField(6)
+  final int experience;
+// 총 경험치
+  @override
+  @JsonKey()
+  @HiveField(7)
+  final int level;
 
   @override
   String toString() {
-    return 'UserProfile(uid: $uid, email: $email, name: $name, photoURL: $photoURL, provider: $provider)';
+    return 'UserProfile(uid: $uid, email: $email, name: $name, photoURL: $photoURL, provider: $provider, points: $points, experience: $experience, level: $level)';
   }
 
   @override
@@ -198,13 +257,17 @@ class _$UserProfileImpl implements _UserProfile {
             (identical(other.photoURL, photoURL) ||
                 other.photoURL == photoURL) &&
             (identical(other.provider, provider) ||
-                other.provider == provider));
+                other.provider == provider) &&
+            (identical(other.points, points) || other.points == points) &&
+            (identical(other.experience, experience) ||
+                other.experience == experience) &&
+            (identical(other.level, level) || other.level == level));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, uid, email, name, photoURL, provider);
+  int get hashCode => Object.hash(runtimeType, uid, email, name, photoURL,
+      provider, points, experience, level);
 
   @JsonKey(ignore: true)
   @override
@@ -226,7 +289,10 @@ abstract class _UserProfile implements UserProfile {
       @HiveField(1) required final String email,
       @HiveField(2) required final String name,
       @HiveField(3) final String? photoURL,
-      @HiveField(4) required final LoginProvider provider}) = _$UserProfileImpl;
+      @HiveField(4) required final LoginProvider provider,
+      @HiveField(5) final int points,
+      @HiveField(6) final int experience,
+      @HiveField(7) final int level}) = _$UserProfileImpl;
 
   factory _UserProfile.fromJson(Map<String, dynamic> json) =
       _$UserProfileImpl.fromJson;
@@ -246,6 +312,15 @@ abstract class _UserProfile implements UserProfile {
   @override
   @HiveField(4)
   LoginProvider get provider;
+  @override
+  @HiveField(5)
+  int get points;
+  @override // 포인트 (상점 화폐)
+  @HiveField(6)
+  int get experience;
+  @override // 총 경험치
+  @HiveField(7)
+  int get level;
   @override
   @JsonKey(ignore: true)
   _$$UserProfileImplCopyWith<_$UserProfileImpl> get copyWith =>

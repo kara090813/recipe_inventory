@@ -19,11 +19,15 @@ class MyPageComponent extends StatelessWidget {
     final recentHistory = userStatus.cookingHistory.take(3).toList();
     final cookHistoryDays = userStatus.getConsecutiveCookingDays();
 
-    // 임시 데이터 (실제로는 UserStatus에서 가져올 예정)
-    final currentLevel = _calculateLevel(userStatus.cookingHistory.length);
-    final currentXP = _calculateCurrentXP(userStatus.cookingHistory.length);
-    final nextLevelXP = _calculateNextLevelXP(currentLevel);
-    final xpProgress = currentXP / nextLevelXP;
+    // 실제 UserStatus의 메서드 사용
+    final currentLevel = userStatus.currentLevel;
+    final currentPoints = userStatus.currentPoints;
+    final currentExperience = userStatus.currentExperience;
+    final levelProgress = userStatus.calculateCurrentLevelProgress();
+    final currentLevelRequiredExp = userStatus.calculateRequiredExpForLevel(currentLevel);
+    final nextLevelRequiredExp = userStatus.calculateRequiredExpForLevel(currentLevel + 1);
+    final currentLevelExp = currentExperience - currentLevelRequiredExp;
+    final nextLevelExp = nextLevelRequiredExp - currentLevelRequiredExp;
 
     return Column(
       children: [
@@ -38,7 +42,16 @@ class MyPageComponent extends StatelessWidget {
                 SizedBox(height: 20.h),
 
                 // 🆕 프로필 + 레벨 시스템
-                _buildEnhancedProfile(context, userStatus, currentLevel, xpProgress, currentXP, nextLevelXP, cookHistoryDays),
+                _buildEnhancedProfile(
+                  context,
+                  userStatus,
+                  currentLevel,
+                  levelProgress,
+                  currentLevelExp,
+                  nextLevelExp,
+                  cookHistoryDays,
+                  currentPoints,
+                ),
 
                 SizedBox(height: 24.h),
 
@@ -69,8 +82,17 @@ class MyPageComponent extends StatelessWidget {
     );
   }
 
-  // 🆕 강화된 프로필 섹션 (레벨 + XP)
-  Widget _buildEnhancedProfile(BuildContext context,UserStatus userStatus, int level, double progress, int currentXP, int nextLevelXP, int cookHistoryDays) {
+  // 🆕 강화된 프로필 섹션 (레벨 + XP + 포인트)
+  Widget _buildEnhancedProfile(
+      BuildContext context,
+      UserStatus userStatus,
+      int level,
+      double progress,
+      int currentLevelExp,
+      int nextLevelExp,
+      int cookHistoryDays,
+      int currentPoints,
+      ) {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -119,7 +141,7 @@ class MyPageComponent extends StatelessWidget {
 
               SizedBox(width: 16.w),
 
-              // 닉네임 + XP 정보
+              // 닉네임 + XP 정보 + 포인트
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,6 +162,41 @@ class MyPageComponent extends StatelessWidget {
                       ],
                     ),
 
+                    SizedBox(height: 4.h),
+
+                    // 포인트 표시
+                    Row(
+                      children: [
+                        Container(
+                          width: 16.w,
+                          height: 16.w,
+                          decoration: BoxDecoration(
+                            color: Color(0xFF6BB6FF),
+                            borderRadius: BorderRadius.circular(3.r),
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 10.w,
+                              height: 10.w,
+                              decoration: BoxDecoration(
+                                color: Color(0xFF4A9EFF),
+                                borderRadius: BorderRadius.circular(2.r),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          '$currentPoints P',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7D674B),
+                          ),
+                        ),
+                      ],
+                    ),
+
                     SizedBox(height: 8.h),
 
                     // XP 진행바
@@ -149,8 +206,8 @@ class MyPageComponent extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('XP: $currentXP / $nextLevelXP', style: TextStyle(fontSize: 12.sp, color: Color(0xFF666666))),
-                            Text('다음 레벨까지 ${nextLevelXP - currentXP}XP', style: TextStyle(fontSize: 10.sp, color: Color(0xFF999999))),
+                            Text('XP: $currentLevelExp / $nextLevelExp', style: TextStyle(fontSize: 12.sp, color: Color(0xFF666666))),
+                            Text('다음 레벨까지 ${nextLevelExp - currentLevelExp}XP', style: TextStyle(fontSize: 10.sp, color: Color(0xFF999999))),
                           ],
                         ),
                         SizedBox(height: 4.h),
@@ -196,7 +253,7 @@ class MyPageComponent extends StatelessWidget {
     );
   }
 
-  // 버전 5: 그라데이션 카드 스타일
+  // 퀘스트 및 뱃지 섹션 (기존 코드 유지)
   Widget _buildQuestAndBadgeSection(BuildContext context) {
     return Column(
       children: [
@@ -261,7 +318,6 @@ class MyPageComponent extends StatelessWidget {
                         ),
                         SizedBox(height: 4.h),
                         Text(
-                          // '새로운 도전이 기다리고 있어요!',
                           "3개의 보상을 수령할 수 있어요!",
                           style: TextStyle(
                             fontSize: 12.sp,
@@ -399,43 +455,7 @@ class MyPageComponent extends StatelessWidget {
     );
   }
 
-
-  Widget _buildMiniBadge(String emoji, bool isUnlocked, bool isNew) {
-    return Stack(
-      children: [
-        Container(
-          width: 28.w,
-          height: 28.w,
-          decoration: BoxDecoration(
-            color: isUnlocked ? Color(0xFFFFF3E6) : Color(0xFFE8E8E8),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isUnlocked ? Color(0xFFBB885E) : Color(0xFFCCCCCC),
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: Text(emoji, style: TextStyle(fontSize: 14.sp)),
-          ),
-        ),
-        if (isNew)
-          Positioned(
-            top: -2,
-            right: -2,
-            child: Container(
-              width: 8.w,
-              height: 8.w,
-              decoration: BoxDecoration(
-                color: Color(0xFFFF8B27),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  // 기존 섹션들 (간소화된 버전들)
+  // 기존 섹션들 (유지)
   Widget _buildOngoingCooking(BuildContext context, List<OngoingCooking> ongoingCooking, UserStatus userStatus) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,18 +567,5 @@ class MyPageComponent extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  // 헬퍼 함수들
-  int _calculateLevel(int cookingCount) {
-    return (cookingCount / 5).floor() + 1; // 5번 요리할 때마다 레벨업
-  }
-
-  int _calculateCurrentXP(int cookingCount) {
-    return (cookingCount % 5) * 20; // 요리 1번당 20XP
-  }
-
-  int _calculateNextLevelXP(int level) {
-    return 100; // 각 레벨마다 100XP 필요
   }
 }

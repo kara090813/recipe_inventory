@@ -13,6 +13,9 @@ class UserProfile with _$UserProfile {
     @HiveField(2) required String name,
     @HiveField(3) String? photoURL,
     @HiveField(4) required LoginProvider provider,
+    @HiveField(5) @Default(0) int points,           // 포인트 (상점 화폐)
+    @HiveField(6) @Default(0) int experience,       // 총 경험치
+    @HiveField(7) @Default(1) int level,            // 현재 레벨
   }) = _UserProfile;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => _$UserProfileFromJson(json);

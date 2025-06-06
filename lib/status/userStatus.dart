@@ -19,6 +19,11 @@ class UserStatus extends ChangeNotifier {
   String? get profileImage => _profileImage;
   UserProfile? get userProfile => _userProfile;
 
+  // 포인트, 경험치, 레벨 관련 getter
+  int get currentPoints => _userProfile?.points ?? 0;
+  int get currentLevel => _userProfile?.level ?? 1;
+  int get currentExperience => _userProfile?.experience ?? 0;
+
   UserStatus() {
     loadUserStatus();
   }
@@ -90,6 +95,146 @@ class UserStatus extends ChangeNotifier {
     }
   }
 
+  // =============== 포인트 관련 메서드 ===============
+
+  /// 포인트 추가
+  Future<void> addPoints(int points) async {
+    if (points <= 0) return;
+
+    try {
+      final currentProfile = _userProfile ?? UserProfile(
+        uid: 'local_user',
+        email: 'local@example.com',
+        name: _nickname,
+        provider: LoginProvider.none,
+      );
+
+      final updatedProfile = currentProfile.copyWith(
+        points: currentProfile.points + points,
+      );
+
+      await updateUserProfile(updatedProfile);
+      print('포인트 추가: +$points (총 ${updatedProfile.points}P)');
+    } catch (e) {
+      print('포인트 추가 실패: $e');
+    }
+  }
+
+  /// 포인트 차감 (0 이하로 내려가지 않음)
+  Future<bool> subtractPoints(int points) async {
+    if (points <= 0) return false;
+
+    try {
+      final currentProfile = _userProfile ?? UserProfile(
+        uid: 'local_user',
+        email: 'local@example.com',
+        name: _nickname,
+        provider: LoginProvider.none,
+      );
+
+      if (currentProfile.points < points) {
+        print('포인트 부족: 현재 ${currentProfile.points}P, 필요 ${points}P');
+        return false;
+      }
+
+      final updatedProfile = currentProfile.copyWith(
+        points: currentProfile.points - points,
+      );
+
+      await updateUserProfile(updatedProfile);
+      print('포인트 차감: -$points (남은 ${updatedProfile.points}P)');
+      return true;
+    } catch (e) {
+      print('포인트 차감 실패: $e');
+      return false;
+    }
+  }
+
+  // =============== 경험치 및 레벨 관련 메서드 ===============
+
+  /// 특정 레벨에 필요한 총 경험치 계산
+  /// 레벨 1: 0XP, 레벨 2: 100XP, 레벨 3: 210XP, 레벨 4: 330XP...
+  /// 공식: 레벨 n에 필요한 총 경험치 = (n-1) * 100 + 10 * (n-2) * (n-1) / 2
+  int calculateRequiredExpForLevel(int level) {
+    if (level <= 1) return 0;
+
+    final n = level;
+    return (n - 1) * 100 + (10 * (n - 2) * (n - 1) ~/ 2);
+  }
+
+  /// 현재 레벨에서의 진행도 계산 (0.0 ~ 1.0)
+  double calculateCurrentLevelProgress() {
+    final currentLevel = this.currentLevel;
+    final currentExp = this.currentExperience;
+
+    if (currentLevel <= 1) {
+      // 레벨 1에서 레벨 2로 가는 진행도
+      return (currentExp / 100.0).clamp(0.0, 1.0);
+    }
+
+    final currentLevelRequiredExp = calculateRequiredExpForLevel(currentLevel);
+    final nextLevelRequiredExp = calculateRequiredExpForLevel(currentLevel + 1);
+    final levelExpRange = nextLevelRequiredExp - currentLevelRequiredExp;
+    final currentLevelProgress = currentExp - currentLevelRequiredExp;
+
+    if (levelExpRange <= 0) return 1.0;
+
+    return (currentLevelProgress / levelExpRange).clamp(0.0, 1.0);
+  }
+
+  /// 경험치 추가 및 자동 레벨업 체크
+  Future<void> addExperience(int exp) async {
+    if (exp <= 0) return;
+
+    try {
+      final currentProfile = _userProfile ?? UserProfile(
+        uid: 'local_user',
+        email: 'local@example.com',
+        name: _nickname,
+        provider: LoginProvider.none,
+      );
+
+      final newExperience = currentProfile.experience + exp;
+      int newLevel = currentProfile.level;
+
+      // 레벨업 체크
+      while (newLevel < 100) { // 최대 레벨 100으로 제한
+        final requiredExp = calculateRequiredExpForLevel(newLevel + 1);
+        if (newExperience >= requiredExp) {
+          newLevel++;
+        } else {
+          break;
+        }
+      }
+
+      final updatedProfile = currentProfile.copyWith(
+        experience: newExperience,
+        level: newLevel,
+      );
+
+      // 레벨업 확인
+      if (newLevel > currentProfile.level) {
+        final levelDiff = newLevel - currentProfile.level;
+        print('🎉 레벨업! ${currentProfile.level} → $newLevel (+$levelDiff레벨)');
+
+        // 레벨업 보상 포인트 지급 (레벨당 50포인트)
+        final bonusPoints = levelDiff * 50;
+        final finalProfile = updatedProfile.copyWith(
+          points: updatedProfile.points + bonusPoints,
+        );
+
+        await updateUserProfile(finalProfile);
+        print('📈 경험치 획득: +${exp}XP (총 ${newExperience}XP)');
+        print('🎁 레벨업 보상: +${bonusPoints}P (총 ${finalProfile.points}P)');
+      } else {
+        await updateUserProfile(updatedProfile);
+        print('📈 경험치 획득: +${exp}XP (총 ${newExperience}XP)');
+      }
+    } catch (e) {
+      print('경험치 추가 실패: $e');
+    }
+  }
+
   String generateRandomNickname() {
     final adjectives = ['행복한', '즐거운', '신나는', '멋진', '귀여운', '열정적인', '창의적인'];
     final nouns = ['요리사', '셰프', '주방장', '맛집탐험가', '미식가', '푸드스타일리스트'];
@@ -104,6 +249,10 @@ class UserStatus extends ChangeNotifier {
   void addCookingHistory(Recipe recipe) {
     _cookingHistory.insert(0, CookingHistory(recipe: recipe, dateTime: DateTime.now()));
     saveUserStatus();
+
+    // 요리 완료 시 경험치 지급 (30XP)
+    addExperience(30);
+
     notifyListeners();
   }
 

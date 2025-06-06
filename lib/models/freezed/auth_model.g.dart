@@ -22,13 +22,16 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       name: fields[2] as String,
       photoURL: fields[3] as String?,
       provider: fields[4] as LoginProvider,
+      points: fields[5] as int,
+      experience: fields[6] as int,
+      level: fields[7] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProfile obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.uid)
       ..writeByte(1)
@@ -38,7 +41,13 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       ..writeByte(3)
       ..write(obj.photoURL)
       ..writeByte(4)
-      ..write(obj.provider);
+      ..write(obj.provider)
+      ..writeByte(5)
+      ..write(obj.points)
+      ..writeByte(6)
+      ..write(obj.experience)
+      ..writeByte(7)
+      ..write(obj.level);
   }
 
   @override
@@ -107,6 +116,9 @@ _$UserProfileImpl _$$UserProfileImplFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String,
       photoURL: json['photoURL'] as String?,
       provider: $enumDecode(_$LoginProviderEnumMap, json['provider']),
+      points: (json['points'] as num?)?.toInt() ?? 0,
+      experience: (json['experience'] as num?)?.toInt() ?? 0,
+      level: (json['level'] as num?)?.toInt() ?? 1,
     );
 
 Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
@@ -116,6 +128,9 @@ Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
       'name': instance.name,
       'photoURL': instance.photoURL,
       'provider': _$LoginProviderEnumMap[instance.provider]!,
+      'points': instance.points,
+      'experience': instance.experience,
+      'level': instance.level,
     };
 
 const _$LoginProviderEnumMap = {
