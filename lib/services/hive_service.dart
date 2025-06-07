@@ -188,6 +188,55 @@ class HiveService {
     await _favoriteRecipesBox.clear();
   }
 
+  // Quest 관련 메서드
+  static Future<void> saveQuests(List<Quest> quests) async {
+    await _questBox.clear();
+    for (int i = 0; i < quests.length; i++) {
+      await _questBox.put(quests[i].id, quests[i]);
+    }
+  }
+
+  static List<Quest> getQuests() {
+    return _questBox.values.toList();
+  }
+
+  static Quest? getQuest(String questId) {
+    return _questBox.get(questId);
+  }
+
+  static Future<void> updateQuestProgress(String questId, int progress, bool isCompleted, bool isRewardReceived) async {
+    final quest = _questBox.get(questId);
+    if (quest != null) {
+      final updatedQuest = quest.copyWith(
+        currentProgress: progress,
+        isCompleted: isCompleted,
+        isRewardReceived: isRewardReceived,
+      );
+      await _questBox.put(questId, updatedQuest);
+    }
+  }
+
+  static Future<void> clearQuests() async {
+    await _questBox.clear();
+  }
+
+  // 퀘스트 동기화 설정값 관련 메서드
+  static Future<void> setLastQuestSyncMonth(String monthKey) async {
+    await _appSettingsBox.put('last_quest_sync_month', monthKey);
+  }
+
+  static String? getLastQuestSyncMonth() {
+    return _appSettingsBox.get('last_quest_sync_month');
+  }
+
+  static Future<void> setQuestSyncTime(int timestamp) async {
+    await _appSettingsBox.put('quest_sync_time', timestamp);
+  }
+
+  static int? getQuestSyncTime() {
+    return _appSettingsBox.get('quest_sync_time');
+  }
+
   // App Settings 관련 메서드 (기존 SharedPreferences 기타 설정들)
   static Future<void> setString(String key, String value) async {
     await _appSettingsBox.put(key, value);
@@ -238,6 +287,7 @@ class HiveService {
     await _userProfileBox.clear();
     await _favoriteRecipesBox.clear();
     await _appSettingsBox.clear();
+    await _questBox.clear();
   }
 
   // 마이그레이션용 메서드
