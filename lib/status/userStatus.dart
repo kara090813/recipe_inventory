@@ -12,6 +12,9 @@ class UserStatus extends ChangeNotifier {
   bool _isInitialized = false;
   UserProfile? _userProfile;
 
+  // 퀘스트 업데이트를 위한 콜백 함수
+  Future<void> Function()? _questUpdateCallback;
+
   List<CookingHistory> get cookingHistory => List.unmodifiable(_cookingHistory);
   List<OngoingCooking> get ongoingCooking => List.unmodifiable(_ongoingCooking);
   String get nickname => _nickname;
@@ -26,6 +29,24 @@ class UserStatus extends ChangeNotifier {
 
   UserStatus() {
     loadUserStatus();
+  }
+
+  /// 퀘스트 업데이트 콜백 설정
+  void setQuestUpdateCallback(Future<void> Function()? callback) {
+    _questUpdateCallback = callback;
+    print('UserStatus: Quest update callback set');
+  }
+
+  /// 퀘스트 업데이트 트리거
+  Future<void> _triggerQuestUpdate() async {
+    if (_questUpdateCallback != null) {
+      try {
+        await _questUpdateCallback!();
+        print('UserStatus: Quest update triggered successfully');
+      } catch (e) {
+        print('UserStatus: Error triggering quest update: $e');
+      }
+    }
   }
 
   Future<void> loadUserStatus() async {
@@ -246,6 +267,7 @@ class UserStatus extends ChangeNotifier {
     return '$adjective $noun';
   }
 
+  // ⭐ 수정된 부분: 요리 히스토리 추가 시 퀘스트 업데이트 트리거
   void addCookingHistory(Recipe recipe) {
     _cookingHistory.insert(0, CookingHistory(recipe: recipe, dateTime: DateTime.now()));
     saveUserStatus();
@@ -254,6 +276,9 @@ class UserStatus extends ChangeNotifier {
     addExperience(30);
 
     notifyListeners();
+
+    // 🎯 퀘스트 진행도 업데이트 트리거
+    _triggerQuestUpdate();
   }
 
   void startCooking(Recipe recipe) {
@@ -265,11 +290,15 @@ class UserStatus extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ⭐ 수정된 부분: 요리 완료 시 퀘스트 업데이트 트리거
   void endCooking(Recipe recipe) {
     _ongoingCooking.removeWhere((cooking) => cooking.recipe.id == recipe.id);
     addCookingHistory(recipe);
     saveUserStatus();
     notifyListeners();
+
+    // 🎯 퀘스트 진행도 업데이트 트리거 (addCookingHistory에서도 호출되지만 안전성을 위해)
+    _triggerQuestUpdate();
   }
 
   void clearOngoingCooking() {

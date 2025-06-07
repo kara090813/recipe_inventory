@@ -248,6 +248,33 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
     }
   }
 
+  // 🎯 퀘스트 콜백 설정 함수
+  void _setupQuestCallbacks(BuildContext context) {
+    try {
+      final questStatus = Provider.of<QuestStatus>(context, listen: false);
+      final userStatus = Provider.of<UserStatus>(context, listen: false);
+      final foodStatus = Provider.of<FoodStatus>(context, listen: false);
+      final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
+
+      // 각 Status에 퀘스트 업데이트 콜백 설정
+      userStatus.setQuestUpdateCallback(() async {
+        await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
+      });
+
+      foodStatus.setQuestUpdateCallback(() async {
+        await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
+      });
+
+      recipeStatus.setQuestUpdateCallback(() async {
+        await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
+      });
+
+      print('✅ Quest callbacks successfully set up');
+    } catch (e) {
+      print('❌ Error setting up quest callbacks: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
@@ -259,11 +286,11 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
             ChangeNotifierProvider<FoodStatus>(create: (context) => FoodStatus()),
             ChangeNotifierProvider(create: (context) => SelectedFoodProvider()),
             ChangeNotifierProvider(create: (context) => FilterStatus()),
-            ChangeNotifierProvider(create: (context) => UserStatus()),
+            ChangeNotifierProvider<UserStatus>(create: (context) => UserStatus()),
             ChangeNotifierProvider(create: (_) => TabStatus()),
-            ChangeNotifierProvider(create: (context) => RecipeStatus()),
-            // 🆕 QuestStatus 추가 - 기존 Provider들과 동일한 패턴으로 추가
-            ChangeNotifierProvider(create: (context) => QuestStatus()),
+            ChangeNotifierProvider<RecipeStatus>(create: (context) => RecipeStatus()),
+            // 🎯 QuestStatus 추가
+            ChangeNotifierProvider<QuestStatus>(create: (context) => QuestStatus()),
           ],
           child: Builder(
             builder: (BuildContext context) {
@@ -272,8 +299,10 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
               // Go Router 인스턴스를 전역 변수에 할당
               goRouterNavigator = router;
 
-              // 앱이 빌드된 후 초기 알림 확인
+              // 앱이 빌드된 후 퀘스트 콜백 설정 및 초기 알림 확인
               WidgetsBinding.instance.addPostFrameCallback((_) {
+                // 🎯 퀘스트 콜백 설정
+                _setupQuestCallbacks(context);
                 _checkPendingNotification();
               });
 

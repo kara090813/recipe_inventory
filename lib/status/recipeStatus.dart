@@ -20,6 +20,27 @@ class RecipeStatus extends ChangeNotifier {
   bool _hasMore = true;
   int _currentPage = 0;
 
+  // 퀘스트 업데이트를 위한 콜백 함수
+  Future<void> Function()? _questUpdateCallback;
+
+  /// 퀘스트 업데이트 콜백 설정
+  void setQuestUpdateCallback(Future<void> Function()? callback) {
+    _questUpdateCallback = callback;
+    print('RecipeStatus: Quest update callback set');
+  }
+
+  /// 퀘스트 업데이트 트리거
+  Future<void> _triggerQuestUpdate() async {
+    if (_questUpdateCallback != null) {
+      try {
+        await _questUpdateCallback!();
+        print('RecipeStatus: Quest update triggered successfully');
+      } catch (e) {
+        print('RecipeStatus: Error triggering quest update: $e');
+      }
+    }
+  }
+
   Recipe getRandomRecommendedRecipe(FoodStatus foodStatus, UserStatus userStatus, int count) {
     // 추천 알고리즘을 사용하여 상위 레시피 가져오기
     final recommendedRecipes = RecipeRecommendationService().getRecommendedRecipes(
@@ -194,17 +215,30 @@ class RecipeStatus extends ChangeNotifier {
     }
   }
 
-  // 좋아요 토글
+  // ⭐ 수정된 부분: 좋아요 토글 시 퀘스트 업데이트 트리거
   Future<void> toggleFavorite(String recipeId) async {
     try {
+      final bool wasAdded;
+
       if (_favoriteRecipeIds.contains(recipeId)) {
         _favoriteRecipeIds.remove(recipeId);
         await HiveService.removeFavoriteRecipe(recipeId);
+        wasAdded = false;
+        print('RecipeStatus: Recipe removed from favorites: $recipeId');
       } else {
         _favoriteRecipeIds.add(recipeId);
         await HiveService.addFavoriteRecipe(recipeId);
+        wasAdded = true;
+        print('RecipeStatus: Recipe added to favorites: $recipeId');
       }
+
       notifyListeners(); // 좋아요 상태 변경만 알림
+
+      // 좋아요가 추가된 경우에만 퀘스트 업데이트 트리거
+      if (wasAdded) {
+        // 🎯 퀘스트 진행도 업데이트 트리거
+        await _triggerQuestUpdate();
+      }
     } catch (e) {
       print('Error toggling favorite: $e');
     }
