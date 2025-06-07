@@ -188,7 +188,7 @@ class HiveService {
     await _favoriteRecipesBox.clear();
   }
 
-  // Quest 관련 메서드
+  // Quest 관련 메서드 (업데이트된 버전)
   static Future<void> saveQuests(List<Quest> quests) async {
     await _questBox.clear();
     for (int i = 0; i < quests.length; i++) {
@@ -204,6 +204,7 @@ class HiveService {
     return _questBox.get(questId);
   }
 
+  // 🆕 개별 퀘스트 업데이트 (startDate 포함)
   static Future<void> updateQuestProgress(String questId, int progress, bool isCompleted, bool isRewardReceived) async {
     final quest = _questBox.get(questId);
     if (quest != null) {
@@ -214,6 +215,28 @@ class HiveService {
       );
       await _questBox.put(questId, updatedQuest);
     }
+  }
+
+  // 🆕 퀘스트 시작 날짜 업데이트
+  static Future<void> updateQuestStartDate(String questId, DateTime startDate) async {
+    final quest = _questBox.get(questId);
+    if (quest != null) {
+      final updatedQuest = quest.copyWith(startDate: startDate);
+      await _questBox.put(questId, updatedQuest);
+      print('📅 Updated quest start date: $questId -> $startDate');
+    }
+  }
+
+  // 🆕 여러 퀘스트의 시작 날짜를 한번에 업데이트
+  static Future<void> updateAllQuestStartDates(DateTime startDate) async {
+    final quests = getQuests();
+    for (final quest in quests) {
+      if (quest.startDate == null) {
+        final updatedQuest = quest.copyWith(startDate: startDate);
+        await _questBox.put(quest.id, updatedQuest);
+      }
+    }
+    print('📅 Updated start dates for ${quests.length} quests to: $startDate');
   }
 
   static Future<void> clearQuests() async {

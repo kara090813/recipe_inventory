@@ -26,15 +26,50 @@ class QuestStatus extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print("Initializing quests...");
+      print("🚀 Initializing quests...");
       _quests = await _syncService.syncQuests();
-      print("Initialized quests count: ${_quests.length}");
+
+      // 🆕 퀘스트 시작 날짜 확인 및 설정
+      await _ensureQuestStartDates();
+
+      print("✅ Initialized quests count: ${_quests.length}");
+
+      // 디버깅: 퀘스트 정보 출력
+      for (final quest in _quests) {
+        print("📋 Quest: ${quest.title} (Start: ${quest.startDate})");
+      }
     } catch (e) {
-      print('Error initializing quests: $e');
+      print('💥 Error initializing quests: $e');
       print('Stack trace: ${StackTrace.current}');
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// 🆕 퀘스트 시작 날짜 확인 및 설정
+  Future<void> _ensureQuestStartDates() async {
+    try {
+      bool hasChanges = false;
+      final now = DateTime.now();
+
+      for (int i = 0; i < _quests.length; i++) {
+        final quest = _quests[i];
+        if (quest.startDate == null) {
+          // 시작 날짜가 없는 퀘스트에 현재 시간 설정
+          _quests[i] = quest.copyWith(startDate: now);
+          hasChanges = true;
+          print("📅 Set start date for quest: ${quest.title} -> $now");
+        }
+      }
+
+      if (hasChanges) {
+        // Hive에 업데이트된 퀘스트들 저장
+        await HiveService.saveQuests(_quests);
+        print("💾 Updated quest start dates saved to Hive");
+      }
+    } catch (e) {
+      print('💥 Error ensuring quest start dates: $e');
     }
   }
 
@@ -48,7 +83,7 @@ class QuestStatus extends ChangeNotifier {
       bool hasChanges = false;
       List<Quest> completedQuests = [];
 
-      print("Updating quest progress...");
+      print("🔄 Updating quest progress...");
 
       for (int i = 0; i < _quests.length; i++) {
         final quest = _quests[i];
@@ -66,7 +101,7 @@ class QuestStatus extends ChangeNotifier {
 
         // 진행도가 변경되었는지 확인
         if (newProgress != quest.currentProgress) {
-          print('Quest "${quest.title}" progress: ${quest.currentProgress} -> $newProgress');
+          print('📈 Quest "${quest.title}" progress: ${quest.currentProgress} -> $newProgress');
 
           final isNowCompleted = newProgress >= quest.targetCount;
 
@@ -105,9 +140,9 @@ class QuestStatus extends ChangeNotifier {
         }
       }
 
-      print("Quest progress update completed. Changes: $hasChanges");
+      print("✅ Quest progress update completed. Changes: $hasChanges");
     } catch (e) {
-      print('Error updating quest progress: $e');
+      print('💥 Error updating quest progress: $e');
       print('Stack trace: ${StackTrace.current}');
     }
   }
@@ -117,7 +152,7 @@ class QuestStatus extends ChangeNotifier {
     try {
       final questIndex = _quests.indexWhere((q) => q.id == questId);
       if (questIndex == -1) {
-        print('Quest not found: $questId');
+        print('❌ Quest not found: $questId');
         return false;
       }
 
@@ -125,17 +160,17 @@ class QuestStatus extends ChangeNotifier {
 
       // 완료되지 않았거나 이미 보상을 받은 경우
       if (!quest.isCompleted) {
-        print('Quest not completed yet: ${quest.title}');
+        print('⚠️ Quest not completed yet: ${quest.title}');
         return false;
       }
 
       if (quest.isRewardReceived) {
-        print('Reward already received for quest: ${quest.title}');
+        print('⚠️ Reward already received for quest: ${quest.title}');
         return false;
       }
 
-      print('Receiving reward for quest: ${quest.title}');
-      print('Reward: ${quest.rewardPoints}P, ${quest.rewardExperience}XP');
+      print('🎁 Receiving reward for quest: ${quest.title}');
+      print('💰 Reward: ${quest.rewardPoints}P, ${quest.rewardExperience}XP');
 
       // 포인트와 경험치 지급
       await userStatus.addPoints(quest.rewardPoints);
@@ -158,22 +193,26 @@ class QuestStatus extends ChangeNotifier {
       print('✅ Reward received successfully for quest: ${quest.title}');
       return true;
     } catch (e) {
-      print('Error receiving reward for quest $questId: $e');
+      print('💥 Error receiving reward for quest $questId: $e');
       return false;
     }
   }
 
-  /// 수동 동기화
+  /// 수동 동기화 (강제 새로고침)
   Future<void> forceSync() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      print("Force syncing quests...");
+      print("🔥 Force syncing quests...");
       _quests = await _syncService.forceSyncQuests();
-      print("Force synced quests count: ${_quests.length}");
+
+      // 시작 날짜 확인 및 설정
+      await _ensureQuestStartDates();
+
+      print("✅ Force synced quests count: ${_quests.length}");
     } catch (e) {
-      print('Error force syncing quests: $e');
+      print('💥 Error force syncing quests: $e');
       print('Stack trace: ${StackTrace.current}');
     } finally {
       _isLoading = false;
@@ -187,11 +226,15 @@ class QuestStatus extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print("Refreshing quests...");
+      print("🔄 Refreshing quests...");
       _quests = await _syncService.syncQuests();
-      print("Refreshed quests count: ${_quests.length}");
+
+      // 시작 날짜 확인 및 설정
+      await _ensureQuestStartDates();
+
+      print("✅ Refreshed quests count: ${_quests.length}");
     } catch (e) {
-      print('Error refreshing quests: $e');
+      print('💥 Error refreshing quests: $e');
       print('Stack trace: ${StackTrace.current}');
     } finally {
       _isLoading = false;
@@ -210,7 +253,7 @@ class QuestStatus extends ChangeNotifier {
       // await NotificationService().showQuestCompletedNotification(quest);
 
     } catch (e) {
-      print('Error showing quest completed notification: $e');
+      print('💥 Error showing quest completed notification: $e');
     }
   }
 
@@ -250,7 +293,7 @@ class QuestStatus extends ChangeNotifier {
     try {
       return _quests.firstWhere((quest) => quest.id == questId);
     } catch (e) {
-      print('Quest not found with id: $questId');
+      print('❌ Quest not found with id: $questId');
       return null;
     }
   }
@@ -285,6 +328,11 @@ class QuestStatus extends ChangeNotifier {
     print('Completed: ${completedQuests.length}');
     print('Total Progress: ${totalProgressPercentage.toStringAsFixed(1)}%');
     print('Available Rewards: ${totalAvailableRewardPoints}P + ${totalAvailableRewardExperience}XP');
+
+    // 각 퀘스트의 시작 날짜 출력
+    for (final quest in _quests) {
+      print('Quest: ${quest.title} - Start: ${quest.startDate}, Progress: ${quest.currentProgress}/${quest.targetCount}');
+    }
     print('==================');
   }
 
@@ -294,9 +342,9 @@ class QuestStatus extends ChangeNotifier {
       await HiveService.clearQuests();
       _quests.clear();
       notifyListeners();
-      print('All quests cleared');
+      print('🗑️ All quests cleared');
     } catch (e) {
-      print('Error clearing quests: $e');
+      print('💥 Error clearing quests: $e');
     }
   }
 }

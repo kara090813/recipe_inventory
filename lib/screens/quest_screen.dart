@@ -13,8 +13,10 @@ class QuestScreen extends StatefulWidget {
   State<QuestScreen> createState() => _QuestScreenState();
 }
 
-class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStateMixin {
+class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin {
   late TabController _tabController;
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnimation;
   int _selectedTabIndex = 0;
 
   @override
@@ -26,11 +28,26 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
         _selectedTabIndex = _tabController.index;
       });
     });
+
+    // 반짝이는 애니메이션 컨트롤러 설정
+    _shimmerController = AnimationController(
+      duration: Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
+
+    _shimmerAnimation = Tween<double>(
+      begin: -1.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOut,
+    ));
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -141,24 +158,11 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
         ),
         Row(
           children: [
-            // 포인트 표시
-            Container(
+            // 포인트 표시 - ice.png 아이콘 사용
+            Image.asset(
+              'assets/imgs/items/ice.png',
               width: 24.w,
               height: 24.w,
-              decoration: BoxDecoration(
-                color: Color(0xFF6BB6FF),
-                borderRadius: BorderRadius.circular(4.r),
-              ),
-              child: Center(
-                child: Container(
-                  width: 16.w,
-                  height: 16.w,
-                  decoration: BoxDecoration(
-                    color: Color(0xFF4A9EFF),
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
-              ),
             ),
             SizedBox(width: 4.w),
             Text(
@@ -177,7 +181,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
     );
   }
 
-  /// 광고 시청 카드 (기존 디자인 유지)
+  /// 광고 시청 카드 (아이콘 변경)
   Widget _buildAdCard() {
     return Container(
       width: double.infinity,
@@ -209,23 +213,10 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
               children: [
                 Row(
                   children: [
-                    Container(
+                    Image.asset(
+                      'assets/imgs/items/ice.png',
                       width: 20.w,
                       height: 20.w,
-                      decoration: BoxDecoration(
-                        color: Color(0xFF6BB6FF),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Center(
-                        child: Container(
-                          width: 14.w,
-                          height: 14.w,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF4A9EFF),
-                            borderRadius: BorderRadius.circular(2.r),
-                          ),
-                        ),
-                      ),
                     ),
                     Text(
                       ' x5',
@@ -270,11 +261,11 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
     );
   }
 
-  /// 탭바 빌드
+  /// 탭바 빌드 (전체, 진행중, 완료)
   Widget _buildTabBar(QuestStatus questStatus) {
     // 각 탭별 개수 계산
-    final inProgressCount = questStatus.inProgressQuests.length;
-    final canReceiveCount = questStatus.canReceiveRewardQuests.length;
+    final allCount = questStatus.quests.length;
+    final inProgressCount = questStatus.inProgressQuests.length + questStatus.canReceiveRewardQuests.length;
     final completedCount = questStatus.completedQuests.length;
 
     return Container(
@@ -312,26 +303,72 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
           fontFamily: 'Mapo',
         ),
         tabs: [
-          Tab(text: '진행 중 ($inProgressCount)'),
-          Tab(text: '보상 수령 대기 ($canReceiveCount)'),
+          Tab(text: '전체 ($allCount)'),
+          Tab(text: '진행중 ($inProgressCount)'),
           Tab(text: '완료 ($completedCount)'),
         ],
       ),
     );
   }
 
-  /// 탭별 퀘스트 필터링
+  /// 탭별 퀘스트 필터링 및 정렬
   List<Quest> _getFilteredQuests(QuestStatus questStatus) {
+    List<Quest> filteredQuests;
+
     switch (_selectedTabIndex) {
-      case 0: // 진행 중
-        return questStatus.inProgressQuests;
-      case 1: // 보상 수령 대기
-        return questStatus.canReceiveRewardQuests;
-      case 2: // 완료
-        return questStatus.completedQuests;
+      case 0: // 전체
+        filteredQuests = List.from(questStatus.quests);
+        // 정렬: 보상 수령 가능 -> 진행중 -> 완료됨 순서
+        filteredQuests.sort((a, b) {
+          // 보상 수령 가능한 것이 최우선
+          if (a.isCompleted && !a.isRewardReceived && !(b.isCompleted && !b.isRewardReceived)) {
+            return -1;
+          }
+          if (b.isCompleted && !b.isRewardReceived && !(a.isCompleted && !a.isRewardReceived)) {
+            return 1;
+          }
+
+          // 보상 완료된 것은 최하위
+          if (a.isRewardReceived && !b.isRewardReceived) {
+            return 1;
+          }
+          if (b.isRewardReceived && !a.isRewardReceived) {
+            return -1;
+          }
+
+          // 나머지는 진행도순 (높은 진행도가 위로)
+          double aProgress = a.targetCount > 0 ? a.currentProgress / a.targetCount : 0;
+          double bProgress = b.targetCount > 0 ? b.currentProgress / b.targetCount : 0;
+          return bProgress.compareTo(aProgress);
+        });
+        break;
+
+      case 1: // 진행중 (진행중 + 보상수령가능)
+        filteredQuests = questStatus.quests.where((quest) => !quest.isRewardReceived).toList();
+        // 보상 수령 가능한 것을 위로
+        filteredQuests.sort((a, b) {
+          if (a.isCompleted && !a.isRewardReceived && !(b.isCompleted && !b.isRewardReceived)) {
+            return -1;
+          }
+          if (b.isCompleted && !b.isRewardReceived && !(a.isCompleted && !a.isRewardReceived)) {
+            return 1;
+          }
+          // 나머지는 진행도순
+          double aProgress = a.targetCount > 0 ? a.currentProgress / a.targetCount : 0;
+          double bProgress = b.targetCount > 0 ? b.currentProgress / b.targetCount : 0;
+          return bProgress.compareTo(aProgress);
+        });
+        break;
+
+      case 2: // 완료 (보상까지 수령한 퀘스트)
+        filteredQuests = questStatus.completedQuests;
+        break;
+
       default:
-        return questStatus.quests;
+        filteredQuests = questStatus.quests;
     }
+
+    return filteredQuests;
   }
 
   /// 빈 상태 위젯
@@ -339,10 +376,10 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
     String message;
     switch (_selectedTabIndex) {
       case 0:
-        message = '진행 중인 퀘스트가 없습니다';
+        message = '퀘스트가 없습니다';
         break;
       case 1:
-        message = '보상을 받을 수 있는 퀘스트가 없습니다';
+        message = '진행 중인 퀘스트가 없습니다';
         break;
       case 2:
         message = '완료된 퀘스트가 없습니다';
@@ -374,7 +411,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
     );
   }
 
-  /// 퀘스트 카드 빌드
+  /// 퀘스트 카드 빌드 (description 추가, 반짝이 애니메이션 적용)
   Widget _buildQuestCard(Quest quest, QuestStatus questStatus, UserStatus userStatus) {
     final progressPercentage = quest.targetCount > 0
         ? (quest.currentProgress / quest.targetCount * 100).round()
@@ -414,14 +451,14 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
       statusTextColor = Color(0xFFFF8B27);
     }
 
-    return Container(
+    Widget questCard = Container(
       margin: EdgeInsets.only(bottom: 12.h),
-      height: 120.h,
+      height: 140.h, // 높이를 늘려서 description 공간 확보
       child: Row(
         children: [
           // 좌측 티켓 (퀘스트 정보 영역)
           Expanded(
-            flex: 78, // 78% 비율
+            flex: 78,
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -471,6 +508,20 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
                       ],
                     ),
 
+                    SizedBox(height: 4.h),
+
+                    // 퀘스트 설명 추가
+                    Text(
+                      quest.description,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Color(0xFF666666),
+                        fontFamily: 'Mapo',
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
                     SizedBox(height: 8.h),
 
                     // 프로그레스 바 (전체 너비 차지)
@@ -508,7 +559,7 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
 
           // 우측 티켓 (보상 영역)
           Expanded(
-            flex: 22, // 22% 비율
+            flex: 22,
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -519,25 +570,13 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 보상 아이콘 및 포인트
+                  // 보상 아이콘 - ice.png로 통일
                   if (quest.rewardPoints > 0) ...[
-                    Container(
+                    Image.asset(
+                      'assets/imgs/items/ice.png',
                       width: 20.w,
                       height: 20.w,
-                      decoration: BoxDecoration(
-                        color: isRewardReceived ? Colors.grey : Color(0xFF6BB6FF),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Center(
-                        child: Container(
-                          width: 14.w,
-                          height: 14.w,
-                          decoration: BoxDecoration(
-                            color: isRewardReceived ? Colors.grey[400] : Color(0xFF4A9EFF),
-                            borderRadius: BorderRadius.circular(2.r),
-                          ),
-                        ),
-                      ),
+                      color: isRewardReceived ? Colors.grey : null,
                     ),
                     SizedBox(height: 2.h),
                     Text(
@@ -615,6 +654,46 @@ class _QuestScreenState extends State<QuestScreen> with SingleTickerProviderStat
         ],
       ),
     );
+
+    // 완료된 퀘스트(보상까지 받은)에 반짝이는 애니메이션 적용
+    if (isRewardReceived) {
+      return AnimatedBuilder(
+        animation: _shimmerAnimation,
+        builder: (context, child) {
+          return Stack(
+            children: [
+              questCard,
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.r),
+                  child: AnimatedBuilder(
+                    animation: _shimmerAnimation,
+                    builder: (context, child) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment(-1.0 + _shimmerAnimation.value, 0.0),
+                            end: Alignment(1.0 + _shimmerAnimation.value, 0.0),
+                            colors: [
+                              Colors.transparent,
+                              Colors.white.withOpacity(0.3),
+                              Colors.transparent,
+                            ],
+                            stops: [0.0, 0.5, 1.0],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    return questCard;
   }
 
   /// 보상 받기 처리

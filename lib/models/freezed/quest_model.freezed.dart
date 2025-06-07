@@ -43,7 +43,10 @@ mixin _$Quest {
   @HiveField(10)
   bool get isCompleted => throw _privateConstructorUsedError;
   @HiveField(11)
-  bool get isRewardReceived => throw _privateConstructorUsedError;
+  bool get isRewardReceived =>
+      throw _privateConstructorUsedError; // 🆕 퀘스트 시작 날짜 추가 (퀘스트를 받아온 날짜)
+  @HiveField(12)
+  DateTime? get startDate => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -67,7 +70,8 @@ abstract class $QuestCopyWith<$Res> {
       @HiveField(8) String monthKey,
       @HiveField(9) int currentProgress,
       @HiveField(10) bool isCompleted,
-      @HiveField(11) bool isRewardReceived});
+      @HiveField(11) bool isRewardReceived,
+      @HiveField(12) DateTime? startDate});
 
   $QuestConditionCopyWith<$Res> get condition;
 }
@@ -97,6 +101,7 @@ class _$QuestCopyWithImpl<$Res, $Val extends Quest>
     Object? currentProgress = null,
     Object? isCompleted = null,
     Object? isRewardReceived = null,
+    Object? startDate = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -147,6 +152,10 @@ class _$QuestCopyWithImpl<$Res, $Val extends Quest>
           ? _value.isRewardReceived
           : isRewardReceived // ignore: cast_nullable_to_non_nullable
               as bool,
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ) as $Val);
   }
 
@@ -178,7 +187,8 @@ abstract class _$$QuestImplCopyWith<$Res> implements $QuestCopyWith<$Res> {
       @HiveField(8) String monthKey,
       @HiveField(9) int currentProgress,
       @HiveField(10) bool isCompleted,
-      @HiveField(11) bool isRewardReceived});
+      @HiveField(11) bool isRewardReceived,
+      @HiveField(12) DateTime? startDate});
 
   @override
   $QuestConditionCopyWith<$Res> get condition;
@@ -207,6 +217,7 @@ class __$$QuestImplCopyWithImpl<$Res>
     Object? currentProgress = null,
     Object? isCompleted = null,
     Object? isRewardReceived = null,
+    Object? startDate = freezed,
   }) {
     return _then(_$QuestImpl(
       id: null == id
@@ -257,6 +268,10 @@ class __$$QuestImplCopyWithImpl<$Res>
           ? _value.isRewardReceived
           : isRewardReceived // ignore: cast_nullable_to_non_nullable
               as bool,
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ));
   }
 }
@@ -276,7 +291,8 @@ class _$QuestImpl implements _Quest {
       @HiveField(8) required this.monthKey,
       @HiveField(9) this.currentProgress = 0,
       @HiveField(10) this.isCompleted = false,
-      @HiveField(11) this.isRewardReceived = false});
+      @HiveField(11) this.isRewardReceived = false,
+      @HiveField(12) this.startDate});
 
   factory _$QuestImpl.fromJson(Map<String, dynamic> json) =>
       _$$QuestImplFromJson(json);
@@ -320,10 +336,14 @@ class _$QuestImpl implements _Quest {
   @JsonKey()
   @HiveField(11)
   final bool isRewardReceived;
+// 🆕 퀘스트 시작 날짜 추가 (퀘스트를 받아온 날짜)
+  @override
+  @HiveField(12)
+  final DateTime? startDate;
 
   @override
   String toString() {
-    return 'Quest(id: $id, title: $title, description: $description, type: $type, condition: $condition, targetCount: $targetCount, rewardPoints: $rewardPoints, rewardExperience: $rewardExperience, monthKey: $monthKey, currentProgress: $currentProgress, isCompleted: $isCompleted, isRewardReceived: $isRewardReceived)';
+    return 'Quest(id: $id, title: $title, description: $description, type: $type, condition: $condition, targetCount: $targetCount, rewardPoints: $rewardPoints, rewardExperience: $rewardExperience, monthKey: $monthKey, currentProgress: $currentProgress, isCompleted: $isCompleted, isRewardReceived: $isRewardReceived, startDate: $startDate)';
   }
 
   @override
@@ -351,7 +371,9 @@ class _$QuestImpl implements _Quest {
             (identical(other.isCompleted, isCompleted) ||
                 other.isCompleted == isCompleted) &&
             (identical(other.isRewardReceived, isRewardReceived) ||
-                other.isRewardReceived == isRewardReceived));
+                other.isRewardReceived == isRewardReceived) &&
+            (identical(other.startDate, startDate) ||
+                other.startDate == startDate));
   }
 
   @JsonKey(ignore: true)
@@ -369,7 +391,8 @@ class _$QuestImpl implements _Quest {
       monthKey,
       currentProgress,
       isCompleted,
-      isRewardReceived);
+      isRewardReceived,
+      startDate);
 
   @JsonKey(ignore: true)
   @override
@@ -398,7 +421,8 @@ abstract class _Quest implements Quest {
       @HiveField(8) required final String monthKey,
       @HiveField(9) final int currentProgress,
       @HiveField(10) final bool isCompleted,
-      @HiveField(11) final bool isRewardReceived}) = _$QuestImpl;
+      @HiveField(11) final bool isRewardReceived,
+      @HiveField(12) final DateTime? startDate}) = _$QuestImpl;
 
   factory _Quest.fromJson(Map<String, dynamic> json) = _$QuestImpl.fromJson;
 
@@ -438,6 +462,9 @@ abstract class _Quest implements Quest {
   @override
   @HiveField(11)
   bool get isRewardReceived;
+  @override // 🆕 퀘스트 시작 날짜 추가 (퀘스트를 받아온 날짜)
+  @HiveField(12)
+  DateTime? get startDate;
   @override
   @JsonKey(ignore: true)
   _$$QuestImplCopyWith<_$QuestImpl> get copyWith =>

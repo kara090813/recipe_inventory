@@ -29,13 +29,14 @@ class QuestAdapter extends TypeAdapter<Quest> {
       currentProgress: fields[9] as int,
       isCompleted: fields[10] as bool,
       isRewardReceived: fields[11] as bool,
+      startDate: fields[12] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Quest obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +60,9 @@ class QuestAdapter extends TypeAdapter<Quest> {
       ..writeByte(10)
       ..write(obj.isCompleted)
       ..writeByte(11)
-      ..write(obj.isRewardReceived);
+      ..write(obj.isRewardReceived)
+      ..writeByte(12)
+      ..write(obj.startDate);
   }
 
   @override
@@ -222,6 +225,9 @@ _$QuestImpl _$$QuestImplFromJson(Map<String, dynamic> json) => _$QuestImpl(
       currentProgress: (json['currentProgress'] as num?)?.toInt() ?? 0,
       isCompleted: json['isCompleted'] as bool? ?? false,
       isRewardReceived: json['isRewardReceived'] as bool? ?? false,
+      startDate: json['startDate'] == null
+          ? null
+          : DateTime.parse(json['startDate'] as String),
     );
 
 Map<String, dynamic> _$$QuestImplToJson(_$QuestImpl instance) =>
@@ -238,6 +244,7 @@ Map<String, dynamic> _$$QuestImplToJson(_$QuestImpl instance) =>
       'currentProgress': instance.currentProgress,
       'isCompleted': instance.isCompleted,
       'isRewardReceived': instance.isRewardReceived,
+      'startDate': instance.startDate?.toIso8601String(),
     };
 
 const _$QuestTypeEnumMap = {
