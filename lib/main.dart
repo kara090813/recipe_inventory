@@ -262,6 +262,8 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
             ChangeNotifierProvider(create: (context) => UserStatus()),
             ChangeNotifierProvider(create: (_) => TabStatus()),
             ChangeNotifierProvider(create: (context) => RecipeStatus()),
+            // 🆕 QuestStatus 추가 - 기존 Provider들과 동일한 패턴으로 추가
+            ChangeNotifierProvider(create: (context) => QuestStatus()),
           ],
           child: Builder(
             builder: (BuildContext context) {
