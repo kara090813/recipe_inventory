@@ -58,8 +58,10 @@ class HiveService {
     // Box 열기
     _recipeBox = await Hive.openBox<Recipe>(RECIPE_BOX);
     _foodBox = await Hive.openBox<Food>(FOOD_BOX);
-    _cookingHistoryBox = await Hive.openBox<CookingHistory>(COOKING_HISTORY_BOX);
-    _ongoingCookingBox = await Hive.openBox<OngoingCooking>(ONGOING_COOKING_BOX);
+    _cookingHistoryBox =
+        await Hive.openBox<CookingHistory>(COOKING_HISTORY_BOX);
+    _ongoingCookingBox =
+        await Hive.openBox<OngoingCooking>(ONGOING_COOKING_BOX);
     _userProfileBox = await Hive.openBox<UserProfile>(USER_PROFILE_BOX);
     _favoriteRecipesBox = await Hive.openBox<String>(FAVORITE_RECIPES_BOX);
     _appSettingsBox = await Hive.openBox(APP_SETTINGS_BOX);
@@ -104,7 +106,8 @@ class HiveService {
   static Future<void> removeFoods(List<Food> foods) async {
     final existingFoods = getFoods();
     final Set<Food> foodsToRemove = Set.from(foods);
-    final filteredFoods = existingFoods.where((food) => !foodsToRemove.contains(food)).toList();
+    final filteredFoods =
+        existingFoods.where((food) => !foodsToRemove.contains(food)).toList();
     await saveFoods(filteredFoods);
   }
 
@@ -188,7 +191,6 @@ class HiveService {
     await _favoriteRecipesBox.clear();
   }
 
-  // Quest 관련 메서드 (업데이트된 버전)
   static Future<void> saveQuests(List<Quest> quests) async {
     await _questBox.clear();
     for (int i = 0; i < quests.length; i++) {
@@ -204,8 +206,9 @@ class HiveService {
     return _questBox.get(questId);
   }
 
-  // 🆕 개별 퀘스트 업데이트 (startDate 포함)
-  static Future<void> updateQuestProgress(String questId, int progress, bool isCompleted, bool isRewardReceived) async {
+  /// 개별 퀘스트 업데이트
+  static Future<void> updateQuestProgress(String questId, int progress,
+      bool isCompleted, bool isRewardReceived) async {
     final quest = _questBox.get(questId);
     if (quest != null) {
       final updatedQuest = quest.copyWith(
@@ -217,47 +220,17 @@ class HiveService {
     }
   }
 
-  // 🆕 퀘스트 시작 날짜 업데이트
-  static Future<void> updateQuestStartDate(String questId, DateTime startDate) async {
-    final quest = _questBox.get(questId);
-    if (quest != null) {
-      final updatedQuest = quest.copyWith(startDate: startDate);
-      await _questBox.put(questId, updatedQuest);
-      print('📅 Updated quest start date: $questId -> $startDate');
-    }
-  }
-
-  // 🆕 여러 퀘스트의 시작 날짜를 한번에 업데이트
-  static Future<void> updateAllQuestStartDates(DateTime startDate) async {
-    final quests = getQuests();
-    for (final quest in quests) {
-      if (quest.startDate == null) {
-        final updatedQuest = quest.copyWith(startDate: startDate);
-        await _questBox.put(quest.id, updatedQuest);
-      }
-    }
-    print('📅 Updated start dates for ${quests.length} quests to: $startDate');
-  }
-
   static Future<void> clearQuests() async {
     await _questBox.clear();
   }
 
-  // 퀘스트 동기화 설정값 관련 메서드
-  static Future<void> setLastQuestSyncMonth(String monthKey) async {
-    await _appSettingsBox.put('last_quest_sync_month', monthKey);
+  // 퀘스트 체크 시간 관련 메서드 (기존 설정 메서드 활용)
+  static Future<void> setLastQuestCheckTime(int timestamp) async {
+    await _appSettingsBox.put('last_quest_check_time', timestamp);
   }
 
-  static String? getLastQuestSyncMonth() {
-    return _appSettingsBox.get('last_quest_sync_month');
-  }
-
-  static Future<void> setQuestSyncTime(int timestamp) async {
-    await _appSettingsBox.put('quest_sync_time', timestamp);
-  }
-
-  static int? getQuestSyncTime() {
-    return _appSettingsBox.get('quest_sync_time');
+  static int? getLastQuestCheckTime() {
+    return _appSettingsBox.get('last_quest_check_time');
   }
 
   // App Settings 관련 메서드 (기존 SharedPreferences 기타 설정들)

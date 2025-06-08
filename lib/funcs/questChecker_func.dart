@@ -12,21 +12,21 @@ class QuestChecker {
       ) {
     try {
       print('🎯 Quest: ${quest.title}');
-      print('📅 Quest Start Date: ${quest.startDate}');
+      print('📅 Quest Synced At: ${quest.syncedAt}');
 
-      // 🔥 퀘스트 시작 날짜 이후의 히스토리만 필터링
+      // 🔥 퀘스트 싱크 날짜 이후의 히스토리만 필터링
       List<CookingHistory> relevantHistory;
 
-      if (quest.startDate != null) {
+      if (quest.syncedAt != null) {
         relevantHistory = userStatus.cookingHistory.where((history) {
-          return history.dateTime.isAfter(quest.startDate!) ||
-              history.dateTime.isAtSameMomentAs(quest.startDate!);
+          return history.dateTime.isAfter(quest.syncedAt!) ||
+              history.dateTime.isAtSameMomentAs(quest.syncedAt!);
         }).toList();
-        print('📊 Filtering history after quest start date');
+        print('📊 Filtering history after quest sync date');
       } else {
-        // startDate가 없는 경우 (기존 퀘스트) 전체 히스토리 사용
+        // syncedAt이 없는 경우 (기존 퀘스트) 전체 히스토리 사용
         relevantHistory = userStatus.cookingHistory;
-        print('⚠️ No start date found, using all history');
+        print('⚠️ No sync date found, using all history');
       }
 
       print('📈 Relevant History Count: ${relevantHistory.length} / ${userStatus.cookingHistory.length}');
@@ -68,10 +68,10 @@ class QuestChecker {
           progress = _checkTaggedRecipe(quest, relevantHistory);
           break;
         case QuestType.favoriteRecipeAdd:
-          progress = _checkFavoriteRecipeAdd(quest, recipeStatus);
+          progress = _checkFavoriteRecipeAdd(quest, recipeStatus, quest.syncedAt);
           break;
         case QuestType.newIngredientAdd:
-          progress = _checkNewIngredientAdd(quest, foodStatus);
+          progress = _checkNewIngredientAdd(quest, foodStatus, quest.syncedAt);
           break;
       }
 
@@ -103,12 +103,6 @@ class QuestChecker {
       }
     }
 
-    // 디버깅: 히스토리에 있는 모든 레시피 타입들 출력
-    if (history.isNotEmpty) {
-      final recipeTypes = history.map((h) => h.recipe.recipe_type).toSet();
-      print('  🏷️ Available recipe types: $recipeTypes');
-    }
-
     return count;
   }
 
@@ -121,20 +115,6 @@ class QuestChecker {
     final count = matchingHistory.length;
 
     print('⭐ Difficulty ($targetDifficulty) Count: $count');
-
-    // 디버깅: 매칭된 레시피들 출력
-    if (matchingHistory.isNotEmpty && count <= 5) {
-      print('  📋 Matching recipes:');
-      for (final h in matchingHistory) {
-        print('    - ${h.recipe.title} (${h.dateTime})');
-      }
-    }
-
-    // 디버깅: 히스토리에 있는 모든 난이도들 출력
-    if (history.isNotEmpty) {
-      final difficulties = history.map((h) => h.recipe.difficulty).toSet();
-      print('  🏷️ Available difficulties: $difficulties');
-    }
 
     return count;
   }
@@ -157,20 +137,6 @@ class QuestChecker {
     final count = matchingHistory.length;
 
     print('🧪 Complex Recipe (>= $minIngredientCount ingredients) Count: $count');
-
-    // 디버깅: 매칭된 레시피들과 재료 개수 출력
-    if (matchingHistory.isNotEmpty && count <= 5) {
-      print('  📋 Complex recipes:');
-      for (final h in matchingHistory) {
-        print('    - ${h.recipe.title} (${h.recipe.ingredients.length} ingredients)');
-      }
-    }
-
-    // 디버깅: 히스토리에 있는 재료 개수들 출력
-    if (history.isNotEmpty) {
-      final ingredientCounts = history.map((h) => h.recipe.ingredients.length).toList();
-      print('  🔢 Ingredient counts: $ingredientCounts');
-    }
 
     return count;
   }
@@ -195,18 +161,6 @@ class QuestChecker {
     final count = matchingHistory.length;
 
     print('🥬 Ingredient Usage ($targetIngredient) Count: $count');
-
-    // 디버깅: 매칭된 레시피들 출력
-    if (matchingHistory.isNotEmpty && count <= 5) {
-      print('  📋 Recipes using $targetIngredient:');
-      for (final h in matchingHistory) {
-        final matchingIngredients = h.recipe.ingredients
-            .where((ing) => ing.food.toLowerCase().contains(targetIngredient.toLowerCase()))
-            .map((ing) => ing.food)
-            .toList();
-        print('    - ${h.recipe.title} (ingredients: ${matchingIngredients.join(", ")})');
-      }
-    }
 
     return count;
   }
@@ -253,19 +207,23 @@ class QuestChecker {
     return count;
   }
 
-  /// 좋아요 레시피 추가 횟수 체크 (전체 좋아요 개수)
-  static int _checkFavoriteRecipeAdd(Quest quest, RecipeStatus recipeStatus) {
+  /// 좋아요 레시피 추가 횟수 체크 (퀘스트 싱크 이후 추가된 것만)
+  static int _checkFavoriteRecipeAdd(Quest quest, RecipeStatus recipeStatus, DateTime? syncedAt) {
+    // TODO: 실제로는 syncedAt 이후 추가된 좋아요만 계산해야 함
+    // 현재는 전체 좋아요 개수로 임시 처리
     final count = recipeStatus.favoriteRecipes.length;
     print('❤️ Favorite Recipe Count: $count');
+    print('⚠️ Note: Should count only favorites added after sync date: $syncedAt');
     return count;
   }
 
-  /// 🆕 새로운 식재료 추가 횟수 체크 (퀘스트 시작 이후 추가된 식재료)
-  static int _checkNewIngredientAdd(Quest quest, FoodStatus foodStatus) {
-    // 현재 구조로는 추적이 어려우므로 현재 식재료 개수로 임시 처리
+  /// 새로운 식재료 추가 횟수 체크 (퀘스트 싱크 이후 추가된 것만)
+  static int _checkNewIngredientAdd(Quest quest, FoodStatus foodStatus, DateTime? syncedAt) {
+    // TODO: 실제로는 syncedAt 이후 추가된 식재료만 계산해야 함
+    // 현재는 전체 식재료 개수로 임시 처리
     final count = foodStatus.userFood.length;
     print('🆕 New Ingredient Add Count: $count (total ingredients)');
-    print('⚠️ Note: Tracking new ingredients since quest start is not implemented yet');
+    print('⚠️ Note: Should count only ingredients added after sync date: $syncedAt');
     return count;
   }
 
@@ -279,7 +237,7 @@ class QuestChecker {
     print('=== QuestChecker Test ===');
     print('Quest Title: ${testQuest.title}');
     print('Quest Type: ${testQuest.type}');
-    print('Quest Start Date: ${testQuest.startDate}');
+    print('Quest Synced At: ${testQuest.syncedAt}');
     print('Target Count: ${testQuest.targetCount}');
 
     final progress = calculateProgress(testQuest, userStatus, foodStatus, recipeStatus);

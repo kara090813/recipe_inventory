@@ -21,7 +21,7 @@ Quest _$QuestFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Quest {
   @HiveField(0)
-  String get id => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError; // Firebase 문서 ID
   @HiveField(1)
   String get title => throw _privateConstructorUsedError;
   @HiveField(2)
@@ -37,16 +37,17 @@ mixin _$Quest {
   @HiveField(7)
   int get rewardExperience => throw _privateConstructorUsedError;
   @HiveField(8)
-  String get monthKey => throw _privateConstructorUsedError;
-  @HiveField(9)
   int get currentProgress => throw _privateConstructorUsedError;
-  @HiveField(10)
+  @HiveField(9)
   bool get isCompleted => throw _privateConstructorUsedError;
-  @HiveField(11)
+  @HiveField(10)
   bool get isRewardReceived =>
-      throw _privateConstructorUsedError; // 🆕 퀘스트 시작 날짜 추가 (퀘스트를 받아온 날짜)
+      throw _privateConstructorUsedError; // 🆕 퀘스트 싱크 받은 날짜 (진행도 체크 기준)
+  @HiveField(11)
+  DateTime? get syncedAt =>
+      throw _privateConstructorUsedError; // Firebase updatedAt 필드 저장 (최신 퀘스트 비교용)
   @HiveField(12)
-  DateTime? get startDate => throw _privateConstructorUsedError;
+  DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -67,11 +68,11 @@ abstract class $QuestCopyWith<$Res> {
       @HiveField(5) int targetCount,
       @HiveField(6) int rewardPoints,
       @HiveField(7) int rewardExperience,
-      @HiveField(8) String monthKey,
-      @HiveField(9) int currentProgress,
-      @HiveField(10) bool isCompleted,
-      @HiveField(11) bool isRewardReceived,
-      @HiveField(12) DateTime? startDate});
+      @HiveField(8) int currentProgress,
+      @HiveField(9) bool isCompleted,
+      @HiveField(10) bool isRewardReceived,
+      @HiveField(11) DateTime? syncedAt,
+      @HiveField(12) DateTime? updatedAt});
 
   $QuestConditionCopyWith<$Res> get condition;
 }
@@ -97,11 +98,11 @@ class _$QuestCopyWithImpl<$Res, $Val extends Quest>
     Object? targetCount = null,
     Object? rewardPoints = null,
     Object? rewardExperience = null,
-    Object? monthKey = null,
     Object? currentProgress = null,
     Object? isCompleted = null,
     Object? isRewardReceived = null,
-    Object? startDate = freezed,
+    Object? syncedAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -136,10 +137,6 @@ class _$QuestCopyWithImpl<$Res, $Val extends Quest>
           ? _value.rewardExperience
           : rewardExperience // ignore: cast_nullable_to_non_nullable
               as int,
-      monthKey: null == monthKey
-          ? _value.monthKey
-          : monthKey // ignore: cast_nullable_to_non_nullable
-              as String,
       currentProgress: null == currentProgress
           ? _value.currentProgress
           : currentProgress // ignore: cast_nullable_to_non_nullable
@@ -152,9 +149,13 @@ class _$QuestCopyWithImpl<$Res, $Val extends Quest>
           ? _value.isRewardReceived
           : isRewardReceived // ignore: cast_nullable_to_non_nullable
               as bool,
-      startDate: freezed == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
+      syncedAt: freezed == syncedAt
+          ? _value.syncedAt
+          : syncedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      updatedAt: freezed == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
     ) as $Val);
   }
@@ -184,11 +185,11 @@ abstract class _$$QuestImplCopyWith<$Res> implements $QuestCopyWith<$Res> {
       @HiveField(5) int targetCount,
       @HiveField(6) int rewardPoints,
       @HiveField(7) int rewardExperience,
-      @HiveField(8) String monthKey,
-      @HiveField(9) int currentProgress,
-      @HiveField(10) bool isCompleted,
-      @HiveField(11) bool isRewardReceived,
-      @HiveField(12) DateTime? startDate});
+      @HiveField(8) int currentProgress,
+      @HiveField(9) bool isCompleted,
+      @HiveField(10) bool isRewardReceived,
+      @HiveField(11) DateTime? syncedAt,
+      @HiveField(12) DateTime? updatedAt});
 
   @override
   $QuestConditionCopyWith<$Res> get condition;
@@ -213,11 +214,11 @@ class __$$QuestImplCopyWithImpl<$Res>
     Object? targetCount = null,
     Object? rewardPoints = null,
     Object? rewardExperience = null,
-    Object? monthKey = null,
     Object? currentProgress = null,
     Object? isCompleted = null,
     Object? isRewardReceived = null,
-    Object? startDate = freezed,
+    Object? syncedAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(_$QuestImpl(
       id: null == id
@@ -252,10 +253,6 @@ class __$$QuestImplCopyWithImpl<$Res>
           ? _value.rewardExperience
           : rewardExperience // ignore: cast_nullable_to_non_nullable
               as int,
-      monthKey: null == monthKey
-          ? _value.monthKey
-          : monthKey // ignore: cast_nullable_to_non_nullable
-              as String,
       currentProgress: null == currentProgress
           ? _value.currentProgress
           : currentProgress // ignore: cast_nullable_to_non_nullable
@@ -268,9 +265,13 @@ class __$$QuestImplCopyWithImpl<$Res>
           ? _value.isRewardReceived
           : isRewardReceived // ignore: cast_nullable_to_non_nullable
               as bool,
-      startDate: freezed == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
+      syncedAt: freezed == syncedAt
+          ? _value.syncedAt
+          : syncedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      updatedAt: freezed == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
     ));
   }
@@ -288,11 +289,11 @@ class _$QuestImpl implements _Quest {
       @HiveField(5) required this.targetCount,
       @HiveField(6) required this.rewardPoints,
       @HiveField(7) required this.rewardExperience,
-      @HiveField(8) required this.monthKey,
-      @HiveField(9) this.currentProgress = 0,
-      @HiveField(10) this.isCompleted = false,
-      @HiveField(11) this.isRewardReceived = false,
-      @HiveField(12) this.startDate});
+      @HiveField(8) this.currentProgress = 0,
+      @HiveField(9) this.isCompleted = false,
+      @HiveField(10) this.isRewardReceived = false,
+      @HiveField(11) this.syncedAt,
+      @HiveField(12) this.updatedAt});
 
   factory _$QuestImpl.fromJson(Map<String, dynamic> json) =>
       _$$QuestImplFromJson(json);
@@ -300,6 +301,7 @@ class _$QuestImpl implements _Quest {
   @override
   @HiveField(0)
   final String id;
+// Firebase 문서 ID
   @override
   @HiveField(1)
   final String title;
@@ -322,28 +324,29 @@ class _$QuestImpl implements _Quest {
   @HiveField(7)
   final int rewardExperience;
   @override
-  @HiveField(8)
-  final String monthKey;
-  @override
   @JsonKey()
-  @HiveField(9)
+  @HiveField(8)
   final int currentProgress;
   @override
   @JsonKey()
-  @HiveField(10)
+  @HiveField(9)
   final bool isCompleted;
   @override
   @JsonKey()
-  @HiveField(11)
+  @HiveField(10)
   final bool isRewardReceived;
-// 🆕 퀘스트 시작 날짜 추가 (퀘스트를 받아온 날짜)
+// 🆕 퀘스트 싱크 받은 날짜 (진행도 체크 기준)
+  @override
+  @HiveField(11)
+  final DateTime? syncedAt;
+// Firebase updatedAt 필드 저장 (최신 퀘스트 비교용)
   @override
   @HiveField(12)
-  final DateTime? startDate;
+  final DateTime? updatedAt;
 
   @override
   String toString() {
-    return 'Quest(id: $id, title: $title, description: $description, type: $type, condition: $condition, targetCount: $targetCount, rewardPoints: $rewardPoints, rewardExperience: $rewardExperience, monthKey: $monthKey, currentProgress: $currentProgress, isCompleted: $isCompleted, isRewardReceived: $isRewardReceived, startDate: $startDate)';
+    return 'Quest(id: $id, title: $title, description: $description, type: $type, condition: $condition, targetCount: $targetCount, rewardPoints: $rewardPoints, rewardExperience: $rewardExperience, currentProgress: $currentProgress, isCompleted: $isCompleted, isRewardReceived: $isRewardReceived, syncedAt: $syncedAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -364,16 +367,16 @@ class _$QuestImpl implements _Quest {
                 other.rewardPoints == rewardPoints) &&
             (identical(other.rewardExperience, rewardExperience) ||
                 other.rewardExperience == rewardExperience) &&
-            (identical(other.monthKey, monthKey) ||
-                other.monthKey == monthKey) &&
             (identical(other.currentProgress, currentProgress) ||
                 other.currentProgress == currentProgress) &&
             (identical(other.isCompleted, isCompleted) ||
                 other.isCompleted == isCompleted) &&
             (identical(other.isRewardReceived, isRewardReceived) ||
                 other.isRewardReceived == isRewardReceived) &&
-            (identical(other.startDate, startDate) ||
-                other.startDate == startDate));
+            (identical(other.syncedAt, syncedAt) ||
+                other.syncedAt == syncedAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(ignore: true)
@@ -388,11 +391,11 @@ class _$QuestImpl implements _Quest {
       targetCount,
       rewardPoints,
       rewardExperience,
-      monthKey,
       currentProgress,
       isCompleted,
       isRewardReceived,
-      startDate);
+      syncedAt,
+      updatedAt);
 
   @JsonKey(ignore: true)
   @override
@@ -418,18 +421,18 @@ abstract class _Quest implements Quest {
       @HiveField(5) required final int targetCount,
       @HiveField(6) required final int rewardPoints,
       @HiveField(7) required final int rewardExperience,
-      @HiveField(8) required final String monthKey,
-      @HiveField(9) final int currentProgress,
-      @HiveField(10) final bool isCompleted,
-      @HiveField(11) final bool isRewardReceived,
-      @HiveField(12) final DateTime? startDate}) = _$QuestImpl;
+      @HiveField(8) final int currentProgress,
+      @HiveField(9) final bool isCompleted,
+      @HiveField(10) final bool isRewardReceived,
+      @HiveField(11) final DateTime? syncedAt,
+      @HiveField(12) final DateTime? updatedAt}) = _$QuestImpl;
 
   factory _Quest.fromJson(Map<String, dynamic> json) = _$QuestImpl.fromJson;
 
   @override
   @HiveField(0)
   String get id;
-  @override
+  @override // Firebase 문서 ID
   @HiveField(1)
   String get title;
   @override
@@ -452,19 +455,19 @@ abstract class _Quest implements Quest {
   int get rewardExperience;
   @override
   @HiveField(8)
-  String get monthKey;
-  @override
-  @HiveField(9)
   int get currentProgress;
   @override
-  @HiveField(10)
+  @HiveField(9)
   bool get isCompleted;
   @override
-  @HiveField(11)
+  @HiveField(10)
   bool get isRewardReceived;
-  @override // 🆕 퀘스트 시작 날짜 추가 (퀘스트를 받아온 날짜)
+  @override // 🆕 퀘스트 싱크 받은 날짜 (진행도 체크 기준)
+  @HiveField(11)
+  DateTime? get syncedAt;
+  @override // Firebase updatedAt 필드 저장 (최신 퀘스트 비교용)
   @HiveField(12)
-  DateTime? get startDate;
+  DateTime? get updatedAt;
   @override
   @JsonKey(ignore: true)
   _$$QuestImplCopyWith<_$QuestImpl> get copyWith =>

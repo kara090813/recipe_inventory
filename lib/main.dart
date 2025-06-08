@@ -248,7 +248,11 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
     }
   }
 
-  // 🎯 퀘스트 콜백 설정 함수
+  // ========================================
+// 2. lib/main.dart 수정 (_setupQuestCallbacks 메서드)
+// ========================================
+
+// 🎯 퀘스트 콜백 설정 함수 수정
   void _setupQuestCallbacks(BuildContext context) {
     try {
       final questStatus = Provider.of<QuestStatus>(context, listen: false);
@@ -267,6 +271,36 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
 
       recipeStatus.setQuestUpdateCallback(() async {
         await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
+      });
+
+      // 🆕 초기 진행도 업데이트 실행
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          print("⏰ Waiting for all Status to initialize...");
+
+          // 모든 Status의 초기화가 완료될 때까지 대기 (최대 5초)
+          int maxWaitTime = 50; // 5초 (100ms * 50)
+          int waitCount = 0;
+
+          while (waitCount < maxWaitTime) {
+            // UserStatus와 RecipeStatus가 로딩 중이 아니고, 기본 데이터가 있는지 확인
+            if (!questStatus.isLoading &&
+                !recipeStatus.isLoading) {
+              break;
+            }
+
+            await Future.delayed(Duration(milliseconds: 100));
+            waitCount++;
+          }
+
+          print("✅ Status initialization wait completed. Starting initial progress update...");
+
+          // 초기 진행도 업데이트 실행
+          await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
+
+        } catch (e) {
+          print("❌ Error in initial quest progress setup: $e");
+        }
       });
 
       print('✅ Quest callbacks successfully set up');

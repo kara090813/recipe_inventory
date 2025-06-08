@@ -25,11 +25,11 @@ class QuestAdapter extends TypeAdapter<Quest> {
       targetCount: fields[5] as int,
       rewardPoints: fields[6] as int,
       rewardExperience: fields[7] as int,
-      monthKey: fields[8] as String,
-      currentProgress: fields[9] as int,
-      isCompleted: fields[10] as bool,
-      isRewardReceived: fields[11] as bool,
-      startDate: fields[12] as DateTime?,
+      currentProgress: fields[8] as int,
+      isCompleted: fields[9] as bool,
+      isRewardReceived: fields[10] as bool,
+      syncedAt: fields[11] as DateTime?,
+      updatedAt: fields[12] as DateTime?,
     );
   }
 
@@ -54,15 +54,15 @@ class QuestAdapter extends TypeAdapter<Quest> {
       ..writeByte(7)
       ..write(obj.rewardExperience)
       ..writeByte(8)
-      ..write(obj.monthKey)
-      ..writeByte(9)
       ..write(obj.currentProgress)
-      ..writeByte(10)
+      ..writeByte(9)
       ..write(obj.isCompleted)
-      ..writeByte(11)
+      ..writeByte(10)
       ..write(obj.isRewardReceived)
+      ..writeByte(11)
+      ..write(obj.syncedAt)
       ..writeByte(12)
-      ..write(obj.startDate);
+      ..write(obj.updatedAt);
   }
 
   @override
@@ -221,13 +221,15 @@ _$QuestImpl _$$QuestImplFromJson(Map<String, dynamic> json) => _$QuestImpl(
       targetCount: (json['targetCount'] as num).toInt(),
       rewardPoints: (json['rewardPoints'] as num).toInt(),
       rewardExperience: (json['rewardExperience'] as num).toInt(),
-      monthKey: json['monthKey'] as String,
       currentProgress: (json['currentProgress'] as num?)?.toInt() ?? 0,
       isCompleted: json['isCompleted'] as bool? ?? false,
       isRewardReceived: json['isRewardReceived'] as bool? ?? false,
-      startDate: json['startDate'] == null
+      syncedAt: json['syncedAt'] == null
           ? null
-          : DateTime.parse(json['startDate'] as String),
+          : DateTime.parse(json['syncedAt'] as String),
+      updatedAt: json['updatedAt'] == null
+          ? null
+          : DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$$QuestImplToJson(_$QuestImpl instance) =>
@@ -240,11 +242,11 @@ Map<String, dynamic> _$$QuestImplToJson(_$QuestImpl instance) =>
       'targetCount': instance.targetCount,
       'rewardPoints': instance.rewardPoints,
       'rewardExperience': instance.rewardExperience,
-      'monthKey': instance.monthKey,
       'currentProgress': instance.currentProgress,
       'isCompleted': instance.isCompleted,
       'isRewardReceived': instance.isRewardReceived,
-      'startDate': instance.startDate?.toIso8601String(),
+      'syncedAt': instance.syncedAt?.toIso8601String(),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
     };
 
 const _$QuestTypeEnumMap = {

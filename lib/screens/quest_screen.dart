@@ -42,6 +42,32 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
       parent: _shimmerController,
       curve: Curves.easeInOut,
     ));
+
+    // 🆕 화면 진입 시 퀘스트 진행도 업데이트
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshQuestProgress();
+    });
+  }
+
+  // 🆕 퀘스트 진행도 새로고침
+  Future<void> _refreshQuestProgress() async {
+    try {
+      print("🔄 QuestScreen: Refreshing quest progress...");
+      final questStatus = Provider.of<QuestStatus>(context, listen: false);
+      final userStatus = Provider.of<UserStatus>(context, listen: false);
+      final foodStatus = Provider.of<FoodStatus>(context, listen: false);
+      final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
+
+      // 다른 Status들이 로딩 중이 아닐 때까지 대기
+      while (recipeStatus.isLoading || questStatus.isLoading) {
+        await Future.delayed(Duration(milliseconds: 100));
+      }
+
+      await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
+      print("✅ QuestScreen: Quest progress refresh completed");
+    } catch (e) {
+      print('❌ QuestScreen: 퀘스트 진행도 새로고침 실패: $e');
+    }
   }
 
   @override

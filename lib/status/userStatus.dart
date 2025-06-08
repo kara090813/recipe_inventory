@@ -70,6 +70,13 @@ class UserStatus extends ChangeNotifier {
       _isInitialized = prefs.getBool('isInitialized') ?? false;
 
       notifyListeners();
+
+      // 🆕 초기화 완료 후 퀘스트 업데이트 트리거 (약간의 지연)
+      Future.delayed(Duration(milliseconds: 200), () async {
+        await _triggerQuestUpdate();
+      });
+
+      print("✅ UserStatus initialization completed");
     } catch (e) {
       print('Error loading user status: $e');
       notifyListeners();

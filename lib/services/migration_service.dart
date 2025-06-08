@@ -196,6 +196,7 @@ class MigrationService {
     }
   }
 
+
   // 마이그레이션 후 SharedPreferences 정리 (선택사항)
   static Future<void> cleanupSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();

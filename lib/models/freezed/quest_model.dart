@@ -8,7 +8,7 @@ part 'quest_model.g.dart';
 @HiveType(typeId: 7)
 class Quest with _$Quest {
   factory Quest({
-    @HiveField(0) required String id,
+    @HiveField(0) required String id, // Firebase 문서 ID
     @HiveField(1) required String title,
     @HiveField(2) required String description,
     @HiveField(3) required QuestType type,
@@ -16,12 +16,13 @@ class Quest with _$Quest {
     @HiveField(5) required int targetCount,
     @HiveField(6) required int rewardPoints,
     @HiveField(7) required int rewardExperience,
-    @HiveField(8) required String monthKey,
-    @HiveField(9) @Default(0) int currentProgress,
-    @HiveField(10) @Default(false) bool isCompleted,
-    @HiveField(11) @Default(false) bool isRewardReceived,
-    // 🆕 퀘스트 시작 날짜 추가 (퀘스트를 받아온 날짜)
-    @HiveField(12) DateTime? startDate,
+    @HiveField(8) @Default(0) int currentProgress,
+    @HiveField(9) @Default(false) bool isCompleted,
+    @HiveField(10) @Default(false) bool isRewardReceived,
+    // 🆕 퀘스트 싱크 받은 날짜 (진행도 체크 기준)
+    @HiveField(11) DateTime? syncedAt,
+    // Firebase updatedAt 필드 저장 (최신 퀘스트 비교용)
+    @HiveField(12) DateTime? updatedAt,
   }) = _Quest;
 
   factory Quest.fromJson(Map<String, dynamic> json) => _$QuestFromJson(json);

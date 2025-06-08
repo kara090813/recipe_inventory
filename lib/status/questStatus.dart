@@ -3,7 +3,6 @@ import '../models/_models.dart';
 import '../models/questSyncService.dart';
 import '../funcs/questChecker_func.dart';
 import '../services/hive_service.dart';
-import '../funcs/notification_service.dart';
 import '_status.dart';
 
 class QuestStatus extends ChangeNotifier {
@@ -29,14 +28,11 @@ class QuestStatus extends ChangeNotifier {
       print("🚀 Initializing quests...");
       _quests = await _syncService.syncQuests();
 
-      // 🆕 퀘스트 시작 날짜 확인 및 설정
-      await _ensureQuestStartDates();
-
       print("✅ Initialized quests count: ${_quests.length}");
 
       // 디버깅: 퀘스트 정보 출력
       for (final quest in _quests) {
-        print("📋 Quest: ${quest.title} (Start: ${quest.startDate})");
+        print("📋 Quest: ${quest.title} (Synced: ${quest.syncedAt})");
       }
     } catch (e) {
       print('💥 Error initializing quests: $e');
@@ -44,32 +40,6 @@ class QuestStatus extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
-    }
-  }
-
-  /// 🆕 퀘스트 시작 날짜 확인 및 설정
-  Future<void> _ensureQuestStartDates() async {
-    try {
-      bool hasChanges = false;
-      final now = DateTime.now();
-
-      for (int i = 0; i < _quests.length; i++) {
-        final quest = _quests[i];
-        if (quest.startDate == null) {
-          // 시작 날짜가 없는 퀘스트에 현재 시간 설정
-          _quests[i] = quest.copyWith(startDate: now);
-          hasChanges = true;
-          print("📅 Set start date for quest: ${quest.title} -> $now");
-        }
-      }
-
-      if (hasChanges) {
-        // Hive에 업데이트된 퀘스트들 저장
-        await HiveService.saveQuests(_quests);
-        print("💾 Updated quest start dates saved to Hive");
-      }
-    } catch (e) {
-      print('💥 Error ensuring quest start dates: $e');
     }
   }
 
@@ -207,9 +177,6 @@ class QuestStatus extends ChangeNotifier {
       print("🔥 Force syncing quests...");
       _quests = await _syncService.forceSyncQuests();
 
-      // 시작 날짜 확인 및 설정
-      await _ensureQuestStartDates();
-
       print("✅ Force synced quests count: ${_quests.length}");
     } catch (e) {
       print('💥 Error force syncing quests: $e');
@@ -228,9 +195,6 @@ class QuestStatus extends ChangeNotifier {
     try {
       print("🔄 Refreshing quests...");
       _quests = await _syncService.syncQuests();
-
-      // 시작 날짜 확인 및 설정
-      await _ensureQuestStartDates();
 
       print("✅ Refreshed quests count: ${_quests.length}");
     } catch (e) {
@@ -329,9 +293,9 @@ class QuestStatus extends ChangeNotifier {
     print('Total Progress: ${totalProgressPercentage.toStringAsFixed(1)}%');
     print('Available Rewards: ${totalAvailableRewardPoints}P + ${totalAvailableRewardExperience}XP');
 
-    // 각 퀘스트의 시작 날짜 출력
+    // 각 퀘스트의 싱크 날짜 출력
     for (final quest in _quests) {
-      print('Quest: ${quest.title} - Start: ${quest.startDate}, Progress: ${quest.currentProgress}/${quest.targetCount}');
+      print('Quest: ${quest.title} - Synced: ${quest.syncedAt}, Progress: ${quest.currentProgress}/${quest.targetCount}');
     }
     print('==================');
   }

@@ -37,6 +37,13 @@ class FoodStatus extends ChangeNotifier {
     try {
       _userFood = HiveService.getFoods();
       notifyListeners();
+
+      // 🆕 초기화 완료 후 퀘스트 업데이트 트리거 (약간의 지연)
+      Future.delayed(Duration(milliseconds: 200), () async {
+        await _triggerQuestUpdate();
+      });
+
+      print("✅ FoodStatus initialization completed (${_userFood.length} foods)");
     } catch (e) {
       print('Error loading foods from Hive: $e');
       notifyListeners();
