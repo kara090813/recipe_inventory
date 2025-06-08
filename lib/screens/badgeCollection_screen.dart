@@ -33,9 +33,26 @@ class BadgeCollectionScreen extends StatefulWidget {
   State<BadgeCollectionScreen> createState() => _BadgeCollectionScreenState();
 }
 
-class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
+class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
+    with TickerProviderStateMixin {
   int _selectedTabIndex = 0;
-  String _selectedBadgeType = '전체';
+  Set<String> _selectedBadgeTypes = {'전체'}; // 토글식으로 변경
+  late AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      duration: Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
 
   // 더미 데이터
   final List<Badge> _badges = [
@@ -73,10 +90,10 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
     ),
     Badge(
       id: '5',
-      name: '전설의 요리사',
-      description: '모든 뱃지 획득',
+      name: '신입 요리사',
+      description: '첫 요리 완성',
       imagePath: 'assets/imgs/badge/type/korean1.png',
-      type: '셰프',
+      type: '요린이',
       isUnlocked: false,
     ),
     Badge(
@@ -84,12 +101,12 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
       name: '다국적 셰프',
       description: '중, 양, 일식 3종 도전',
       imagePath: 'assets/imgs/badge/type/korean1.png',
-      type: '셰프',
+      type: '요르신',
       isUnlocked: true,
     ),
   ];
 
-  final List<String> _badgeTypes = ['전체', '요리마스터', '요리사', '으르신'];
+  final List<String> _badgeTypes = ['전체', '요리사', '요린이', '요르신'];
 
   // 메인 뱃지 가져오기
   Badge? get _mainBadge {
@@ -104,8 +121,10 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
   List<Badge> get _filteredBadges {
     List<Badge> filtered = _badges;
 
-    if (_selectedBadgeType != '전체') {
-      filtered = filtered.where((badge) => badge.type == _selectedBadgeType).toList();
+    // 토글식 필터링
+    if (!_selectedBadgeTypes.contains('전체')) {
+      filtered = filtered.where((badge) =>
+          _selectedBadgeTypes.contains(badge.type)).toList();
     }
 
     switch (_selectedTabIndex) {
@@ -123,17 +142,16 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
   }
 
   // 각 탭별 개수
-  int get _totalCount => _selectedBadgeType == '전체'
-      ? _badges.length
-      : _badges.where((badge) => badge.type == _selectedBadgeType).length;
+  int get _totalCount => _getCountByFilter(_badges);
+  int get _unlockedCount => _getCountByFilter(_badges.where((badge) => badge.isUnlocked).toList());
+  int get _progressCount => _getCountByFilter(_badges.where((badge) => !badge.isUnlocked).toList());
 
-  int get _unlockedCount => _selectedBadgeType == '전체'
-      ? _badges.where((badge) => badge.isUnlocked).length
-      : _badges.where((badge) => badge.type == _selectedBadgeType && badge.isUnlocked).length;
-
-  int get _progressCount => _selectedBadgeType == '전체'
-      ? _badges.where((badge) => !badge.isUnlocked).length
-      : _badges.where((badge) => badge.type == _selectedBadgeType && !badge.isUnlocked).length;
+  int _getCountByFilter(List<Badge> badges) {
+    if (_selectedBadgeTypes.contains('전체')) {
+      return badges.length;
+    }
+    return badges.where((badge) => _selectedBadgeTypes.contains(badge.type)).length;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,49 +174,62 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
               ),
             ),
 
-            // 메인 뱃지 영역 (심플하게)
-            _buildMainBadgeSection(),
-
-            SizedBox(height: 60.h),
-
-            // 폴더 컨테이너
-            Expanded(
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Column(
-                  children: [
-                    // 폴더 탭들
-                    _buildFolderTabs(),
-
-                    // 폴더 내용
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF5F1E8),
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(20.r),
-                            bottomRight: Radius.circular(20.r),
-                            topLeft: _selectedTabIndex == 0 ? Radius.zero : Radius.circular(20.r),
-                            topRight: _selectedTabIndex == 2 ? Radius.zero : Radius.circular(20.r),
-                          ),
-                          border: Border.all(color: Color(0xFFD4C4A8), width: 1.5),
-                        ),
-                        child: Column(
-                          children: [
-                            SizedBox(height: 20.h),
-                            // 뱃지 타입 선택기
-                            _buildBadgeTypeSelector(),
-                            SizedBox(height: 20.h),
-                            // 뱃지 리스트
-                            Expanded(child: _buildBadgeGrid()),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+            // 메인 뱃지 영역 (포인트 카드)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFF8F0), Color(0xFFF0E6D6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(24.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0xFF7D674B).withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+                border: Border.all(color: Color(0xFFE8DCC8).withOpacity(0.5)),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 35.h),
+              child: _buildMainBadgeSection(),
+            ),
+
+            SizedBox(height: 30.h),
+
+            // 컨트롤 영역 (포인트 카드)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.w),
+              decoration: BoxDecoration(
+                color: Color(0xFFFFFBF5),
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(color: Color(0xFFE8DCC8)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.all(20.w),
+              child: Column(
+                children: [
+                  // 모던한 상태 선택기
+                  _buildModernStatusSelector(),
+                  SizedBox(height: 20.h),
+                  // 토글식 뱃지 타입 선택기
+                  _buildToggleBadgeTypeSelector(),
+                ],
               ),
             ),
+
+            SizedBox(height: 20.h),
+
+            // 뱃지 그리드 영역
+            Expanded(child: _buildBadgeGrid()),
           ],
         ),
       ),
@@ -217,6 +248,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
               color: Color(0xFF7D674B),
               fontSize: 20.sp,
               fontFamily: 'Mapo',
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
@@ -271,17 +303,26 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
     );
   }
 
-  Widget _buildFolderTabs() {
-    return Row(
-      children: [
-        _buildFolderTab('전체', 0, _totalCount),
-        _buildFolderTab('획득', 1, _unlockedCount),
-        _buildFolderTab('진행중', 2, _progressCount),
-      ],
+  // 모던한 상태 선택기 (세그먼트 컨트롤 스타일)
+  Widget _buildModernStatusSelector() {
+    return Container(
+      height: 50.h,
+      decoration: BoxDecoration(
+        color: Color(0xFFF5F1E8),
+        borderRadius: BorderRadius.circular(25.r),
+        border: Border.all(color: Color(0xFFE8DCC8), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          _buildModernTab('전체', 0, _totalCount),
+          _buildModernTab('획득', 1, _unlockedCount),
+          _buildModernTab('진행중', 2, _progressCount),
+        ],
+      ),
     );
   }
 
-  Widget _buildFolderTab(String title, int index, int count) {
+  Widget _buildModernTab(String title, int index, int count) {
     final isSelected = _selectedTabIndex == index;
 
     return Expanded(
@@ -291,30 +332,31 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
             _selectedTabIndex = index;
           });
         },
-        child: Container(
-          height: 50.h,
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          margin: EdgeInsets.all(4.w),
           decoration: BoxDecoration(
-            color: isSelected ? Color(0xFFF5F1E8) : Color(0xFFE8DCC8),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20.r),
-              topRight: Radius.circular(20.r),
-            ),
-            border: Border(
-              top: BorderSide(color: Color(0xFFD4C4A8), width: 1.5),
-              left: BorderSide(color: Color(0xFFD4C4A8), width: 1.5),
-              right: BorderSide(color: Color(0xFFD4C4A8), width: 1.5),
-              bottom: isSelected ? BorderSide.none : BorderSide(color: Color(0xFFD4C4A8), width: 1.5),
-            ),
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(21.r),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: Color(0xFF7D674B).withOpacity(0.15),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ] : null,
           ),
           child: Center(
-            child: Text(
-              '$title($count)',
+            child: AnimatedDefaultTextStyle(
+              duration: Duration(milliseconds: 300),
               style: TextStyle(
                 fontSize: 14.sp,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected ? Color(0xFF7D674B) : Color(0xFF999999),
                 fontFamily: 'Mapo',
               ),
+              child: Text('$title ($count)'),
             ),
           ),
         ),
@@ -322,46 +364,78 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
     );
   }
 
-  Widget _buildBadgeTypeSelector() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Row(
-        children: _badgeTypes.map((type) {
-          final isSelected = _selectedBadgeType == type;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedBadgeType = type;
-                });
-              },
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 3.w),
-                padding: EdgeInsets.symmetric(vertical: 10.h),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Color(0xFFBB885E),
-                  borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(
-                    color: Color(0xFFBB885E),
-                    width: 1.5,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    type,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Color(0xFF7D674B) : Colors.white,
-                      fontFamily: 'Mapo',
-                    ),
-                  ),
-                ),
+  // 토글식 뱃지 타입 선택기
+  Widget _buildToggleBadgeTypeSelector() {
+    return Wrap(
+      spacing: 8.w,
+      runSpacing: 8.h,
+      children: _badgeTypes.map((type) {
+        final isSelected = _selectedBadgeTypes.contains(type);
+        final isAll = type == '전체';
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              if (isAll) {
+                // 전체 선택 시 다른 모든 선택 해제
+                _selectedBadgeTypes.clear();
+                _selectedBadgeTypes.add('전체');
+              } else {
+                if (_selectedBadgeTypes.contains('전체')) {
+                  // 전체가 선택되어 있으면 전체 해제하고 현재 타입 선택
+                  _selectedBadgeTypes.clear();
+                  _selectedBadgeTypes.add(type);
+                } else {
+                  // 토글
+                  if (isSelected) {
+                    _selectedBadgeTypes.remove(type);
+                    // 아무것도 선택되지 않으면 전체 선택
+                    if (_selectedBadgeTypes.isEmpty) {
+                      _selectedBadgeTypes.add('전체');
+                    }
+                  } else {
+                    _selectedBadgeTypes.add(type);
+                  }
+                }
+              }
+            });
+          },
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 200),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              gradient: isSelected ? LinearGradient(
+                colors: [Color(0xFFFF8B27), Color(0xFFFFB347)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ) : null,
+              color: isSelected ? null : Colors.white,
+              borderRadius: BorderRadius.circular(20.r),
+              border: Border.all(
+                color: isSelected ? Color(0xFFFF8B27) : Color(0xFFE8DCC8),
+                width: 1.5,
               ),
+              boxShadow: isSelected ? [
+                BoxShadow(
+                  color: Color(0xFFFF8B27).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ] : null,
             ),
-          );
-        }).toList(),
-      ),
+            child: AnimatedDefaultTextStyle(
+              duration: Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : Color(0xFF7D674B),
+                fontFamily: 'Mapo',
+              ),
+              child: Text(type),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -395,12 +469,12 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: GridView.builder(
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.only(top: 10.h, bottom: 20.h),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
+          crossAxisCount: 2, // 2열로 변경
           crossAxisSpacing: 16.w,
           mainAxisSpacing: 20.h,
-          childAspectRatio: 0.7,
+          childAspectRatio: 1.0, // 비율 조정 (정사각형에 가깝게)
         ),
         itemCount: filteredBadges.length,
         itemBuilder: (context, index) {
@@ -462,82 +536,130 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen> {
           );
         }
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: Color(0xFFE8DCC8), width: 1.5),
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+              color: badge.isUnlocked ? Color(0xFFE8DCC8) : Color(0xFFE0E0E0),
+              width: 1.5
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: badge.isUnlocked
+                  ? Color(0xFF7D674B).withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: badge.isUnlocked ? 10 : 5,
+              offset: Offset(0, badge.isUnlocked ? 5 : 2),
+            ),
+          ],
         ),
-        padding: EdgeInsets.all(12.w),
+        padding: EdgeInsets.all(6.w), // 패딩 더 줄임
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 뱃지 이미지 (큼직하게)
+            // 뱃지 이미지 (더욱 크게)
             Expanded(
-              flex: 3,
+              flex: 6, // 더 큰 비율로 확장
               child: Container(
                 width: double.infinity,
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: badge.isUnlocked ? Color(0xFFFF8B27) : Colors.grey[400],
-                        shape: BoxShape.circle,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // 뱃지 이미지만 표시 (배경 제거)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16.r),
+                      child: Image.asset(
+                        imagePath,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: badge.isUnlocked ? Color(0xFFFF8B27) : Colors.grey[400],
+                              borderRadius: BorderRadius.circular(16.r),
+                            ),
+                            child: Icon(
+                              Icons.emoji_events,
+                              color: Colors.white,
+                              size: 60.w, // 아이콘도 더 크게
+                            ),
+                          );
+                        },
                       ),
-                      child: Icon(
-                        Icons.emoji_events,
-                        color: Colors.white,
-                        size: 30.w,
+                    ),
+                    // 잠금 오버레이 (뱃지 이미지 위에만)
+                    if (!badge.isUnlocked)
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16.r),
+                          color: Colors.black.withOpacity(0.5),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.lock,
+                            color: Colors.white,
+                            size: 50.w,
+                          ),
+                        ),
                       ),
-                    );
-                  },
+                  ],
                 ),
               ),
             ),
 
             SizedBox(height: 8.h),
 
-            // 뱃지 이름 (형광펜 효과)
-            Stack(
-              children: [
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: -1,
-                  child: Container(
-                    height: 14.h,
-                    color: Color(0xFFFFD8A8),
+            // 뱃지 이름 (형광펜 효과 적용)
+            Container(
+              height: 28.h, // 고정 높이로 위치 일치
+              alignment: Alignment.center,
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: -1,
+                    child: Container(
+                      height: 12.h,
+                      color: Color(0xFFFFD8A8),
+                    ),
                   ),
-                ),
-                Text(
-                  badge.name,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontFamily: 'Mapo',
+                  Text(
+                    badge.name,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                      color: badge.isUnlocked ? Colors.black : Colors.grey[600],
+                      fontFamily: 'Mapo',
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
 
-            SizedBox(height: 6.h),
+            SizedBox(height: 4.h),
 
-            // 뱃지 설명 (작게)
-            Text(
-              badge.description,
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: badge.isUnlocked ? Color(0xFF666666) : Colors.grey[500],
-                fontFamily: 'Mapo',
+            // 뱃지 설명 (위치 고정, ... 처리)
+            Container(
+              height: 18.h, // 고정 높이로 위치 일치
+              alignment: Alignment.center,
+              child: Text(
+                badge.description,
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: badge.isUnlocked ? Color(0xFF999999) : Colors.grey[500],
+                  fontFamily: 'Mapo',
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis, // ... 처리
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
