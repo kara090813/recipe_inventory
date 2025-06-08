@@ -141,6 +141,12 @@ flutter:
     - assets/imgs/background/
     - assets/imgs/icons/
     - assets/imgs/guide/
+    - assets/imgs/badge/continuous/
+    - assets/imgs/badge/count/
+    - assets/imgs/badge/difficulty/
+    - assets/imgs/badge/spec/
+    - assets/imgs/badge/time/
+    - assets/imgs/badge/type/
     - assets/data/alarm.mp3
   fonts:
     - family: Mapo

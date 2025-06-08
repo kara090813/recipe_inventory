@@ -15,3 +15,4 @@ export 'customFoodAddTab_screen.dart';
 export 'customFoodDeleteTab_screen.dart';
 export 'notificationRedirect_screen.dart';
 export 'quest_screen.dart';
+export 'badgeCollection_screen.dart';
