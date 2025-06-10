@@ -5,3 +5,4 @@ export 'userStatus.dart';
 export 'tabStatus.dart';
 export 'recipeStatus.dart';
 export 'questStatus.dart';
+export 'badgeStatus.dart';

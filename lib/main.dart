@@ -252,15 +252,15 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
 // 2. lib/main.dart 수정 (_setupQuestCallbacks 메서드)
 // ========================================
 
-// 🎯 퀘스트 콜백 설정 함수 수정
-  void _setupQuestCallbacks(BuildContext context) {
+  void _setupStatusCallbacks(BuildContext context) {
     try {
       final questStatus = Provider.of<QuestStatus>(context, listen: false);
+      final badgeStatus = Provider.of<BadgeStatus>(context, listen: false); // 🆕 추가
       final userStatus = Provider.of<UserStatus>(context, listen: false);
       final foodStatus = Provider.of<FoodStatus>(context, listen: false);
       final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
 
-      // 각 Status에 퀘스트 업데이트 콜백 설정
+      // 🎯 퀘스트 업데이트 콜백 설정
       userStatus.setQuestUpdateCallback(() async {
         await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
       });
@@ -273,7 +273,20 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
         await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
       });
 
-      // 🆕 초기 진행도 업데이트 실행
+      // 🆕 뱃지 업데이트 콜백 설정
+      userStatus.setBadgeUpdateCallback(() async {
+        await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
+      });
+
+      foodStatus.setBadgeUpdateCallback(() async {
+        await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
+      });
+
+      recipeStatus.setBadgeUpdateCallback(() async {
+        await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
+      });
+
+      // 🆕 초기 뱃지 진행도 업데이트 실행
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
           print("⏰ Waiting for all Status to initialize...");
@@ -283,8 +296,9 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
           int waitCount = 0;
 
           while (waitCount < maxWaitTime) {
-            // UserStatus와 RecipeStatus가 로딩 중이 아니고, 기본 데이터가 있는지 확인
+            // Status들이 로딩 중이 아니고, 기본 데이터가 있는지 확인
             if (!questStatus.isLoading &&
+                !badgeStatus.isLoading &&
                 !recipeStatus.isLoading) {
               break;
             }
@@ -295,19 +309,21 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
 
           print("✅ Status initialization wait completed. Starting initial progress update...");
 
-          // 초기 진행도 업데이트 실행
+          // 퀘스트와 뱃지 진행도 모두 업데이트 실행
           await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
+          await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
 
         } catch (e) {
-          print("❌ Error in initial quest progress setup: $e");
+          print("❌ Error in initial progress setup: $e");
         }
       });
 
-      print('✅ Quest callbacks successfully set up');
+      print('✅ Status callbacks successfully set up');
     } catch (e) {
-      print('❌ Error setting up quest callbacks: $e');
+      print('❌ Error setting up status callbacks: $e');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -323,8 +339,8 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
             ChangeNotifierProvider<UserStatus>(create: (context) => UserStatus()),
             ChangeNotifierProvider(create: (_) => TabStatus()),
             ChangeNotifierProvider<RecipeStatus>(create: (context) => RecipeStatus()),
-            // 🎯 QuestStatus 추가
             ChangeNotifierProvider<QuestStatus>(create: (context) => QuestStatus()),
+            ChangeNotifierProvider<BadgeStatus>(create: (context) => BadgeStatus()),
           ],
           child: Builder(
             builder: (BuildContext context) {

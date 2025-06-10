@@ -14,6 +14,7 @@ class UserStatus extends ChangeNotifier {
 
   // 퀘스트 업데이트를 위한 콜백 함수
   Future<void> Function()? _questUpdateCallback;
+  Future<void> Function()? _badgeUpdateCallback;
 
   List<CookingHistory> get cookingHistory => List.unmodifiable(_cookingHistory);
   List<OngoingCooking> get ongoingCooking => List.unmodifiable(_ongoingCooking);
@@ -31,6 +32,10 @@ class UserStatus extends ChangeNotifier {
     loadUserStatus();
   }
 
+  void setBadgeUpdateCallback(Future<void> Function()? callback) {
+    _badgeUpdateCallback = callback;
+    print('BadgeStatus: Badge update callback set');
+  }
   /// 퀘스트 업데이트 콜백 설정
   void setQuestUpdateCallback(Future<void> Function()? callback) {
     _questUpdateCallback = callback;

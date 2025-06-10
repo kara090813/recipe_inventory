@@ -8,6 +8,7 @@ class FoodStatus extends ChangeNotifier {
 
   // 퀘스트 업데이트를 위한 콜백 함수
   Future<void> Function()? _questUpdateCallback;
+  Future<void> Function()? _badgeUpdateCallback;
 
   List<Food> get userFood => List.unmodifiable(_userFood);
 
@@ -19,6 +20,10 @@ class FoodStatus extends ChangeNotifier {
   void setQuestUpdateCallback(Future<void> Function()? callback) {
     _questUpdateCallback = callback;
     print('FoodStatus: Quest update callback set');
+  }
+  void setBadgeUpdateCallback(Future<void> Function()? callback) {
+    _badgeUpdateCallback = callback;
+    print('BadgeStatus: Badge update callback set');
   }
 
   /// 퀘스트 업데이트 트리거
