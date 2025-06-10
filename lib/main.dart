@@ -352,7 +352,7 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
               // 앱이 빌드된 후 퀘스트 콜백 설정 및 초기 알림 확인
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 // 🎯 퀘스트 콜백 설정
-                _setupQuestCallbacks(context);
+                _setupStatusCallbacks(context);
                 _checkPendingNotification();
               });
 
