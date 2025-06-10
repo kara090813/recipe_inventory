@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/_models.dart';
+import '../data/badgeData.dart';
 
 class HiveService {
   static const String RECIPE_BOX = 'recipes';
@@ -10,6 +11,8 @@ class HiveService {
   static const String FAVORITE_RECIPES_BOX = 'favorite_recipes';
   static const String APP_SETTINGS_BOX = 'app_settings';
   static const String QUEST_BOX = 'quests';
+  static const String USER_BADGE_PROGRESS_BOX = 'user_badge_progress';
+  static const String BADGE_STATS_BOX = 'badge_stats';
 
   static late Box<Recipe> _recipeBox;
   static late Box<Food> _foodBox;
@@ -19,6 +22,8 @@ class HiveService {
   static late Box<String> _favoriteRecipesBox;
   static late Box _appSettingsBox;
   static late Box<Quest> _questBox;
+  static late Box<UserBadgeProgress> _userBadgeProgressBox;
+  static late Box<BadgeStats> _badgeStatsBox;
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -54,6 +59,27 @@ class HiveService {
     if (!Hive.isAdapterRegistered(9)) {
       Hive.registerAdapter(QuestTypeAdapter());
     }
+    if (!Hive.isAdapterRegistered(10)) {
+      Hive.registerAdapter(BadgeAdapter());
+    }
+    if (!Hive.isAdapterRegistered(11)) {
+      Hive.registerAdapter(BadgeConditionAdapter());
+    }
+    if (!Hive.isAdapterRegistered(12)) {
+      Hive.registerAdapter(BadgeCategoryAdapter());
+    }
+    if (!Hive.isAdapterRegistered(13)) {
+      Hive.registerAdapter(BadgeDifficultyAdapter());
+    }
+    if (!Hive.isAdapterRegistered(14)) {
+      Hive.registerAdapter(BadgeTypeAdapter());
+    }
+    if (!Hive.isAdapterRegistered(15)) {
+      Hive.registerAdapter(UserBadgeProgressAdapter());
+    }
+    if (!Hive.isAdapterRegistered(16)) {
+      Hive.registerAdapter(BadgeStatsAdapter());
+    }
 
     // Box 열기
     _recipeBox = await Hive.openBox<Recipe>(RECIPE_BOX);
@@ -66,6 +92,8 @@ class HiveService {
     _favoriteRecipesBox = await Hive.openBox<String>(FAVORITE_RECIPES_BOX);
     _appSettingsBox = await Hive.openBox(APP_SETTINGS_BOX);
     _questBox = await Hive.openBox<Quest>(QUEST_BOX);
+    _userBadgeProgressBox = await Hive.openBox<UserBadgeProgress>(USER_BADGE_PROGRESS_BOX);
+    _badgeStatsBox = await Hive.openBox<BadgeStats>(BADGE_STATS_BOX);
   }
 
   // Recipe 관련 메서드
@@ -274,6 +302,158 @@ class HiveService {
     await _appSettingsBox.delete(key);
   }
 
+  // ==================== UserBadgeProgress 관련 메서드 ====================
+
+  /// 사용자 뱃지 진행도 저장
+  static Future<void> saveUserBadgeProgress(List<UserBadgeProgress> progressList) async {
+    await _userBadgeProgressBox.clear();
+    for (final progress in progressList) {
+      await _userBadgeProgressBox.put(progress.badgeId, progress);
+    }
+  }
+
+  /// 사용자 뱃지 진행도 로드
+  static List<UserBadgeProgress> getUserBadgeProgress() {
+    return _userBadgeProgressBox.values.toList();
+  }
+
+  /// 특정 뱃지 진행도 가져오기
+  static UserBadgeProgress? getBadgeProgress(String badgeId) {
+    return _userBadgeProgressBox.get(badgeId);
+  }
+
+  /// 개별 뱃지 진행도 업데이트
+  static Future<void> updateBadgeProgress({
+    required String badgeId,
+    required int currentProgress,
+    required bool isUnlocked,
+    DateTime? unlockedAt,
+    bool? isMainBadge,
+    Map<String, dynamic>? metadata,
+  }) async {
+    final existing = _userBadgeProgressBox.get(badgeId);
+
+    final updated = UserBadgeProgress(
+      badgeId: badgeId,
+      currentProgress: currentProgress,
+      isUnlocked: isUnlocked,
+      unlockedAt: unlockedAt ?? existing?.unlockedAt,
+      isMainBadge: isMainBadge ?? existing?.isMainBadge ?? false,
+      progressUpdatedAt: DateTime.now(),
+      metadata: metadata ?? existing?.metadata ?? {},
+    );
+
+    await _userBadgeProgressBox.put(badgeId, updated);
+  }
+
+  /// 메인 뱃지 설정
+  static Future<void> setMainBadge(String badgeId) async {
+    // 모든 뱃지의 메인 설정 해제
+    final allProgress = getUserBadgeProgress();
+    for (final progress in allProgress) {
+      if (progress.isMainBadge) {
+        await updateBadgeProgress(
+          badgeId: progress.badgeId,
+          currentProgress: progress.currentProgress,
+          isUnlocked: progress.isUnlocked,
+          unlockedAt: progress.unlockedAt,
+          isMainBadge: false,
+          metadata: progress.metadata,
+        );
+      }
+    }
+
+    // 새로운 메인 뱃지 설정
+    final targetProgress = getBadgeProgress(badgeId);
+    if (targetProgress != null && targetProgress.isUnlocked) {
+      await updateBadgeProgress(
+        badgeId: badgeId,
+        currentProgress: targetProgress.currentProgress,
+        isUnlocked: targetProgress.isUnlocked,
+        unlockedAt: targetProgress.unlockedAt,
+        isMainBadge: true,
+        metadata: targetProgress.metadata,
+      );
+    }
+  }
+
+  /// 메인 뱃지 가져오기
+  static UserBadgeProgress? getMainBadge() {
+    final allProgress = getUserBadgeProgress();
+    try {
+      return allProgress.firstWhere((progress) => progress.isMainBadge);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 잠금 해제된 뱃지 목록
+  static List<UserBadgeProgress> getUnlockedBadges() {
+    return getUserBadgeProgress().where((progress) => progress.isUnlocked).toList();
+  }
+
+  /// 진행 중인 뱃지 목록
+  static List<UserBadgeProgress> getInProgressBadges() {
+    return getUserBadgeProgress().where((progress) =>
+    !progress.isUnlocked && progress.currentProgress > 0
+    ).toList();
+  }
+
+  /// 뱃지 진행도 초기화
+  static Future<void> clearBadgeProgress() async {
+    await _userBadgeProgressBox.clear();
+  }
+
+// ==================== BadgeStats 관련 메서드 ====================
+
+  /// 뱃지 통계 저장
+  static Future<void> saveBadgeStats(BadgeStats stats) async {
+    await _badgeStatsBox.put('badge_stats', stats);
+  }
+
+  /// 뱃지 통계 로드
+  static BadgeStats? getBadgeStats() {
+    return _badgeStatsBox.get('badge_stats');
+  }
+
+  /// 뱃지 통계 업데이트
+  static Future<void> updateBadgeStats() async {
+    final progressList = getUserBadgeProgress();
+    final unlockedList = getUnlockedBadges();
+
+    final weakCount = unlockedList.where((p) {
+      final badge = getBadgeById(p.badgeId);
+      return badge?.difficulty == BadgeDifficulty.weak;
+    }).length;
+
+    final mediumCount = unlockedList.where((p) {
+      final badge = getBadgeById(p.badgeId);
+      return badge?.difficulty == BadgeDifficulty.medium;
+    }).length;
+
+    final strongCount = unlockedList.where((p) {
+      final badge = getBadgeById(p.badgeId);
+      return badge?.difficulty == BadgeDifficulty.strong;
+    }).length;
+
+    final hellCount = unlockedList.where((p) {
+      final badge = getBadgeById(p.badgeId);
+      return badge?.difficulty == BadgeDifficulty.hell;
+    }).length;
+
+    final stats = BadgeStats(
+      totalBadges: BADGE_LIST.length,
+      unlockedBadges: unlockedList.length,
+      weakBadges: weakCount,
+      mediumBadges: mediumCount,
+      strongBadges: strongCount,
+      hellBadges: hellCount,
+      lastUpdated: DateTime.now(),
+    );
+
+    await saveBadgeStats(stats);
+  }
+
   // 전체 데이터 클리어
   static Future<void> clearAll() async {
     await _recipeBox.clear();
@@ -284,6 +464,8 @@ class HiveService {
     await _favoriteRecipesBox.clear();
     await _appSettingsBox.clear();
     await _questBox.clear();
+    await _userBadgeProgressBox.clear();
+    await _badgeStatsBox.clear();
   }
 
   // 마이그레이션용 메서드
