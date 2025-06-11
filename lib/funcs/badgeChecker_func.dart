@@ -77,16 +77,10 @@ class BadgeChecker {
       RecipeStatus recipeStatus,
       ) {
     final now = DateTime.now();
-
-    // 캐시가 유효한 경우 재사용
-    if (_cachedHistoryData != null &&
-        _lastCacheTime != null &&
-        now.difference(_lastCacheTime!) < CACHE_DURATION) {
-      return _cachedHistoryData!;
-    }
-
-    // 새로운 히스토리 데이터 생성
+    
+    // 새로운 히스토리 데이터 강제 생성 (캐시 무시하고 항상 최신 데이터 사용)
     final cookingHistory = userStatus.cookingHistory;
+    print('🔍 BadgeChecker: Getting fresh cooking history - count: ${cookingHistory.length}');
 
     // 레시피별 요리 횟수 계산 (recipeRetry용)
     final Map<String, int> recipeRetryCount = {};
@@ -102,16 +96,15 @@ class BadgeChecker {
       hourlyCount[hour] = (hourlyCount[hour] ?? 0) + 1;
     }
 
-    _cachedHistoryData = {
+    final historyData = {
       'cookingHistory': cookingHistory,
       'recipeRetryCount': recipeRetryCount,
       'hourlyCount': hourlyCount,
       'maxRetryCount': recipeRetryCount.values.isEmpty ? 0 : recipeRetryCount.values.reduce((a, b) => a > b ? a : b),
     };
-    _lastCacheTime = now;
 
-    print('📈 Cache updated: ${cookingHistory.length} histories processed');
-    return _cachedHistoryData!;
+    print('📈 Fresh data generated: ${cookingHistory.length} histories processed');
+    return historyData;
   }
 
   /// 단계별 뱃지의 이전 단계 완료 여부 체크
@@ -244,15 +237,14 @@ class BadgeChecker {
 
   /// 레시피 재도전 횟수 체크
   static int _checkRecipeRetry(Badge badge, List<CookingHistory> history) {
-    // 캐시에서 최대 재시도 횟수 가져오기
-    final cachedData = _cachedHistoryData;
-    if (cachedData == null) {
-      print('⚠️ Cache not available for recipe retry check');
-      return 0;
+    // 실시간으로 재시도 횟수 계산
+    final Map<String, int> recipeRetryCount = {};
+    for (final historyItem in history) {
+      final recipeId = historyItem.recipe.id;
+      recipeRetryCount[recipeId] = (recipeRetryCount[recipeId] ?? 0) + 1;
     }
-
-    final maxRetryCount = cachedData['maxRetryCount'] as int;
-    final recipeRetryCount = cachedData['recipeRetryCount'] as Map<String, int>;
+    
+    final maxRetryCount = recipeRetryCount.values.isEmpty ? 0 : recipeRetryCount.values.reduce((a, b) => a > b ? a : b);
 
     print('🔄 Recipe Retry Max Count: $maxRetryCount');
 
@@ -330,8 +322,8 @@ class BadgeChecker {
       ) {
     final results = <String, int>{};
 
-    // 캐시 미리 생성
-    _getCachedHistoryData(userStatus, recipeStatus);
+    // 캐시 클리어하여 최신 데이터 보장
+    clearCache();
 
     for (final badge in badges) {
       results[badge.id] = calculateBadgeProgress(

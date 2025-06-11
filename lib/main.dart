@@ -309,9 +309,9 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
 
           print("✅ Status initialization wait completed. Starting initial progress update...");
 
-          // 퀘스트와 뱃지 진행도 모두 업데이트 실행
+          // 퀘스트와 뱃지 진행도 모두 업데이트 실행 (초기화 시에는 알림 억제)
           await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
-          await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
+          await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus, suppressNotifications: true);
 
         } catch (e) {
           print("❌ Error in initial progress setup: $e");

@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,16 @@ class RecipeCardWidget extends StatelessWidget {
   final FocusNode node;
 
   const RecipeCardWidget({super.key, required this.recipe, required this.node});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RecipeCardWidget &&
+          runtimeType == other.runtimeType &&
+          recipe.id == other.recipe.id;
+
+  @override
+  int get hashCode => recipe.id.hashCode;
 
   Color _getDifficultyColor(String difficulty) {
     switch (difficulty) {
@@ -71,27 +82,39 @@ class RecipeCardWidget extends StatelessWidget {
                             scale: isTablet(context) ? 1 : 0.5,
                             child: CachedNetworkImage(
                               imageUrl: recipe.thumbnail,
-                              memCacheWidth: 800,
-                              memCacheHeight: 600,
-                              maxWidthDiskCache: 800,
-                              maxHeightDiskCache: 600,
-                              fadeOutDuration: Duration(milliseconds: 300),
+                              memCacheWidth: 400,
+                              memCacheHeight: 300,
+                              maxWidthDiskCache: 400,
+                              maxHeightDiskCache: 300,
+                              fadeInDuration: Duration(milliseconds: 200),
+                              fadeOutDuration: Duration(milliseconds: 200),
                               filterQuality: FilterQuality.low,
                               fit: BoxFit.cover,
                               alignment: Alignment.topCenter,
-                              placeholder: (context, url) => Center(
-                                child: SizedBox(
-                                  width: 48.w,
-                                  height: 48.w,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
+                              cacheManager: DefaultCacheManager(),
+                              placeholder: (context, url) => Container(
+                                color: Color(0xFFF5F5F5),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 24.w,
+                                    height: 24.w,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFFFF8B27),
+                                    ),
                                   ),
                                 ),
                               ),
-                              errorWidget: (context, url, error) {
-                                print('Image Error: $error');
-                                return Center(child: Icon(Icons.error));
-                              },
+                              errorWidget: (context, url, error) => Container(
+                                color: Color(0xFFF5F5F5),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.image_not_supported,
+                                    color: Colors.grey,
+                                    size: 32.w,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),

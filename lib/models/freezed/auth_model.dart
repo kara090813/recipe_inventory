@@ -16,6 +16,8 @@ class UserProfile with _$UserProfile {
     @HiveField(5) @Default(0) int points,           // 포인트 (상점 화폐)
     @HiveField(6) @Default(0) int experience,       // 총 경험치
     @HiveField(7) @Default(1) int level,            // 현재 레벨
+    @HiveField(8) @Default(false) bool isUsingBadgeProfile,  // 뱃지 프로필 사용 여부
+    @HiveField(9) String? mainBadgeId,              // 메인 뱃지 ID
   }) = _UserProfile;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => _$UserProfileFromJson(json);

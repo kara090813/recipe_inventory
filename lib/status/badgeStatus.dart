@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/_models.dart';
 import '../data/badgeData.dart';
 import '../funcs/badgeChecker_func.dart';
 import '../services/hive_service.dart';
+import '../widgets/_widgets.dart';
 import '_status.dart';
 
 class BadgeStatus extends ChangeNotifier {
@@ -13,16 +16,32 @@ class BadgeStatus extends ChangeNotifier {
 
   // 뱃지 업데이트를 위한 콜백 함수 (다른 Status들로부터 받음)
   Future<void> Function()? _badgeUpdateCallback;
+  
+  // 뱃지 팝업 관련 필드
+  List<Badge> _pendingBadgeNotifications = [];
+  bool _isShowingBadgePopup = false;
+  BuildContext? _currentContext;
+  bool _isMigrationCompleted = false;
 
   // Getters
   List<Badge> get badges => List.unmodifiable(_badges);
   List<UserBadgeProgress> get userBadgeProgressList => List.unmodifiable(_userBadgeProgressList);
   UserBadgeProgress? get mainBadge => _mainBadge;
   bool get isLoading => _isLoading;
+  
+  // 편의 Getters
+  List<UserBadgeProgress> get unlockedBadges => 
+    _userBadgeProgressList.where((badge) => badge.isUnlocked).toList();
+  
+  List<UserBadgeProgress> get lockedBadges => 
+    _userBadgeProgressList.where((badge) => !badge.isUnlocked).toList();
 
-  // 생성자에서 초기화
+  // 생성자에서 초기화 지연
   BadgeStatus() {
-    _initializeBadges();
+    // 다음 프레임에서 초기화하여 Hive가 완전히 준비된 후 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeBadges();
+    });
   }
 
   /// 뱃지 업데이트 콜백 설정 (다른 Status들로부터)
@@ -70,6 +89,30 @@ class BadgeStatus extends ChangeNotifier {
   Future<void> _initializeDefaultProgressForExistingUsers() async {
     bool hasChanges = false;
 
+    // 기존 사용자 체크 - 마이그레이션 서비스에서 설정한 플래그 확인
+    bool isExistingUser = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      isExistingUser = prefs.getBool('is_legacy_user') ?? false;
+      
+      // 추가적인 체크 (마이그레이션이 완료되지 않은 경우)
+      if (!isExistingUser) {
+        final userProfile = HiveService.getUserProfile();
+        final cookingHistory = HiveService.getCookingHistory();
+        isExistingUser = userProfile != null || cookingHistory.isNotEmpty;
+      }
+    } catch (e) {
+      print("⚠️ Legacy user 체크 중 오류: $e");
+      // 폴백: Hive 데이터로 판단
+      final userProfile = HiveService.getUserProfile();
+      final cookingHistory = HiveService.getCookingHistory();
+      isExistingUser = userProfile != null || cookingHistory.isNotEmpty;
+    }
+    
+    if (isExistingUser) {
+      print("🔄 기존 사용자 감지: 뱃지 진행도 초기화 중...");
+    }
+
     for (final badge in _badges) {
       // 진행도가 없는 뱃지들에 대해 기본값 생성
       final existingProgress = _userBadgeProgressList
@@ -92,7 +135,19 @@ class BadgeStatus extends ChangeNotifier {
     // 변경사항이 있으면 저장
     if (hasChanges) {
       await HiveService.saveUserBadgeProgress(_userBadgeProgressList);
-      print("✅ Initialized default progress for ${_userBadgeProgressList.length} badges");
+      print("✅ Initialized default progress for ${_userBadgeProgressList.length} badges (기존 사용자: $isExistingUser)");
+      
+      // 기존 사용자의 경우 즉시 뱃지 진행도 업데이트 수행 (알림 억제)
+      if (isExistingUser && _badgeUpdateCallback != null) {
+        print("🔄 기존 사용자 뱃지 진행도 업데이트 실행 (알림 억제)...");
+        try {
+          // 기존 사용자는 알림을 표시하지 않음
+          await _performMigrationBadgeUpdate();
+          print("✅ 기존 사용자 뱃지 진행도 업데이트 완료 (알림 억제)");
+        } catch (e) {
+          print("💥 기존 사용자 뱃지 진행도 업데이트 실패: $e");
+        }
+      }
     }
   }
 
@@ -101,15 +156,19 @@ class BadgeStatus extends ChangeNotifier {
       UserStatus userStatus,
       FoodStatus foodStatus,
       RecipeStatus recipeStatus,
+      {bool suppressNotifications = false}
       ) async {
     if (_isLoading) return;
 
     try {
-      print("🔄 Updating badge progress...");
+      print("🔄 Updating badge progress... (suppressNotifications: $suppressNotifications)");
 
       bool hasChanges = false;
       List<UserBadgeProgress> newlyUnlockedBadges = [];
 
+      // BadgeChecker 캐시 클리어하여 최신 데이터 보장
+      BadgeChecker.clearCache();
+      
       // 배치로 모든 뱃지 진행도 계산 (성능 최적화)
       final progressResults = BadgeChecker.calculateMultipleBadgeProgress(
         _badges,
@@ -125,18 +184,25 @@ class BadgeStatus extends ChangeNotifier {
 
         if (badge == null) continue;
 
-        // 이미 완료된 뱃지는 건너뛰기
-        if (userProgress.isUnlocked) continue;
+        // 이미 완료된 뱃지는 건너뛰기 (단, 디버그 로그는 출력)
+        if (userProgress.isUnlocked) {
+          print('⭐ Badge "${badge.name}" already unlocked, skipping...');
+          continue;
+        }
+        
+        print('🔍 Checking badge "${badge.name}" - current: ${userProgress.currentProgress}, unlocked: ${userProgress.isUnlocked}');
 
         // BadgeChecker로 현재 진행도 계산
         final newProgress = progressResults[badge.id] ?? 0;
         final targetCount = _getTargetCount(badge);
 
-        // 진행도가 변경되었는지 확인
-        if (newProgress != userProgress.currentProgress) {
-          print('📈 Badge "${badge.name}" progress: ${userProgress.currentProgress} -> $newProgress');
-
-          final isNowCompleted = newProgress >= targetCount;
+        // 진행도가 변경되었거나, 조건을 만족하지만 unlock되지 않은 경우 처리
+        final isNowCompleted = newProgress >= targetCount;
+        final needsUpdate = newProgress != userProgress.currentProgress || 
+                           (isNowCompleted && !userProgress.isUnlocked);
+        
+        if (needsUpdate) {
+          print('📈 Badge "${badge.name}" progress: ${userProgress.currentProgress} -> $newProgress (completed: $isNowCompleted, unlocked: ${userProgress.isUnlocked})');
 
           // 뱃지 진행도 업데이트
           final updatedProgress = userProgress.copyWith(
@@ -158,6 +224,13 @@ class BadgeStatus extends ChangeNotifier {
             if (_mainBadge == null) {
               await _setMainBadgeInternal(badge.id);
             }
+            
+            // 즉시 알림 표시 (개별적으로) - suppressNotifications가 false이고 마이그레이션이 완료된 후에만
+            if (!suppressNotifications && (_isMigrationCompleted || _isNewUser())) {
+              await _showBadgeUnlockedNotification(updatedProgress);
+            } else {
+              print('🔕 Badge notification suppressed: migration=${!_isMigrationCompleted}, suppress=${suppressNotifications}, badge=${badge.name}');
+            }
           }
 
           // Hive에 개별 뱃지 진행도 업데이트
@@ -176,11 +249,6 @@ class BadgeStatus extends ChangeNotifier {
 
         // 뱃지 통계 업데이트
         await HiveService.updateBadgeStats();
-
-        // 새로 획득한 뱃지들에 대해 알림 표시
-        for (final unlockedBadge in newlyUnlockedBadges) {
-          await _showBadgeUnlockedNotification(unlockedBadge);
-        }
       }
 
       print("✅ Badge progress update completed. Changes: $hasChanges");
@@ -316,10 +384,6 @@ class BadgeStatus extends ChangeNotifier {
     }
   }
 
-  /// 잠금 해제된 뱃지 목록
-  List<UserBadgeProgress> get unlockedBadges =>
-      _userBadgeProgressList.where((p) => p.isUnlocked).toList();
-
   /// 진행 중인 뱃지 목록
   List<UserBadgeProgress> get inProgressBadges =>
       _userBadgeProgressList.where((p) => !p.isUnlocked && p.currentProgress > 0).toList();
@@ -361,14 +425,22 @@ class BadgeStatus extends ChangeNotifier {
       final badge = getBadgeById(unlockedBadge.badgeId);
       if (badge == null) return;
 
-      // 간단한 콘솔 알림 (실제 구현에서는 UI 알림이나 토스트 메시지 사용)
+      // 콘솔 로그
       print('🎉 뱃지 획득 알림: ${badge.name}');
       print('   설명: ${badge.description}');
       print('   카테고리: ${badge.category.displayName}');
       print('   난이도: ${badge.difficulty.displayName}');
 
-      // 필요하다면 NotificationService를 사용하여 실제 알림 구현
-      // await NotificationService().showBadgeUnlockedNotification(badge);
+      // 새로 획득한 뱃지를 대기열에 추가 (중복 방지)
+      if (!_pendingBadgeNotifications.any((b) => b.id == badge.id)) {
+        _pendingBadgeNotifications.add(badge);
+        print('🔔 Badge "${badge.name}" added to notification queue');
+      } else {
+        print('⚠️ Badge "${badge.name}" already in notification queue, skipping...');
+      }
+      
+      // 현재 화면에서 팝업을 표시할 수 있으면 즉시 표시
+      _tryShowNextBadgePopup();
 
     } catch (e) {
       print('💥 Error showing badge unlocked notification: $e');
@@ -467,5 +539,116 @@ class BadgeStatus extends ChangeNotifier {
   void clearBadgeCache() {
     BadgeChecker.clearCache();
     print('🗑️ Badge checker cache cleared');
+  }
+  
+  // =============== 뱃지 팝업 관련 메서드 ===============
+  
+  /// 현재 컨텍스트 설정 (화면에서 호출)
+  void setCurrentContext(BuildContext? context) {
+    _currentContext = context;
+  }
+  
+  /// 다음 뱃지 팝업 표시 시도
+  void _tryShowNextBadgePopup() {
+    if (_isShowingBadgePopup || _pendingBadgeNotifications.isEmpty) {
+      return;
+    }
+    
+    // 컨텍스트가 없으면 잠깐 후 다시 시도
+    if (_currentContext == null) {
+      print('⏰ No context available for badge popup, retrying in 1 second...');
+      Future.delayed(const Duration(seconds: 1), () {
+        _tryShowNextBadgePopup();
+      });
+      return;
+    }
+    
+    _showBadgePopup(_pendingBadgeNotifications.removeAt(0));
+  }
+  
+  /// 뱃지 팝업 표시
+  Future<void> _showBadgePopup(Badge badge) async {
+    if (_currentContext == null) return;
+    
+    _isShowingBadgePopup = true;
+    
+    try {
+      await showBadgeUnlockedDialog(
+        context: _currentContext!,
+        badge: badge,
+        onConfirm: () {
+          _isShowingBadgePopup = false;
+          // 다음 대기 중인 뱃지가 있으면 연속으로 표시
+          Future.delayed(const Duration(milliseconds: 300), () {
+            _tryShowNextBadgePopup();
+          });
+        },
+      );
+    } catch (e) {
+      print('💥 Error showing badge popup: $e');
+      _isShowingBadgePopup = false;
+      // 에러 발생 시에도 다음 뱃지 시도
+      _tryShowNextBadgePopup();
+    }
+  }
+  
+  /// 수동으로 팝업 표시 (외부에서 호출 가능)
+  void showPendingBadgePopups() {
+    _tryShowNextBadgePopup();
+  }
+  
+  /// 대기 중인 팝업 개수
+  int get pendingBadgeCount => _pendingBadgeNotifications.length;
+  
+  /// 모든 대기 중인 팝업 클리어
+  void clearPendingBadgePopups() {
+    _pendingBadgeNotifications.clear();
+    print('🗑️ All pending badge popups cleared');
+  }
+  
+  /// 마이그레이션용 뱃지 업데이트 (알림 억제)
+  Future<void> _performMigrationBadgeUpdate() async {
+    if (_badgeUpdateCallback == null) return;
+    
+    try {
+      // 기존 콜백은 suppressNotifications 매개변수를 지원하지 않으므로
+      // 임시로 팝업 대기열을 클리어하고 알림을 억제하는 플래그를 설정
+      final originalNotifications = List<Badge>.from(_pendingBadgeNotifications);
+      _pendingBadgeNotifications.clear();
+      
+      // 일시적으로 컨텍스트를 null로 설정하여 팝업이 표시되지 않도록 함
+      final originalContext = _currentContext;
+      _currentContext = null;
+      
+      // 뱃지 업데이트 실행
+      await _badgeUpdateCallback!();
+      
+      // 원래 컨텍스트 복원 (새로운 알림은 허용)
+      _currentContext = originalContext;
+      
+      // 마이그레이션 중 생성된 알림들은 제거 (기존 획득 뱃지들)
+      _pendingBadgeNotifications.clear();
+      
+      // 마이그레이션 완료 플래그 설정
+      _isMigrationCompleted = true;
+      
+      print('🔕 Migration badge update completed with suppressed notifications');
+      
+    } catch (e) {
+      print('💥 Error in migration badge update: $e');
+      // 에러 발생 시 컨텍스트 복원
+      _currentContext = _currentContext;
+    }
+  }
+  
+  /// 새 사용자인지 확인 (요리 히스토리가 거의 없는 경우)
+  bool _isNewUser() {
+    try {
+      final cookingHistoryCount = HiveService.getCookingHistory().length;
+      return cookingHistoryCount <= 1; // 첫 요리 또는 아직 요리하지 않은 사용자
+    } catch (e) {
+      print('⚠️ Error checking if new user: $e');
+      return true; // 에러 시 새 사용자로 간주
+    }
   }
 }

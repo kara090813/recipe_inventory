@@ -6,6 +6,7 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../funcs/_funcs.dart';
 import '../models/_models.dart';
@@ -19,10 +20,13 @@ class RecommendedRecipeComponent extends StatefulWidget {
   _RecommendedRecipeComponentState createState() => _RecommendedRecipeComponentState();
 }
 
-class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent> {
+class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent> with AutomaticKeepAliveClientMixin {
   late CardSwiperController _cardSwiperController;
   List<Recipe> _recipeItems = [];
   int _recipeCardsSinceLastAd = 0;
+  
+  @override
+  bool get wantKeepAlive => true;
 
   // 광고 관련 상수
   static const int TARGET_AD_COUNT = 3; // 유지하려는 광고 개수
@@ -128,6 +132,7 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Stack(
       children: [
         Column(
@@ -136,29 +141,35 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
             SizedBox(height: 10.h),
             DottedBarWidget(),
             SizedBox(height: 26.h),
-            Consumer<RecipeStatus>(
-              builder: (context, recipeStatus, child) {
-                if (recipeStatus.isLoading) {
-                  return const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                if (_recipeItems.isEmpty) {
-                  _recipeItems = RecipeRecommendationService().getRecommendedRecipes(
-                    Provider.of<UserStatus>(context, listen: false),
-                    Provider.of<FoodStatus>(context, listen: false),
-                    recipeStatus,
-                  );
-                  if (_recipeItems.isEmpty) {
-                    return const Expanded(
-                      child: Center(child: Text('레시피가 없습니다')),
-                    );
+            Expanded(
+              child: Selector3<RecipeStatus, UserStatus, FoodStatus, ({bool isLoading, int recipesLength, int userHash, int foodHash})>(
+                selector: (context, recipeStatus, userStatus, foodStatus) => (
+                  isLoading: recipeStatus.isLoading,
+                  recipesLength: recipeStatus.recipes.length,
+                  userHash: userStatus.hashCode,
+                  foodHash: foodStatus.hashCode,
+                ),
+                builder: (context, data, child) {
+                  if (data.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
                   }
-                }
 
-                return Expanded(
-                  child: CardSwiper(
+                  if (_recipeItems.isEmpty) {
+                    final recipeStatus = context.read<RecipeStatus>();
+                    final userStatus = context.read<UserStatus>();
+                    final foodStatus = context.read<FoodStatus>();
+                    
+                    _recipeItems = RecipeRecommendationService().getRecommendedRecipes(
+                      userStatus,
+                      foodStatus,
+                      recipeStatus,
+                    );
+                    if (_recipeItems.isEmpty) {
+                      return const Center(child: Text('레시피가 없습니다'));
+                    }
+                  }
+
+                  return CardSwiper(
                     controller: _cardSwiperController,
                     cardsCount: _recipeItems.length,
                     onSwipe: _onSwipe,
@@ -168,15 +179,16 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
                     cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
                       final recipe = _recipeItems[index];
                       return RecipeCard(
+                        key: ValueKey(recipe.id),
                         recipe: recipe,
                         onPrevious: () => _cardSwiperController.undo(),
                         onNext: () => _cardSwiperController.swipe(CardSwiperDirection.left),
                         onLike: () => _cardSwiperController.swipe(CardSwiperDirection.right),
                       );
                     },
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
             SizedBox(height: 40.h),
           ],
@@ -194,10 +206,20 @@ class _RecommendedRecipeComponentState extends State<RecommendedRecipeComponent>
 
   @override
   void dispose() {
+    // 광고 정리
     for (final ad in _readyAds) {
       ad.dispose();
     }
     _currentAd?.dispose();
+    
+    // 컨트롤러 정리
+    _cardSwiperController.dispose();
+    
+    // 캐시 정리 (메모리 절약)
+    if (_recipeItems.length > 50) {
+      _recipeItems.clear();
+    }
+    
     super.dispose();
   }
 }
@@ -357,9 +379,35 @@ class RecipeCard extends StatelessWidget {
             flex: 1,
             child: ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(10.r)),
-              child: Image.network(
-                recipe.thumbnail,
-                fit: BoxFit.fitWidth,
+              child: CachedNetworkImage(
+                imageUrl: recipe.thumbnail,
+                memCacheWidth: 600,
+                memCacheHeight: 400,
+                maxWidthDiskCache: 600,
+                maxHeightDiskCache: 400,
+                fadeInDuration: Duration(milliseconds: 200),
+                fadeOutDuration: Duration(milliseconds: 200),
+                filterQuality: FilterQuality.low,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Color(0xFFF5F5F5),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFF8B27),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Color(0xFFF5F5F5),
+                  child: Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: Colors.grey,
+                      size: 40,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -422,10 +470,11 @@ class RecipeCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: Consumer<RecipeStatus>(
-                              builder: (context, recipeStatus, child) {
+                            child: Selector<RecipeStatus, bool>(
+                              selector: (context, recipeStatus) => recipeStatus.isFavorite(recipe.id),
+                              builder: (context, isFavorite, child) {
                                 return Icon(
-                                  recipeStatus.isFavorite(recipe.id)
+                                  isFavorite
                                       ? Icons.favorite
                                       : Icons.favorite_border,
                                   color: const Color(0xFFEC3030),
@@ -472,8 +521,9 @@ class RecipeCard extends StatelessWidget {
                   SizedBox(
                     height: 20.h,
                   ),
-                  Consumer<FoodStatus>(
-                    builder: (context, foodStatus, child) {
+                  Builder(
+                    builder: (context) {
+                      final foodStatus = context.read<FoodStatus>();
                       final matchRate = foodStatus.calculateMatchRate(recipe.ingredients);
                       return Center(child: MatchRateIndicator(matchRate: matchRate));
                     },
@@ -506,36 +556,34 @@ class RecipeCard extends StatelessWidget {
                       SizedBox(
                         width: isTablet(context) ? 10.w :  20.w,
                       ),
-                      Consumer<UserStatus>(builder: (context, userStatus, child) {
-                        return GestureDetector(
-                          onTap: () {
-                            userStatus.startCooking(recipe);
-                            context.push('/recipeInfo', extra: recipe);
-                          },
-                          child: Container(
-                            width: isTablet(context) ? 60.w : 70.w,
-                            height: isTablet(context) ? 60.w : 70.w,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF8B27),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  spreadRadius: 0,
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: SizedBox(
-                                  width: isTablet(context) ? 46.w : 56.w,
-                                  child: Image.asset('assets/imgs/items/cookStart'
-                                      '.png')),
-                            ),
+                      GestureDetector(
+                        onTap: () {
+                          context.read<UserStatus>().startCooking(recipe);
+                          context.push('/recipeInfo', extra: recipe);
+                        },
+                        child: Container(
+                          width: isTablet(context) ? 60.w : 70.w,
+                          height: isTablet(context) ? 60.w : 70.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF8B27),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                spreadRadius: 0,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                        );
-                      }),
+                          child: Center(
+                            child: SizedBox(
+                                width: isTablet(context) ? 46.w : 56.w,
+                                child: Image.asset('assets/imgs/items/cookStart'
+                                    '.png')),
+                          ),
+                        ),
+                      ),
                       SizedBox(
                         width: isTablet(context) ? 10.w : 20.w,
                       ),

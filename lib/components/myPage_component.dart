@@ -82,7 +82,7 @@ class MyPageComponent extends StatelessWidget {
     );
   }
 
-  // 🆕 강화된 프로필 섹션 (레벨 + XP + 포인트)
+  // 🆕 강화된 프로필 섹션 (레벨 + XP + 포인트 + 뱃지)
   Widget _buildEnhancedProfile(
       BuildContext context,
       UserStatus userStatus,
@@ -114,14 +114,30 @@ class MyPageComponent extends StatelessWidget {
               // 프로필 이미지 + 레벨 뱃지
               Stack(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Color(0xFFBB885E), width: 3),
+                  GestureDetector(
+                    onTap: () {
+                      // 프로필 이미지 클릭 시 뱃지 선택 다이얼로그 표시
+                      _showProfileBadgeDialog(context, userStatus);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: userStatus.userProfile?.isUsingBadgeProfile == true 
+                            ? Color(0xFFFFB347) 
+                            : Color(0xFFBB885E), 
+                          width: 3
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          userStatus.getDisplayProfileImage(), 
+                          width: 80.w, 
+                          height: 80.w, 
+                          fit: BoxFit.cover
+                        ),
+                      ),
                     ),
-                    child: userStatus.profileImage != null
-                        ? ClipOval(child: Image.network(userStatus.profileImage!, width: 80.w, height: 80.w, fit: BoxFit.cover))
-                        : ClipOval(child: Image.asset('assets/imgs/items/baseProfile.png', width: 80.w)),
                   ),
                   Positioned(
                     bottom: -5,
@@ -136,6 +152,21 @@ class MyPageComponent extends StatelessWidget {
                       child: Text('Lv.$level', style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold)),
                     ),
                   ),
+                  // 프로필 타입 표시 아이콘
+                  if (userStatus.userProfile?.isUsingBadgeProfile == true)
+                    Positioned(
+                      top: -5,
+                      right: -5,
+                      child: Container(
+                        padding: EdgeInsets.all(4.w),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFFB347),
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(color: Color(0xFFFF8B27).withOpacity(0.3), blurRadius: 4, offset: Offset(0, 2))],
+                        ),
+                        child: Icon(Icons.star, size: 12.w, color: Colors.white),
+                      ),
+                    ),
                 ],
               ),
 
@@ -148,7 +179,16 @@ class MyPageComponent extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(userStatus.nickname, style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold)),
+                        Expanded(
+                          child: Text(
+                            userStatus.nickname,
+                            style: TextStyle(
+                              fontSize: userStatus.nickname.length > 8 ? 16.sp : 20.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         SizedBox(width: 8.w),
                         OutlinedButton(
                           onPressed: () => context.push('/profileSet'),
@@ -162,7 +202,7 @@ class MyPageComponent extends StatelessWidget {
                       ],
                     ),
 
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 2.h),
 
                     // 포인트 표시
                     Row(
@@ -248,12 +288,420 @@ class MyPageComponent extends StatelessWidget {
               ),
             ],
           ),
+          
+          // 뱃지 정보 섹션 추가
+          Consumer<BadgeStatus>(
+            builder: (context, badgeStatus, child) {
+              final unlockedCount = badgeStatus.unlockedBadges.length;
+              final totalCount = badgeStatus.badges.length;
+              final mainBadgeId = userStatus.userProfile?.mainBadgeId;
+              final mainBadge = mainBadgeId != null ? badgeStatus.getBadgeById(mainBadgeId) : null;
+              
+              return Column(
+                children: [
+                  SizedBox(height: 16.h),
+                  
+                  // 구분선
+                  Container(
+                    height: 1,
+                    color: Color(0xFFBB885E).withOpacity(0.3),
+                  ),
+                  
+                  SizedBox(height: 12.h),
+                  
+                  // 뱃지 정보
+                  Row(
+                    children: [
+                      // 뱃지 획득 현황
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '뱃지 컬렉션',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Color(0xFF999999),
+                              ),
+                            ),
+                            SizedBox(height: 4.h),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.emoji_events,
+                                  size: 16.w,
+                                  color: Color(0xFFFFB347),
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  '$unlockedCount/$totalCount개 획득',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF7D674B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // 메인 뱃지 정보
+                      if (mainBadge != null) ...[
+                        Container(
+                          width: 1,
+                          height: 40.h,
+                          color: Color(0xFFBB885E).withOpacity(0.3),
+                          margin: EdgeInsets.symmetric(horizontal: 16.w),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '메인 뱃지',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: Color(0xFF999999),
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Row(
+                                children: [
+                                  Image.asset(
+                                    mainBadge.imagePath,
+                                    width: 20.w,
+                                    height: 20.w,
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Expanded(
+                                    child: Text(
+                                      mainBadge.name,
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7D674B),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  
+                  SizedBox(height: 12.h),
+                  
+                  // 뱃지 관리 버튼
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push('/badge'),
+                          icon: Icon(Icons.collections_bookmark, size: 14.w),
+                          label: Text('뱃지 컬렉션'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Color(0xFF7D674B),
+                            side: BorderSide(color: Color(0xFF7D674B)),
+                            padding: EdgeInsets.symmetric(vertical: 8.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showProfileBadgeDialog(context, userStatus),
+                          icon: Icon(
+                            mainBadge != null ? Icons.swap_horiz : Icons.star,
+                            size: 14.w,
+                          ),
+                          label: Text(mainBadge != null ? '뱃지 변경' : '뱃지 설정'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Color(0xFFFFB347),
+                            side: BorderSide(color: Color(0xFFFFB347)),
+                            padding: EdgeInsets.symmetric(vertical: 8.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  // 퀘스트 및 뱃지 섹션 (기존 코드 유지)
+  // 프로필 뱃지 선택 다이얼로그
+  void _showProfileBadgeDialog(BuildContext context, UserStatus userStatus) {
+    final badgeStatus = context.read<BadgeStatus>();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          title: Text(
+            '프로필 설정',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF7D674B),
+            ),
+          ),
+          content: Container(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 현재 프로필 정보
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFFF3E6),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Color(0xFFBB885E)),
+                  ),
+                  child: Row(
+                    children: [
+                      ClipOval(
+                        child: Image.asset(
+                          userStatus.getDisplayProfileImage(),
+                          width: 50.w,
+                          height: 50.w,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '현재 프로필',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Color(0xFF999999),
+                              ),
+                            ),
+                            Text(
+                              userStatus.getProfileType(),
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF7D674B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                SizedBox(height: 16.h),
+                
+                // 베이스 프로필로 변경 버튼
+                if (userStatus.userProfile?.isUsingBadgeProfile == true)
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      await userStatus.toggleBadgeProfile(null);
+                      Navigator.of(context).pop();
+                    },
+                    icon: Icon(Icons.person, size: 16.w),
+                    label: Text('베이스 프로필로 변경'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFBB885E),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                    ),
+                  ),
+                
+                SizedBox(height: 12.h),
+                
+                // 뱃지 프로필 선택 버튼
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showBadgeSelectionDialog(context, userStatus, badgeStatus);
+                  },
+                  icon: Icon(Icons.star, size: 16.w),
+                  label: Text('뱃지 프로필 선택'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFFFB347),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                '닫기',
+                style: TextStyle(color: Color(0xFF7D674B)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 뱃지 선택 다이얼로그
+  void _showBadgeSelectionDialog(BuildContext context, UserStatus userStatus, BadgeStatus badgeStatus) {
+    // 획득한 뱃지만 필터링
+    final userBadges = badgeStatus.unlockedBadges;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          title: Text(
+            '뱃지 프로필 선택',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF7D674B),
+            ),
+          ),
+          content: Container(
+            width: double.maxFinite,
+            height: 400.h,
+            child: userBadges.isEmpty
+                ? Center(
+                    child: Text(
+                      '획득한 뱃지가 없습니다.',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: Color(0xFF999999),
+                      ),
+                    ),
+                  )
+                : GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.8,
+                      crossAxisSpacing: 12.w,
+                      mainAxisSpacing: 12.h,
+                    ),
+                    itemCount: userBadges.length,
+                    itemBuilder: (context, index) {
+                      final userBadge = userBadges[index];
+                      final badge = badgeStatus.getBadgeById(userBadge.badgeId);
+                      if (badge == null) return Container();
+
+                      final isSelected = userStatus.userProfile?.mainBadgeId == badge.id;
+
+                      return GestureDetector(
+                        onTap: () async {
+                          await userStatus.toggleBadgeProfile(badge.id);
+                          Navigator.of(context).pop();
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected ? Color(0xFFFFE0B2) : Colors.white,
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color: isSelected ? Color(0xFFFFB347) : Color(0xFFE0E0E0),
+                              width: isSelected ? 2 : 1,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: Color(0xFFFFB347).withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                badge.imagePath,
+                                width: 50.w,
+                                height: 50.w,
+                                fit: BoxFit.contain,
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                badge.name,
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? Color(0xFF7D674B) : Color(0xFF666666),
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (isSelected)
+                                Container(
+                                  margin: EdgeInsets.only(top: 4.h),
+                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFFFFB347),
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  child: Text(
+                                    '사용중',
+                                    style: TextStyle(
+                                      fontSize: 8.sp,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                '취소',
+                style: TextStyle(color: Color(0xFF7D674B)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 퀘스트 및 뱃지 섹션 (뱃지 카드 업데이트)
   Widget _buildQuestAndBadgeSection(BuildContext context) {
     return Column(
       children: [
@@ -317,32 +765,51 @@ class MyPageComponent extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 4.h),
-                        Text(
-                          "3개의 보상을 수령할 수 있어요!",
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Color(0xFF8D6E63),
-                            fontFamily: 'Mapo',
-                          ),
+                        Consumer<QuestStatus>(
+                          builder: (context, questStatus, child) {
+                            final claimableCount = questStatus.quests
+                                .where((q) => q.isCompleted && !q.isRewardReceived)
+                                .length;
+                            return Text(
+                              claimableCount > 0
+                                  ? "$claimableCount개의 보상을 수령할 수 있어요!"
+                                  : "새로운 퀘스트에 도전하세요!",
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Color(0xFF8D6E63),
+                                fontFamily: 'Mapo',
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF8B27),
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                    child: Text(
-                      '3',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Mapo',
-                      ),
-                    ),
+                  Consumer<QuestStatus>(
+                    builder: (context, questStatus, child) {
+                      final claimableCount = questStatus.quests
+                          .where((q) => q.isCompleted && !q.isRewardReceived)
+                          .length;
+                      if (claimableCount > 0) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFF8B27),
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Text(
+                            '$claimableCount',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Mapo',
+                            ),
+                          ),
+                        );
+                      }
+                      return Container();
+                    },
                   ),
                 ],
               ),
@@ -396,18 +863,31 @@ class MyPageComponent extends StatelessWidget {
                           child: Text('⭐', style: TextStyle(fontSize: 22.sp)),
                         ),
                       ),
-                      Positioned(
-                        top: -2,
-                        right: -2,
-                        child: Container(
-                          width: 12.w,
-                          height: 12.w,
-                          decoration: BoxDecoration(
-                            color: Color(0xFFFF3333),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1),
-                          ),
-                        ),
+                      Consumer<BadgeStatus>(
+                        builder: (context, badgeStatus, child) {
+                          // 최근 획득한 뱃지가 있는지 확인 (예: 7일 이내)
+                          final recentBadges = badgeStatus.unlockedBadges
+                              .where((badge) => badge.unlockedAt != null &&
+                                  DateTime.now().difference(badge.unlockedAt!).inDays <= 7)
+                              .toList();
+                          
+                          if (recentBadges.isNotEmpty) {
+                            return Positioned(
+                              top: -2,
+                              right: -2,
+                              child: Container(
+                                width: 12.w,
+                                height: 12.w,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFFF3333),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1),
+                                ),
+                              ),
+                            );
+                          }
+                          return Container();
+                        },
                       ),
                     ],
                   ),
@@ -426,25 +906,42 @@ class MyPageComponent extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 4.h),
-                        Text(
-                          '새로운 뱃지를 획득했어요!',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Color(0xFF8D6E63),
-                            fontFamily: 'Mapo',
-                          ),
+                        Consumer<BadgeStatus>(
+                          builder: (context, badgeStatus, child) {
+                            final recentBadges = badgeStatus.unlockedBadges
+                                .where((badge) => badge.unlockedAt != null &&
+                                    DateTime.now().difference(badge.unlockedAt!).inDays <= 7)
+                                .toList();
+                            
+                            return Text(
+                              recentBadges.isNotEmpty
+                                  ? '새로운 뱃지를 획득했어요!'
+                                  : '다양한 뱃지를 모아보세요!',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Color(0xFF8D6E63),
+                                fontFamily: 'Mapo',
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
-                  Text(
-                    '15/30',
-                    style: TextStyle(
-                      color: Color(0xFF7D674B),
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Mapo',
-                    ),
+                  Consumer<BadgeStatus>(
+                    builder: (context, badgeStatus, child) {
+                      final unlockedCount = badgeStatus.unlockedBadges.length;
+                      final totalCount = badgeStatus.badges.length;
+                      return Text(
+                        '$unlockedCount/$totalCount',
+                        style: TextStyle(
+                          color: Color(0xFF7D674B),
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Mapo',
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

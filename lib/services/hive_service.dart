@@ -88,7 +88,16 @@ class HiveService {
         await Hive.openBox<CookingHistory>(COOKING_HISTORY_BOX);
     _ongoingCookingBox =
         await Hive.openBox<OngoingCooking>(ONGOING_COOKING_BOX);
-    _userProfileBox = await Hive.openBox<UserProfile>(USER_PROFILE_BOX);
+    
+    // UserProfile 박스 처리 - 스키마 변경으로 인한 오류 처리
+    try {
+      _userProfileBox = await Hive.openBox<UserProfile>(USER_PROFILE_BOX);
+    } catch (e) {
+      print('UserProfile 박스 열기 실패, 삭제 후 재생성: $e');
+      await Hive.deleteBoxFromDisk(USER_PROFILE_BOX);
+      _userProfileBox = await Hive.openBox<UserProfile>(USER_PROFILE_BOX);
+    }
+    
     _favoriteRecipesBox = await Hive.openBox<String>(FAVORITE_RECIPES_BOX);
     _appSettingsBox = await Hive.openBox(APP_SETTINGS_BOX);
     _questBox = await Hive.openBox<Quest>(QUEST_BOX);

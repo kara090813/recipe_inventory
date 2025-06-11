@@ -34,9 +34,13 @@ class _SearchRecipeComponentState extends State<SearchRecipeComponent> {
 
   @override
   void dispose() {
+    // 컨트롤러 정리
     searchController.dispose();
     searchFocusNode.dispose();
-    searchController.clear();
+    
+    // 추천 서비스 캐시 정리 (메모리 절약)
+    RecipeRecommendationService.reduceCacheSize();
+    
     super.dispose();
   }
 
@@ -49,11 +53,20 @@ class _SearchRecipeComponentState extends State<SearchRecipeComponent> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<FilterStatus, RecipeStatus>(
-      builder: (context, filterStatus, recipeStatus, child) {
-        if (recipeStatus.isLoading) {
+    return Selector2<FilterStatus, RecipeStatus, ({bool isLoading, String searchQuery, List<Recipe> recipes, Map<String, dynamic> filters})>(
+      selector: (context, filterStatus, recipeStatus) => (
+        isLoading: recipeStatus.isLoading,
+        searchQuery: recipeStatus.searchQuery,
+        recipes: recipeStatus.recipes,
+        filters: filterStatus.getAllFilters(),
+      ),
+      builder: (context, data, child) {
+        if (data.isLoading) {
           return Center(child: CircularProgressIndicator());
         }
+
+        final filterStatus = context.read<FilterStatus>();
+        final recipeStatus = context.read<RecipeStatus>();
 
         // FilterStatus의 필터 정보를 기반으로 레시피 필터링
         final filteredRecipes = recipeStatus.getFilteredRecipes(

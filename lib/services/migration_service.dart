@@ -6,6 +6,8 @@ import 'hive_service.dart';
 class MigrationService {
   static const String MIGRATION_COMPLETED_KEY = 'hive_migration_completed';
   static const String USER_PROFILE_MIGRATION_KEY = 'user_profile_migration_v2';
+  static const String USER_PROFILE_BADGE_MIGRATION_KEY = 'user_profile_badge_migration_v1';
+  static const String BADGE_PROGRESS_MIGRATION_KEY = 'badge_progress_migration_v1';
 
   static Future<void> migrateToHive() async {
     final prefs = await SharedPreferences.getInstance();
@@ -16,6 +18,10 @@ class MigrationService {
 
       // UserProfile 추가 필드 마이그레이션 체크
       await _migrateUserProfileFields(prefs);
+      // UserProfile 뱃지 필드 마이그레이션 체크
+      await _migrateUserProfileBadgeFields(prefs);
+      // 뱃지 진행도 마이그레이션 체크
+      await _migrateBadgeProgress(prefs);
       return;
     }
 
@@ -39,6 +45,9 @@ class MigrationService {
 
       // 6. FavoriteRecipes 마이그레이션
       await _migrateFavoriteRecipes(prefs);
+
+      // 7. 뱃지 진행도 마이그레이션 (UserProfile 마이그레이션 후에 실행)
+      await _migrateBadgeProgress(prefs);
 
       // 마이그레이션 완료 표시
       await prefs.setBool(MIGRATION_COMPLETED_KEY, true);
@@ -76,6 +85,34 @@ class MigrationService {
       await prefs.setBool(USER_PROFILE_MIGRATION_KEY, true);
     } catch (e) {
       print('UserProfile 필드 마이그레이션 오류: $e');
+    }
+  }
+
+  /// UserProfile에 새로 추가된 뱃지 필드들(isUsingBadgeProfile, mainBadgeId) 마이그레이션
+  static Future<void> _migrateUserProfileBadgeFields(SharedPreferences prefs) async {
+    try {
+      // 이미 뱃지 필드 마이그레이션이 완료된 경우 스킵
+      if (prefs.getBool(USER_PROFILE_BADGE_MIGRATION_KEY) ?? false) {
+        return;
+      }
+
+      print('UserProfile 뱃지 필드 마이그레이션 시작...');
+
+      final userProfile = HiveService.getUserProfile();
+      if (userProfile != null) {
+        // 기존 UserProfile에 뱃지 필드가 없는 경우 기본값으로 업데이트
+        final updatedProfile = userProfile.copyWith(
+          isUsingBadgeProfile: userProfile.isUsingBadgeProfile, // 이미 있으면 유지, 없으면 기본값(false) 적용
+          mainBadgeId: userProfile.mainBadgeId, // 이미 있으면 유지, 없으면 null
+        );
+
+        await HiveService.saveUserProfile(updatedProfile);
+        print('UserProfile 뱃지 필드 마이그레이션 완료');
+      }
+
+      await prefs.setBool(USER_PROFILE_BADGE_MIGRATION_KEY, true);
+    } catch (e) {
+      print('UserProfile 뱃지 필드 마이그레이션 오류: $e');
     }
   }
 
@@ -161,7 +198,11 @@ class MigrationService {
   static Future<void> _migrateUserProfile(SharedPreferences prefs) async {
     try {
       final String? userProfileJson = prefs.getString('userProfile');
+      final String? legacyNickname = prefs.getString('nickname');
+      final bool? isInitialized = prefs.getBool('isInitialized');
+      
       if (userProfileJson != null) {
+        // 기존 UserProfile이 있는 경우
         final Map<String, dynamic> profileData = json.decode(userProfileJson);
 
         // 새로 추가된 필드들에 기본값 설정
@@ -174,10 +215,37 @@ class MigrationService {
         if (!profileData.containsKey('level')) {
           profileData['level'] = 1;
         }
+        // 뱃지 관련 필드 추가
+        if (!profileData.containsKey('isUsingBadgeProfile')) {
+          profileData['isUsingBadgeProfile'] = false;
+        }
+        if (!profileData.containsKey('mainBadgeId')) {
+          profileData['mainBadgeId'] = null;
+        }
 
         final userProfile = UserProfile.fromJson(profileData);
         await HiveService.saveUserProfile(userProfile);
         print('사용자 프로필 마이그레이션 완료');
+        
+      } else if (legacyNickname != null && isInitialized == true) {
+        // UserProfile은 없지만 nickname과 isInitialized가 있는 경우 (로그인하지 않은 기존 사용자)
+        print('로그인하지 않은 기존 사용자 감지: $legacyNickname');
+        
+        // 로그인하지 않은 기존 사용자를 위한 기본 UserProfile 생성
+        final defaultProfile = UserProfile(
+          uid: 'legacy_user_${DateTime.now().millisecondsSinceEpoch}',
+          email: 'legacy@local.app',
+          name: legacyNickname,
+          provider: LoginProvider.none,
+          points: 0,
+          experience: 0,
+          level: 1,
+          isUsingBadgeProfile: false,
+          mainBadgeId: null,
+        );
+        
+        await HiveService.saveUserProfile(defaultProfile);
+        print('로그인하지 않은 기존 사용자 프로필 생성 완료: $legacyNickname');
       }
     } catch (e) {
       print('사용자 프로필 마이그레이션 오류: $e');
@@ -197,6 +265,56 @@ class MigrationService {
   }
 
 
+  /// 뱃지 진행도 데이터 마이그레이션 (기존 사용자 대상)
+  static Future<void> _migrateBadgeProgress(SharedPreferences prefs) async {
+    try {
+      // 이미 뱃지 진행도 마이그레이션이 완료된 경우 스킵
+      if (prefs.getBool(BADGE_PROGRESS_MIGRATION_KEY) ?? false) {
+        return;
+      }
+
+      print('뱃지 진행도 마이그레이션 시작...');
+
+      // 기존 사용자 식별을 위한 다양한 조건 확인
+      final userProfile = HiveService.getUserProfile();
+      final cookingHistory = HiveService.getCookingHistory();
+      final String? legacyNickname = prefs.getString('nickname');
+      final bool? isInitialized = prefs.getBool('isInitialized');
+      final String? legacyHistoryJson = prefs.getString('cookingHistory');
+      
+      // 기존 사용자 조건:
+      // 1. Hive에 UserProfile이 있거나
+      // 2. Hive에 CookingHistory가 있거나  
+      // 3. SharedPreferences에 nickname + isInitialized가 있거나
+      // 4. SharedPreferences에 cookingHistory가 있는 경우
+      final isExistingUser = userProfile != null || 
+                            cookingHistory.isNotEmpty ||
+                            (legacyNickname != null && isInitialized == true) ||
+                            legacyHistoryJson != null;
+      
+      if (isExistingUser) {
+        print('기존 사용자 감지됨:');
+        print('  - UserProfile 존재: ${userProfile != null}');
+        print('  - CookingHistory 존재: ${cookingHistory.isNotEmpty}');  
+        print('  - Legacy Nickname: $legacyNickname');
+        print('  - isInitialized: $isInitialized');
+        print('  - Legacy History JSON 존재: ${legacyHistoryJson != null}');
+        
+        // 기존 사용자임을 SharedPreferences에 마킹 (BadgeStatus에서 참조)
+        await prefs.setBool('is_legacy_user', true);
+        
+        print('뱃지 진행도 마이그레이션 완료 (BadgeStatus에서 처리됨)');
+      } else {
+        print('신규 사용자로 판단됨');
+        await prefs.setBool('is_legacy_user', false);
+      }
+
+      await prefs.setBool(BADGE_PROGRESS_MIGRATION_KEY, true);
+    } catch (e) {
+      print('뱃지 진행도 마이그레이션 오류: $e');
+    }
+  }
+
   // 마이그레이션 후 SharedPreferences 정리 (선택사항)
   static Future<void> cleanupSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
@@ -209,6 +327,10 @@ class MigrationService {
       await prefs.remove('ongoingCooking');
       await prefs.remove('userProfile');
       await prefs.remove('favorite_recipes');
+      await prefs.remove('nickname');
+      await prefs.remove('isInitialized');
+      
+      // 주의: is_legacy_user 플래그는 삭제하지 않음 (뱃지 시스템에서 계속 참조)
 
       print('SharedPreferences 정리 완료');
     } catch (e) {

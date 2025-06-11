@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/_models.dart';
 import '../services/hive_service.dart';
 import 'dart:math';
+import 'dart:io';
+import '../data/badgeData.dart';
 
 class UserStatus extends ChangeNotifier {
   List<CookingHistory> _cookingHistory = [];
@@ -54,6 +56,18 @@ class UserStatus extends ChangeNotifier {
     }
   }
 
+  /// 뱃지 업데이트 트리거
+  Future<void> _triggerBadgeUpdate() async {
+    if (_badgeUpdateCallback != null) {
+      try {
+        await _badgeUpdateCallback!();
+        print('UserStatus: Badge update triggered successfully');
+      } catch (e) {
+        print('UserStatus: Error triggering badge update: $e');
+      }
+    }
+  }
+
   Future<void> loadUserStatus() async {
     try {
       // Hive에서 데이터 로드
@@ -99,6 +113,86 @@ class UserStatus extends ChangeNotifier {
     } catch (e) {
       print('Error updating user profile: $e');
     }
+  }
+
+  /// 뱃지 프로필 설정/해제
+  Future<void> toggleBadgeProfile(String? badgeId) async {
+    try {
+      if (_userProfile == null) {
+        print('UserProfile이 존재하지 않습니다.');
+        return;
+      }
+
+      // 뱃지 프로필 해제
+      if (badgeId == null) {
+        final updatedProfile = _userProfile!.copyWith(
+          isUsingBadgeProfile: false,
+          mainBadgeId: null,
+        );
+        await updateUserProfile(updatedProfile);
+        print('뱃지 프로필이 해제되었습니다.');
+        return;
+      }
+
+      // 뱃지 존재 확인
+      final badge = getBadgeById(badgeId);
+      if (badge == null) {
+        print('해당 뱃지를 찾을 수 없습니다: $badgeId');
+        return;
+      }
+
+      // 뱃지 이미지 파일 존재 확인
+      final badgeImagePath = badge.imagePath;
+      final file = File(badgeImagePath);
+      if (!await file.exists()) {
+        print('뱃지 이미지 파일이 존재하지 않습니다: $badgeImagePath');
+        // 에셋 파일은 File.exists()로 확인할 수 없으므로 이 체크는 생략
+      }
+
+      // 뱃지 프로필 설정
+      final updatedProfile = _userProfile!.copyWith(
+        isUsingBadgeProfile: true,
+        mainBadgeId: badgeId,
+      );
+      await updateUserProfile(updatedProfile);
+      print('뱃지 프로필이 설정되었습니다: ${badge.name}');
+    } catch (e) {
+      print('뱃지 프로필 토글 실패: $e');
+    }
+  }
+
+  /// 현재 표시할 프로필 이미지 경로 가져오기
+  String getDisplayProfileImage() {
+    if (_userProfile == null) {
+      return 'assets/imgs/items/baseProfile.png'; // 기본 프로필 이미지
+    }
+
+    // 뱃지 프로필 사용 중인 경우
+    if (_userProfile!.isUsingBadgeProfile && _userProfile!.mainBadgeId != null) {
+      final badge = getBadgeById(_userProfile!.mainBadgeId!);
+      if (badge != null) {
+        return badge.imagePath;
+      }
+    }
+
+    // 기본 프로필 이미지
+    return _userProfile!.photoURL ?? 'assets/imgs/items/baseProfile.png';
+  }
+
+  /// 현재 프로필 타입 가져오기
+  String getProfileType() {
+    if (_userProfile == null) {
+      return '베이스';
+    }
+
+    if (_userProfile!.isUsingBadgeProfile && _userProfile!.mainBadgeId != null) {
+      final badge = getBadgeById(_userProfile!.mainBadgeId!);
+      if (badge != null) {
+        return '뱃지: ${badge.name}';
+      }
+    }
+
+    return '베이스';
   }
 
   Future<void> clearUserProfile() async {
@@ -279,7 +373,7 @@ class UserStatus extends ChangeNotifier {
     return '$adjective $noun';
   }
 
-  // ⭐ 수정된 부분: 요리 히스토리 추가 시 퀘스트 업데이트 트리거
+  // ⭐ 수정된 부분: 요리 히스토리 추가 시 퀘스트 및 뱃지 업데이트 트리거
   void addCookingHistory(Recipe recipe) {
     _cookingHistory.insert(0, CookingHistory(recipe: recipe, dateTime: DateTime.now()));
     saveUserStatus();
@@ -289,8 +383,11 @@ class UserStatus extends ChangeNotifier {
 
     notifyListeners();
 
-    // 🎯 퀘스트 진행도 업데이트 트리거
-    _triggerQuestUpdate();
+    // 🎯 즉시 퀘스트 및 뱃지 진행도 업데이트 트리거 (동기적으로)
+    Future.microtask(() async {
+      await _triggerQuestUpdate();
+      await _triggerBadgeUpdate();
+    });
   }
 
   void startCooking(Recipe recipe) {
@@ -302,15 +399,18 @@ class UserStatus extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ⭐ 수정된 부분: 요리 완료 시 퀘스트 업데이트 트리거
+  // ⭐ 수정된 부분: 요리 완료 시 퀘스트 및 뱃지 업데이트 트리거
   void endCooking(Recipe recipe) {
     _ongoingCooking.removeWhere((cooking) => cooking.recipe.id == recipe.id);
     addCookingHistory(recipe);
     saveUserStatus();
     notifyListeners();
 
-    // 🎯 퀘스트 진행도 업데이트 트리거 (addCookingHistory에서도 호출되지만 안전성을 위해)
-    _triggerQuestUpdate();
+    // 🎯 즉시 퀘스트 및 뱃지 진행도 업데이트 트리거 (추가 안전성 위해)
+    Future.microtask(() async {
+      await _triggerQuestUpdate();
+      await _triggerBadgeUpdate();
+    });
   }
 
   void clearOngoingCooking() {

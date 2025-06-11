@@ -29,7 +29,7 @@ class AdSupportedRecipeListWidget extends StatefulWidget {
   State<AdSupportedRecipeListWidget> createState() => _AdSupportedRecipeListWidgetState();
 }
 
-class _AdSupportedRecipeListWidgetState extends State<AdSupportedRecipeListWidget> {
+class _AdSupportedRecipeListWidgetState extends State<AdSupportedRecipeListWidget> with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
   List<Recipe> _loadedRecipes = [];
   List<BannerAd?> _bannerAds = [];
@@ -37,7 +37,10 @@ class _AdSupportedRecipeListWidgetState extends State<AdSupportedRecipeListWidge
   bool _hasMore = true;
   int _recipeCardsSinceLastAd = 0;
 
-  static const int _pageSize = 10;
+  static const int _pageSize = 15; // 페이지 크기 증가로 광고 로드 빈도 감소
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -78,12 +81,11 @@ class _AdSupportedRecipeListWidgetState extends State<AdSupportedRecipeListWidge
   bool listEquals(List<Recipe> a, List<Recipe> b) {
     if (a.length != b.length) return false;
 
-    for (int i = 0; i < a.length; i++) {
-      // ID로 비교 (더 정확한 비교 방법이 있다면 사용)
-      if (a[i].id != b[i].id) return false;
-    }
-
-    return true;
+    // ID 기반 Set으로 비교하여 중복 체크
+    final setA = a.map((recipe) => recipe.id).toSet();
+    final setB = b.map((recipe) => recipe.id).toSet();
+    
+    return setA.length == setB.length && setA.difference(setB).isEmpty;
   }
 
   void _createBannerAd() {
@@ -126,8 +128,8 @@ class _AdSupportedRecipeListWidgetState extends State<AdSupportedRecipeListWidge
       return;
     }
 
-    // 지연 시뮬레이션 (실제 API 호출 대체)
-    await Future.delayed(Duration(milliseconds: 500));
+    // 지연 시간 단축
+    await Future.delayed(Duration(milliseconds: 100));
 
     // 새 레시피 추가
     final newRecipes = widget.recipes.sublist(
@@ -135,26 +137,35 @@ class _AdSupportedRecipeListWidgetState extends State<AdSupportedRecipeListWidge
       end > widget.recipes.length ? widget.recipes.length : end,
     );
 
-    // 광고 추가 계산
-    int adsToAdd = (newRecipes.length / widget.adFrequency).ceil();
-    for (int i = 0; i < adsToAdd; i++) {
+    // 광고 추가 최적화 - 한 번에 여러 개 로드하지 않고 필요에 따라 로드
+    int currentAdsNeeded = ((_loadedRecipes.length + newRecipes.length) / widget.adFrequency).ceil();
+    int existingAds = _bannerAds.where((ad) => ad != null).length;
+    
+    if (currentAdsNeeded > existingAds) {
       _createBannerAd();
     }
 
-    setState(() {
-      _loadedRecipes.addAll(newRecipes);
-      _isLoading = false;
-    });
+    if (mounted) { // mounted 체크
+      // 중복 제거 - 이미 로드된 레시피 ID들
+      final loadedIds = _loadedRecipes.map((r) => r.id).toSet();
+      final uniqueNewRecipes = newRecipes.where((recipe) => !loadedIds.contains(recipe.id)).toList();
+      
+      setState(() {
+        _loadedRecipes.addAll(uniqueNewRecipes);
+        _isLoading = false;
+      });
+    }
   }
 
   void _scrollListener() {
-    if (_scrollController.position.extentAfter < 200) {
+    if (_scrollController.position.extentAfter < 400) { // threshold 증가
       _loadMoreRecipes();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin 필수
     int totalItems = _loadedRecipes.length;
     // 광고 개수 계산 (adFrequency개 레시피마다 1개 광고)
     int adCount = (totalItems / widget.adFrequency).ceil();
@@ -170,6 +181,9 @@ class _AdSupportedRecipeListWidgetState extends State<AdSupportedRecipeListWidge
             padding: EdgeInsets.only(top: 10.h),
             controller: _scrollController,
             itemCount: totalListItems + (_isLoading ? 1 : 0),
+            cacheExtent: 600, // 캐시 영역 설정
+            addAutomaticKeepAlives: true,
+            addRepaintBoundaries: true,
             itemBuilder: (context, index) {
               // 로딩 인디케이터 표시
               if (index >= totalListItems) {
@@ -179,47 +193,58 @@ class _AdSupportedRecipeListWidgetState extends State<AdSupportedRecipeListWidge
                 );
               }
 
-              // 광고 위치 계산
-              int adIndex = index ~/ (widget.adFrequency + 1);
-              bool isAdPosition = (index % (widget.adFrequency + 1) == widget.adFrequency);
-              // 광고제거버전
-              // if (isAdPosition && adIndex < _bannerAds.length && 1==2) {
-              if (isAdPosition && adIndex < _bannerAds.length) {
-                // 광고 표시
-                final ad = _bannerAds[adIndex];
-                if (ad == null) {
-                  // 로드 실패한 광고는 빈 컨테이너로 처리
-                  return SizedBox(height: 10.h);
+              // 광고 위치 계산 수정
+              // 광고는 매 (adFrequency + 1)번째 위치에 표시
+              // 예: adFrequency=4일 때, 인덱스 4, 9, 14, 19... 에 광고 표시
+              bool isAdPosition = (index + 1) % (widget.adFrequency + 1) == 0;
+              
+              if (isAdPosition) {
+                // 광고 인덱스 계산
+                int adIndex = index ~/ (widget.adFrequency + 1);
+                
+                if (adIndex < _bannerAds.length) {
+                  final ad = _bannerAds[adIndex];
+                  if (ad == null) {
+                    // 로드 실패한 광고는 빈 컨테이너로 처리
+                    return SizedBox(height: 10.h);
+                  }
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 20.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(color: Color(0xFFBB885E), width: 1.w),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    height: 60.h,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10.r),
+                      child: AdWidget(ad: ad),
+                    ),
+                  );
+                } else {
+                  // 광고가 아직 로드되지 않은 경우 스킵
+                  return SizedBox.shrink();
                 }
-                return Container(
-                  margin: EdgeInsets.only(bottom: 20.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(color: Color(0xFFBB885E), width: 1.w),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        spreadRadius: 1,
-                        blurRadius: 5,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  height: 60.h,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10.r),
-                    child: AdWidget(ad: ad),
-                  ),
-                );
               } else {
                 // 레시피 카드 표시
-                // 광고 때문에 실제 레시피 인덱스 계산
-                int recipeIndex = index - (index ~/ (widget.adFrequency + 1));
+                // 실제 레시피 인덱스 계산 (광고 개수만큼 빼기)
+                int adsBeforeThisIndex = index ~/ (widget.adFrequency + 1);
+                int recipeIndex = index - adsBeforeThisIndex;
+                
                 if (recipeIndex >= _loadedRecipes.length) {
                   return SizedBox.shrink();
                 }
+                
                 return RecipeCardWidget(
+                  key: ValueKey(_loadedRecipes[recipeIndex].id),
                   recipe: _loadedRecipes[recipeIndex],
                   node: widget.node,
                 );

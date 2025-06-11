@@ -73,7 +73,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
   // 이미지 프리로딩 최적화
   void _preloadVisibleImages() {
     final badgeStatus = Provider.of<BadgeStatus>(context, listen: false);
-    final visibleBadges = _filteredBadges.take(20); // 처음 20개만 프리로드
+    final visibleBadges = _getFilteredBadges(badgeStatus).take(20); // 처음 20개만 프리로드
 
     for (final combinedBadge in visibleBadges) {
       final imagePath = _getImagePath(combinedBadge);
@@ -93,9 +93,8 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
     }
   }
 
-  // 뱃지와 진행도를 합친 데이터 구조
-  List<CombinedBadgeData> get _filteredBadges {
-    final badgeStatus = Provider.of<BadgeStatus>(context);
+  // 뱃지와 진행도를 합친 데이터 구조 (BadgeStatus를 매개변수로 받음)
+  List<CombinedBadgeData> _getFilteredBadges(BadgeStatus badgeStatus) {
     final badges = badgeStatus.badges;
     final userProgressList = badgeStatus.userBadgeProgressList;
     final mainBadge = badgeStatus.mainBadge;
@@ -166,18 +165,37 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
     return filtered;
   }
 
-  // 메인 뱃지 데이터 가져오기
-  CombinedBadgeData? get _mainBadgeData {
+  // 메인 뱃지 데이터 가져오기 (필터와 무관하게)
+  CombinedBadgeData? _getMainBadgeData(BadgeStatus badgeStatus) {
+    final badges = badgeStatus.badges;
+    final userProgressList = badgeStatus.userBadgeProgressList;
+    final mainBadge = badgeStatus.mainBadge;
+    
+    if (mainBadge == null) return null;
+    
     try {
-      return _filteredBadges.firstWhere((data) => data.isMainBadge);
+      final badge = badges.firstWhere((b) => b.id == mainBadge.badgeId);
+      final progress = userProgressList.firstWhere(
+        (p) => p.badgeId == badge.id,
+        orElse: () => UserBadgeProgress(
+          badgeId: badge.id,
+          currentProgress: 0,
+          isUnlocked: false,
+        ),
+      );
+      
+      return CombinedBadgeData(
+        badge: badge,
+        progress: progress,
+        isMainBadge: true,
+      );
     } catch (e) {
       return null;
     }
   }
 
   // 각 탭별 개수 계산 (성능 최적화)
-  Map<String, int> get _tabCounts {
-    final badgeStatus = Provider.of<BadgeStatus>(context);
+  Map<String, int> _getTabCounts(BadgeStatus badgeStatus) {
     final badges = badgeStatus.badges;
     final userProgressList = badgeStatus.userBadgeProgressList;
 
@@ -254,7 +272,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                   child: Column(
                     children: [
                       SizedBox(height: 4.h),
-                      _buildOptimizedHeader(),
+                      _buildOptimizedHeader(badgeStatus),
                       SizedBox(height: 10.h),
                       DottedBarWidget(),
                       SizedBox(height: 16.h),
@@ -265,7 +283,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                 // 상태 탭바
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: _buildOptimizedStatusSelector(),
+                  child: _buildOptimizedStatusSelector(badgeStatus),
                 ),
 
                 SizedBox(height: 12.h),
@@ -279,7 +297,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                 SizedBox(height: 16.h),
 
                 // 뱃지 리스트
-                Expanded(child: _buildOptimizedBadgeList()),
+                Expanded(child: _buildOptimizedBadgeList(badgeStatus)),
               ],
             );
           },
@@ -288,9 +306,9 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
     );
   }
 
-  Widget _buildOptimizedHeader() {
-    final mainBadgeData = _mainBadgeData;
-    final tabCounts = _tabCounts;
+  Widget _buildOptimizedHeader(BadgeStatus badgeStatus) {
+    final mainBadgeData = _getMainBadgeData(badgeStatus);
+    final tabCounts = _getTabCounts(badgeStatus);
 
     return Row(
       children: [
@@ -325,6 +343,9 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
 
         // 메인 뱃지 (최적화된 렌더링)
         _buildOptimizedMainBadge(mainBadgeData),
+        
+        // 디버그 초기화 버튼 (작은 크기)
+        _buildDebugResetButton(),
       ],
     );
   }
@@ -398,8 +419,8 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
     );
   }
 
-  Widget _buildOptimizedStatusSelector() {
-    final tabCounts = _tabCounts;
+  Widget _buildOptimizedStatusSelector(BadgeStatus badgeStatus) {
+    final tabCounts = _getTabCounts(badgeStatus);
 
     return Container(
       height: 44.h,
@@ -755,8 +776,8 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
     return count;
   }
 
-  Widget _buildOptimizedBadgeList() {
-    final filteredBadges = _filteredBadges;
+  Widget _buildOptimizedBadgeList(BadgeStatus badgeStatus) {
+    final filteredBadges = _getFilteredBadges(badgeStatus);
 
     if (filteredBadges.isEmpty) {
       return Center(
@@ -1404,6 +1425,197 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
     final targetCount = _getTargetCount(data.badge);
     if (targetCount == 0) return 0.0;
     return (data.progress.currentProgress / targetCount * 100).clamp(0.0, 100.0);
+  }
+
+  /// 디버그용 초기화 버튼
+  Widget _buildDebugResetButton() {
+    return Container(
+      margin: EdgeInsets.only(left: 8.w),
+      child: GestureDetector(
+        onTap: () => _showDebugResetDialog(),
+        child: Container(
+          width: 32.w,
+          height: 32.w,
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: Colors.red.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            Icons.refresh,
+            size: 16.w,
+            color: Colors.red,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 디버그 초기화 확인 다이얼로그
+  void _showDebugResetDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          '⚠️ 디버그 초기화',
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        ),
+        content: Text(
+          '다음 데이터가 모두 초기화됩니다:\n\n'
+          '• 모든 뱃지 획득 기록\n'
+          '• 요리 히스토리\n'
+          '• 퀘스트 진행도\n'
+          '• 사용자 프로필 (레벨, 경험치, 포인트)\n\n'
+          '이 작업은 되돌릴 수 없습니다.\n정말 진행하시겠습니까?',
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Color(0xFF666666),
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              '취소',
+              style: TextStyle(
+                color: Color(0xFF666666),
+                fontSize: 14.sp,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _performDebugReset();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            child: Text(
+              '초기화',
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 디버그 초기화 실행
+  Future<void> _performDebugReset() async {
+    try {
+      // 로딩 다이얼로그 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Color(0xFFFF8B27)),
+                SizedBox(height: 16.h),
+                Text(
+                  '데이터 초기화 중...',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // 각 Status에서 데이터 초기화
+      final badgeStatus = Provider.of<BadgeStatus>(context, listen: false);
+      final userStatus = Provider.of<UserStatus>(context, listen: false);
+      final questStatus = Provider.of<QuestStatus>(context, listen: false);
+
+      // 1. 뱃지 데이터 초기화
+      await badgeStatus.clearBadges();
+      
+      // 2. 사용자 데이터 초기화 (요리 히스토리, 프로필 등)
+      userStatus.reset();
+      
+      // 3. 퀘스트 데이터 초기화
+      await questStatus.clearQuests();
+
+      // 4. Badge Status 다시 초기화
+      await badgeStatus.refreshBadges();
+
+      // 로딩 다이얼로그 닫기
+      Navigator.of(context).pop();
+
+      // 성공 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '🎯 디버그 초기화가 완료되었습니다!',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Color(0xFF4CAF50),
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+        ),
+      );
+
+      print('🗑️ 디버그 초기화 완료 - 모든 데이터가 초기화되었습니다.');
+
+    } catch (e) {
+      // 에러 발생 시 로딩 다이얼로그 닫기
+      Navigator.of(context).pop();
+
+      // 에러 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '❌ 초기화 중 오류가 발생했습니다: $e',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+        ),
+      );
+
+      print('💥 디버그 초기화 실패: $e');
+    }
   }
 
   Widget _buildProgressBarWithPointer(CombinedBadgeData data) {

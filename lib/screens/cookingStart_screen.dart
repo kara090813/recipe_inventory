@@ -308,7 +308,21 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
   /// 요리 횟수를 확인하고 적절한 액션 수행 (광고 또는 리뷰 요청)
   Future<void> _checkCookCountAndNavigate(BuildContext context) async {
     final userStatus = Provider.of<UserStatus>(context, listen: false);
+    final badgeStatus = Provider.of<BadgeStatus>(context, listen: false);
+    
+    // BadgeStatus에 현재 컨텍스트 설정 (뱃지 팝업 표시용)
+    badgeStatus.setCurrentContext(context);
+    
     userStatus.endCooking(_loadedRecipe!);
+    
+    // 강제로 뱃지 진행도 업데이트 및 팝업 확인
+    Future.delayed(const Duration(milliseconds: 100), () async {
+      final foodStatus = Provider.of<FoodStatus>(context, listen: false);
+      final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
+      await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
+      badgeStatus.showPendingBadgePopups();
+    });
+    
     final cookCount = userStatus.cookingHistory.length;
 
     final prefs = await SharedPreferences.getInstance();

@@ -16,3 +16,4 @@ export 'mypageShrink_widget.dart';
 export 'matchRateIndicator_widget.dart';
 export 'ingredientList_widget.dart';
 export 'adSupportedRecipeList_widget.dart';
+export 'badgeUnlocked_widget.dart';

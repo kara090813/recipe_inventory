@@ -125,14 +125,16 @@ class _ProfileSetScreenState extends State<ProfileSetScreen> {
               SizedBox(height: 20.h),
               TextField(
                 controller: controller,
+                maxLength: 15,
                 decoration: InputDecoration(
-                  hintText: '새로운 닉네임을 입력하세요',
+                  hintText: '새로운 닉네임을 입력하세요 (최대 15자)',
                   border: UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFFA8927F)),
                   ),
                   focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFFA8927F)),
                   ),
+                  counterText: '',
                 ),
                 style: TextStyle(fontSize: 16.sp, fontFamily: 'Mapo'),
                 textAlign: TextAlign.center,

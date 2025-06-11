@@ -40,9 +40,12 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    // 화면이 완전히 빌드된 후 가이드 표시
+    // 화면이 완전히 빌드된 후 가이드 표시 및 BadgeStatus 컨텍스트 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
       OnboardingGuide.showIfNeeded(context, guideContents);
+      
+      // BadgeStatus에 현재 컨텍스트 설정 (뱃지 팝업 표시용)
+      Provider.of<BadgeStatus>(context, listen: false).setCurrentContext(context);
     });
   }
 

@@ -479,12 +479,12 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
 
     Widget questCard = Container(
       margin: EdgeInsets.only(bottom: 12.h),
-      height: 140.h, // 높이를 늘려서 description 공간 확보
+      height: 160.h, // 모바일 최적화를 위한 높이 증가
       child: Row(
         children: [
           // 좌측 티켓 (퀘스트 정보 영역)
           Expanded(
-            flex: 78,
+            flex: 72,
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -506,7 +506,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                           child: Text(
                             quest.title,
                             style: TextStyle(
-                              fontSize: 14.sp,
+                              fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF5E3009),
                               fontFamily: 'Mapo',
@@ -524,7 +524,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                           child: Text(
                             '${progressPercentage}%',
                             style: TextStyle(
-                              fontSize: 10.sp,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                               fontFamily: 'Mapo',
@@ -540,7 +540,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                     Text(
                       quest.description,
                       style: TextStyle(
-                        fontSize: 11.sp,
+                        fontSize: 13.sp,
                         color: Color(0xFF666666),
                         fontFamily: 'Mapo',
                       ),
@@ -562,7 +562,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                         Text(
                           '0',
                           style: TextStyle(
-                            fontSize: 10.sp,
+                            fontSize: 11.sp,
                             color: Color(0xFF666666),
                             fontFamily: 'Mapo',
                           ),
@@ -570,7 +570,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                         Text(
                           '${quest.targetCount}',
                           style: TextStyle(
-                            fontSize: 10.sp,
+                            fontSize: 11.sp,
                             color: Color(0xFF666666),
                             fontFamily: 'Mapo',
                           ),
@@ -585,7 +585,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
 
           // 우측 티켓 (보상 영역)
           Expanded(
-            flex: 22,
+            flex: 28,
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -600,15 +600,15 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                   if (quest.rewardPoints > 0) ...[
                     Image.asset(
                       'assets/imgs/items/ice.png',
-                      width: 20.w,
-                      height: 20.w,
+                      width: 24.w,
+                      height: 24.w,
                       color: isRewardReceived ? Colors.grey : null,
                     ),
                     SizedBox(height: 2.h),
                     Text(
                       '${quest.rewardPoints}P',
                       style: TextStyle(
-                        fontSize: 10.sp,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.bold,
                         color: isRewardReceived ? Color(0xFF999999) : Color(0xFF5E3009),
                         fontFamily: 'Mapo',
@@ -622,7 +622,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                     Text(
                       '+${quest.rewardExperience}XP',
                       style: TextStyle(
-                        fontSize: 9.sp,
+                        fontSize: 11.sp,
                         color: isRewardReceived ? Color(0xFF999999) : Color(0xFF5E3009),
                         fontFamily: 'Mapo',
                       ),
@@ -636,7 +636,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                     GestureDetector(
                       onTap: () => _handleReceiveReward(quest, questStatus, userStatus),
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10.r),
@@ -656,7 +656,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                           statusText,
                           style: TextStyle(
                             color: Color(0xFFFF8B27),
-                            fontSize: 10.sp,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Mapo',
                           ),
@@ -668,7 +668,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                       statusText,
                       style: TextStyle(
                         color: statusTextColor,
-                        fontSize: 9.sp,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Mapo',
                       ),
