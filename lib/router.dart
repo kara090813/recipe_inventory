@@ -19,13 +19,6 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/notification_redirect',
-        builder: (context, state) {
-          final recipeId = state.uri.queryParameters['recipeId'] ?? '';
-          return NotificationRedirectScreen(recipeId: recipeId);
-        },
-      ),
-      GoRoute(
           path: '/foodAdd',
           builder: (context, state) {
             return FoodAddScreen();

@@ -7,4 +7,3 @@ export 'recipeRecommendationService_func.dart';
 export 'customFoodService_func.dart';
 export 'isTablet_func.dart';
 export 'onboardingGuideFunc.dart';
-export 'notification_service.dart';

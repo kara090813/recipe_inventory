@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'dart:io' show Platform;
 import '../widgets/_widgets.dart';
 import '../models/_models.dart';
 import '../status/_status.dart';
@@ -18,6 +20,17 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
   late AnimationController _shimmerController;
   late Animation<double> _shimmerAnimation;
   int _selectedTabIndex = 0;
+  
+  // 리워드 광고 관련 변수
+  RewardedAd? _rewardedAd;
+  bool _isAdLoaded = false;
+  bool _isAdLoading = false;
+  bool _isAdShowing = false;
+  
+  // 광고 ID 설정
+  static final String _adUnitId = Platform.isAndroid
+      ? 'ca-app-pub-1961572115316398/4301193690'
+      : 'ca-app-pub-1961572115316398/9050957497';
 
   @override
   void initState() {
@@ -46,6 +59,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
     // 🆕 화면 진입 시 퀘스트 진행도 업데이트
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshQuestProgress();
+      _loadRewardedAd();
     });
   }
 
@@ -74,6 +88,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
   void dispose() {
     _tabController.dispose();
     _shimmerController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
@@ -207,15 +222,148 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
     );
   }
 
-  /// 광고 시청 카드 (아이콘 변경)
+  /// 리워드 광고 로드
+  void _loadRewardedAd() {
+    if (_isAdLoading || _isAdLoaded) return;
+    
+    setState(() {
+      _isAdLoading = true;
+    });
+    
+    RewardedAd.load(
+      adUnitId: _adUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          print('광고 로드 성공');
+          _rewardedAd = ad;
+          setState(() {
+            _isAdLoaded = true;
+            _isAdLoading = false;
+          });
+          _setAdCallbacks();
+        },
+        onAdFailedToLoad: (error) {
+          print('광고 로드 실패: $error');
+          setState(() {
+            _isAdLoaded = false;
+            _isAdLoading = false;
+          });
+          
+          // 실패 후 5초 뒤 재로드 시도
+          Future.delayed(Duration(seconds: 5), () {
+            if (mounted && !_isAdLoaded) {
+              _loadRewardedAd();
+            }
+          });
+        },
+      ),
+    );
+  }
+  
+  /// 광고 콜백 설정
+  void _setAdCallbacks() {
+    if (_rewardedAd == null) return;
+    
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        print('광고 표시됨');
+        setState(() {
+          _isAdShowing = true;
+        });
+      },
+      onAdDismissedFullScreenContent: (ad) {
+        print('광고 닫힘');
+        setState(() {
+          _isAdShowing = false;
+        });
+        ad.dispose();
+        _rewardedAd = null;
+        _isAdLoaded = false;
+        // 광고 닫힌 후 새로운 광고 로드
+        _loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        print('광고 표시 실패: $error');
+        setState(() {
+          _isAdShowing = false;
+        });
+        ad.dispose();
+        _rewardedAd = null;
+        _isAdLoaded = false;
+        _loadRewardedAd();
+      },
+    );
+  }
+  
+  /// 광고 시청 처리
+  void _showRewardedAd() {
+    if (_rewardedAd == null || _isAdShowing) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '광고를 불러오는 중입니다. 잠시 후 다시 시도해주세요.',
+            style: TextStyle(fontFamily: 'Mapo'),
+          ),
+          backgroundColor: Color(0xFFFF8B27),
+        ),
+      );
+      return;
+    }
+    
+    _rewardedAd!.show(
+      onUserEarnedReward: (ad, reward) {
+        print('리워드 획득: ${reward.amount} ${reward.type}');
+        _handleAdReward();
+      },
+    );
+  }
+  
+  /// 광고 시청 보상 처리
+  void _handleAdReward() {
+    final userStatus = Provider.of<UserStatus>(context, listen: false);
+    
+    // 얼음 포인트 100개 지급
+    userStatus.addPoints(userStatus.currentPoints + 100);
+    
+    // 성공 메시지 표시
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Image.asset(
+              'assets/imgs/items/ice.png',
+              width: 24.w,
+              height: 24.w,
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                '광고 시청 완료! 얼음 포인트 100개를 획득했습니다!',
+                style: TextStyle(fontFamily: 'Mapo', fontSize: 14.sp),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Color(0xFF4CAF50),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+  
+  /// 광고 시청 카드 (아이콘 변경 및 비활성화 상태 지원)
   Widget _buildAdCard() {
+    final bool isAdAvailable = _isAdLoaded && !_isAdShowing;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: Color(0xFFFFF3E6),
+        color: isAdAvailable ? Color(0xFFFFF3E6) : Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: Color(0xFFBB885E), width: 1),
+        border: Border.all(
+          color: isAdAvailable ? Color(0xFFBB885E) : Color(0xFFCCCCCC), 
+          width: 1
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.3),
@@ -231,6 +379,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
             'assets/imgs/items/tv.png',
             width: 60.w,
             height: 40.h,
+            color: isAdAvailable ? null : Colors.grey,
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -241,44 +390,53 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                   children: [
                     Image.asset(
                       'assets/imgs/items/ice.png',
-                      width: 20.w,
-                      height: 20.w,
+                      width: 28.w,
+                      height: 28.w,
+                      color: isAdAvailable ? null : Colors.grey,
                     ),
                     Text(
-                      ' x5',
+                      ' x 100',
                       style: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Mapo',
+                        color: isAdAvailable ? Colors.black : Colors.grey,
                       ),
                     ),
                   ],
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  '광고를 시청하고 포인트를 얻어보세요!',
+                  _isAdLoading 
+                    ? '광고를 준비하고 있습니다...'
+                    : (isAdAvailable 
+                        ? '광고를 시청하고\n얼음 포인트를 얻어보세요!'
+                        : '광고가 준비되지 않았습니다.'),
                   style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Color(0xFF666666),
+                    fontSize: 13.sp,
+                    color: isAdAvailable ? Color(0xFF666666) : Colors.grey,
                     fontFamily: 'Mapo',
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            decoration: BoxDecoration(
-              color: Color(0xFF8B4513),
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Text(
-              '10 / 10',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Mapo',
+          GestureDetector(
+            onTap: isAdAvailable ? _showRewardedAd : null,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: isAdAvailable ? Color(0xFF8B4513) : Color(0xFFCCCCCC),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Text(
+                _isAdLoading ? '로딩 중...' : (isAdAvailable ? '광고 시청' : '준비 중'),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Mapo',
+                ),
               ),
             ),
           ),
@@ -493,7 +651,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.fromLTRB(20.w, 14.h, 10.w, 14.h),
+                padding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 12.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -506,7 +664,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                           child: Text(
                             quest.title,
                             style: TextStyle(
-                              fontSize: 16.sp,
+                              fontSize: 18.sp,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF5E3009),
                               fontFamily: 'Mapo',
@@ -540,7 +698,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                     Text(
                       quest.description,
                       style: TextStyle(
-                        fontSize: 13.sp,
+                        fontSize: 15.sp,
                         color: Color(0xFF666666),
                         fontFamily: 'Mapo',
                       ),
@@ -600,15 +758,15 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                   if (quest.rewardPoints > 0) ...[
                     Image.asset(
                       'assets/imgs/items/ice.png',
-                      width: 24.w,
-                      height: 24.w,
+                      width: 32.w,
+                      height: 32.w,
                       color: isRewardReceived ? Colors.grey : null,
                     ),
                     SizedBox(height: 2.h),
                     Text(
                       '${quest.rewardPoints}P',
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.bold,
                         color: isRewardReceived ? Color(0xFF999999) : Color(0xFF5E3009),
                         fontFamily: 'Mapo',
@@ -622,7 +780,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                     Text(
                       '+${quest.rewardExperience}XP',
                       style: TextStyle(
-                        fontSize: 11.sp,
+                        fontSize: 13.sp,
                         color: isRewardReceived ? Color(0xFF999999) : Color(0xFF5E3009),
                         fontFamily: 'Mapo',
                       ),
@@ -656,7 +814,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                           statusText,
                           style: TextStyle(
                             color: Color(0xFFFF8B27),
-                            fontSize: 12.sp,
+                            fontSize: 13.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Mapo',
                           ),
@@ -668,7 +826,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
                       statusText,
                       style: TextStyle(
                         color: statusTextColor,
-                        fontSize: 11.sp,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Mapo',
                       ),

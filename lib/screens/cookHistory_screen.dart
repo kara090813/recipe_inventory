@@ -320,10 +320,10 @@ class _CookHistoryScreenState extends State<CookHistoryScreen> {
                 borderRadius: BorderRadius.circular(8.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    offset: Offset(0, 3),
-                    blurRadius: 4,
-                    spreadRadius: 1,
+                    color: Colors.black.withOpacity(0.15),
+                    offset: Offset(0, 2),
+                    blurRadius: 8,
+                    spreadRadius: 0,
                   )
                 ]),
             child: Row(

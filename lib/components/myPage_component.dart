@@ -1051,6 +1051,14 @@ class MyPageComponent extends StatelessWidget {
               decoration: BoxDecoration(
                 color: [Color(0xFFFFDD9E), Color(0xFFFFD1A9), Color(0xFFFFB4A9)][index],
                 borderRadius: BorderRadius.circular(10.r),
+                  boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                                offset: Offset(0, 3),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          )
+                        ]
               ),
               child: ListTile(
                 dense: true,

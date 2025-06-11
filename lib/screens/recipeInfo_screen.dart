@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'dart:io';
 import '../status/_status.dart';
 import '../widgets/_widgets.dart';
 import '../models/_models.dart';
@@ -21,11 +23,80 @@ class _RecipeInfoScreenState extends State<RecipeInfoScreen> {
   Recipe? _loadedRecipe;
   bool _isLoading = false;
   String? _error;
+  InterstitialAd? _interstitialAd;
+  bool _isAdLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _loadRecipeData();
+    _loadInterstitialAd();
+  }
+
+  @override
+  void dispose() {
+    _interstitialAd?.dispose();
+    super.dispose();
+  }
+
+  void _loadInterstitialAd() {
+    final adUnitId = Platform.isAndroid
+        ? 'ca-app-pub-1961572115316398/8954754570'  // Android 광고 ID
+        : 'ca-app-pub-1961572115316398/3953709338'; // iOS 광고 ID
+
+    InterstitialAd.load(
+      adUnitId: adUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          _interstitialAd = ad;
+          _isAdLoaded = true;
+          
+          _interstitialAd!.setImmersiveMode(true);
+          _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdShowedFullScreenContent: (InterstitialAd ad) {
+              print('요리시작 전면광고 표시됨');
+            },
+            onAdDismissedFullScreenContent: (InterstitialAd ad) {
+              print('요리시작 전면광고 닫힘');
+              ad.dispose();
+              _interstitialAd = null;
+              _isAdLoaded = false;
+              // 광고가 닫힌 후 요리 시작 화면으로 이동
+              _navigateToCookingStart();
+            },
+            onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+              print('요리시작 전면광고 표시 실패: $error');
+              ad.dispose();
+              _interstitialAd = null;
+              _isAdLoaded = false;
+              // 광고 표시 실패 시에도 요리 시작 화면으로 이동
+              _navigateToCookingStart();
+            },
+          );
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print('요리시작 전면광고 로드 실패: $error');
+          _isAdLoaded = false;
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialAd() {
+    if (_isAdLoaded && _interstitialAd != null) {
+      _interstitialAd!.show();
+    } else {
+      // 광고가 로드되지 않았거나 없으면 바로 요리 시작 화면으로 이동
+      _navigateToCookingStart();
+    }
+  }
+
+  void _navigateToCookingStart() {
+    if (_loadedRecipe != null) {
+      context.read<UserStatus>().startCooking(_loadedRecipe!);
+      context.push('/cookingStart', extra: _loadedRecipe);
+    }
   }
 
   Future<void> _loadRecipeData() async {
@@ -401,8 +472,7 @@ class _RecipeInfoScreenState extends State<RecipeInfoScreen> {
                           ],
                         ),
                         onPressed: () {
-                          context.read<UserStatus>().startCooking(_loadedRecipe!);
-                          context.push('/cookingStart', extra: _loadedRecipe);
+                          _showInterstitialAd();
                         },
                       ),
                     ),
