@@ -109,7 +109,22 @@ class _SearchRecipeComponentState extends State<SearchRecipeComponent> {
           },
           child: Column(
               children: [
-              HeaderWidget(title: '레시피 탐색'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  HeaderWidget(title: '레시피 탐색'),
+                  IconButton(
+                    onPressed: () {
+                      context.push('/custom');
+                    },
+                    icon: Icon(
+                      Icons.add_circle_outline,
+                      color: Color(0xFF5E3009),
+                      size: 28.w,
+                    ),
+                  ),
+                ],
+              ),
           SizedBox(height: 10.h),
           DottedBarWidget(),
           SizedBox(height: 12.h),
