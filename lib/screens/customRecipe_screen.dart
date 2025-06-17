@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_reorderable_list/flutter_reorderable_list.dart';
 import '../widgets/backButton_widget.dart';
 import '../status/userStatus.dart';
 import '../status/recipeStatus.dart';
@@ -449,6 +450,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
     setState(() {
       cookingSteps.removeAt(index);
     });
+    _saveDraft(); // 삭제 시 자동 저장
   }
 
   void _addTag(String tag) {
@@ -1247,7 +1249,41 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(child: _buildStepGuideHeader('요리과정을 작성해주세요!')),
-          SizedBox(height: 32.h),
+          SizedBox(height: 16.h),
+
+          // 안내 메시지
+          if (cookingSteps.isNotEmpty) ...[
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: Color(0xFFF0F8FF),
+                border: Border.all(color: Color(0xFF87CEEB), width: 1),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF4682B4),
+                    size: 20.w,
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      '요리단계를 꾹 눌러서 드래그하면 순서를 변경할 수 있어요!',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: Color(0xFF4682B4),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16.h),
+          ],
+          SizedBox(height: 16.h),
 
           // 조리단계 작성
           Row(
@@ -1327,25 +1363,53 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
           ),
           SizedBox(height: 32.h),
 
-          // 추가된 조리과정
+          // 추가된 조리과정 (드래그 앤 드롭 가능)
           if (cookingSteps.isNotEmpty) ...[
-            ...cookingSteps.asMap().entries.map((entry) {
-              int index = entry.key;
-              String step = entry.value;
-              
-              return Container(
-                margin: EdgeInsets.only(bottom: 12.h),
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: Color(0xFFFDF8F4),
-                  border: Border.all(color: Color(0xFFDEB887), width: 2),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+            Text(
+              '추가된 조리과정',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF333333),
+              ),
+            ),
+            SizedBox(height: 16.h),
+            ReorderableListView(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) {
+                    newIndex -= 1;
+                  }
+                  final item = cookingSteps.removeAt(oldIndex);
+                  cookingSteps.insert(newIndex, item);
+                  _saveDraft(); // 순서 변경 시 자동 저장
+                });
+              },
+              children: cookingSteps.asMap().entries.map((entry) {
+                int index = entry.key;
+                String step = entry.value;
+                
+                return Container(
+                  key: ValueKey('step_$index'),
+                  margin: EdgeInsets.only(bottom: 12.h),
+                  child: Container(
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFDF8F4),
+                      border: Border.all(color: Color(0xFFDEB887), width: 2),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Row(
                       children: [
+                        // 드래그 핸들
+                        Icon(
+                          Icons.drag_handle,
+                          color: Color(0xFF999999),
+                          size: 20.w,
+                        ),
+                        SizedBox(width: 8.w),
                         Container(
                           width: 28.w,
                           height: 28.w,
@@ -1394,10 +1458,10 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
                         ),
                       ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  ),
+                );
+              }).toList(),
+            ),
           ],
         ],
       ),
