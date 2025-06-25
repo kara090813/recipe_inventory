@@ -16,3 +16,7 @@ export 'customFoodDeleteTab_screen.dart';
 export 'quest_screen.dart';
 export 'badgeCollection_screen.dart';
 export 'customRecipe_screen.dart';
+export 'customRecipePurchase_screen.dart';
+export 'customRecipeManage_screen.dart';
+export 'customRecipeEdit_screen.dart';
+export 'cook_complete_screen.dart';

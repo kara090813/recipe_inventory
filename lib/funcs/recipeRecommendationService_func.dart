@@ -39,6 +39,11 @@ class RecipeRecommendationService {
       matchRate = _matchRateCache[matchRateKey]!;
     } else {
       matchRate = foodStatus.calculateMatchRate(recipe.ingredients);
+      // 매치레이트 캐시 크기 제한
+      if (_matchRateCache.length >= _maxCacheSize) {
+        final firstKey = _matchRateCache.keys.first;
+        _matchRateCache.remove(firstKey);
+      }
       _matchRateCache[matchRateKey] = matchRate;
     }
     score += (matchRate / 100) * INGREDIENT_MATCH_WEIGHT;
@@ -57,7 +62,8 @@ class RecipeRecommendationService {
 
     // 점수 캐시에 저장 (크기 제한)
     if (_scoreCache.length >= _maxCacheSize) {
-      _scoreCache.remove(_scoreCache.keys.first);
+      final firstKey = _scoreCache.keys.first;
+      _scoreCache.remove(firstKey);
     }
     _scoreCache[scoreKey] = score;
     
@@ -179,7 +185,8 @@ class RecipeRecommendationService {
       
       // 결과 캐시에 저장 (크기 제한)
       if (_cache.length >= _maxCacheSize) {
-        _cache.remove(_cache.keys.first);
+        final firstKey = _cache.keys.first;
+        _cache.remove(firstKey);
       }
       _cache[cacheKey] = result;
       return result;
@@ -208,7 +215,8 @@ class RecipeRecommendationService {
       
       // 결과 캐시에 저장 (크기 제한)
       if (_cache.length >= _maxCacheSize) {
-        _cache.remove(_cache.keys.first);
+        final firstKey = _cache.keys.first;
+        _cache.remove(firstKey);
       }
       _cache[cacheKey] = recommendedRecipes;
       return recommendedRecipes;
@@ -225,16 +233,23 @@ class RecipeRecommendationService {
   // 메모리 압박 시 캐시 크기 줄이기
   static void reduceCacheSize() {
     if (_cache.length > _maxCacheSize / 2) {
-      final keysToRemove = _cache.keys.take(_cache.length - _maxCacheSize ~/ 2);
+      final keysToRemove = _cache.keys.take(_cache.length - _maxCacheSize ~/ 2).toList();
       for (final key in keysToRemove) {
         _cache.remove(key);
       }
     }
     
     if (_scoreCache.length > _maxCacheSize / 2) {
-      final keysToRemove = _scoreCache.keys.take(_scoreCache.length - _maxCacheSize ~/ 2);
+      final keysToRemove = _scoreCache.keys.take(_scoreCache.length - _maxCacheSize ~/ 2).toList();
       for (final key in keysToRemove) {
         _scoreCache.remove(key);
+      }
+    }
+    
+    if (_matchRateCache.length > _maxCacheSize / 2) {
+      final keysToRemove = _matchRateCache.keys.take(_matchRateCache.length - _maxCacheSize ~/ 2).toList();
+      for (final key in keysToRemove) {
+        _matchRateCache.remove(key);
       }
     }
   }

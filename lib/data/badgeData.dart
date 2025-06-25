@@ -14,7 +14,7 @@ final List<Badge> BADGE_LIST = [
       type: BadgeType.totalCookingCount,
       targetCookingCount: 1,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 1,
   ),
   Badge(
@@ -28,7 +28,7 @@ final List<Badge> BADGE_LIST = [
       type: BadgeType.totalCookingCount,
       targetCookingCount: 10,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 2,
   ),
   Badge(
@@ -42,7 +42,7 @@ final List<Badge> BADGE_LIST = [
       type: BadgeType.totalCookingCount,
       targetCookingCount: 30,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 3,
   ),
   Badge(
@@ -56,7 +56,7 @@ final List<Badge> BADGE_LIST = [
       type: BadgeType.totalCookingCount,
       targetCookingCount: 50,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 4,
   ),
   Badge(
@@ -70,6 +70,7 @@ final List<Badge> BADGE_LIST = [
       type: BadgeType.totalCookingCount,
       targetCookingCount: 100,
     ),
+    isDesignComplete: true,
     sortOrder: 5,
   ),
 
@@ -78,41 +79,42 @@ final List<Badge> BADGE_LIST = [
     id: 'continuous_01',
     name: '3일의 열정',
     description: '3일 연속 요리',
-    imagePath: 'assets/imgs/badge/continuous/continuous1.png',
+    imagePath: 'assets/imgs/badge/continuous/conti1.png',
     category: BadgeCategory.continuous,
     difficulty: BadgeDifficulty.weak,
     condition: BadgeCondition(
       type: BadgeType.consecutiveCooking,
       consecutiveDays: 3,
     ),
+    isDesignComplete: true,
     sortOrder: 10,
   ),
   Badge(
     id: 'continuous_02',
     name: '일주일의 습관',
     description: '7일 연속 요리',
-    imagePath: 'assets/imgs/badge/continuous/continuous2.png',
+    imagePath: 'assets/imgs/badge/continuous/conti2.png',
     category: BadgeCategory.continuous,
     difficulty: BadgeDifficulty.medium,
     condition: BadgeCondition(
       type: BadgeType.consecutiveCooking,
       consecutiveDays: 7,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 11,
   ),
   Badge(
     id: 'continuous_03',
     name: '지속의 마법사',
     description: '30일 연속 요리',
-    imagePath: 'assets/imgs/badge/continuous/continuous3.png',
+    imagePath: 'assets/imgs/badge/continuous/conti3.png',
     category: BadgeCategory.continuous,
     difficulty: BadgeDifficulty.strong,
     condition: BadgeCondition(
       type: BadgeType.consecutiveCooking,
       consecutiveDays: 30,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 12,
   ),
 
@@ -129,7 +131,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '쉬움',
       difficultyCount: 5,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 20,
   ),
   Badge(
@@ -144,7 +146,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '쉬움',
       difficultyCount: 15,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 21,
   ),
   Badge(
@@ -159,7 +161,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '쉬움',
       difficultyCount: 30,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 22,
   ),
 
@@ -176,7 +178,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '보통',
       difficultyCount: 3,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 25,
   ),
   Badge(
@@ -191,7 +193,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '보통',
       difficultyCount: 12,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 26,
   ),
   Badge(
@@ -206,7 +208,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '보통',
       difficultyCount: 25,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 27,
   ),
 
@@ -223,7 +225,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '어려움',
       difficultyCount: 1,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 30,
   ),
   Badge(
@@ -238,7 +240,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '어려움',
       difficultyCount: 5,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 31,
   ),
   Badge(
@@ -253,6 +255,7 @@ final List<Badge> BADGE_LIST = [
       difficulty: '어려움',
       difficultyCount: 15,
     ),
+    isDesignComplete: true,
     sortOrder: 32,
   ),
 
@@ -269,6 +272,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '한식',
       recipeTypeCount: 5,
     ),
+    isDesignComplete: true,
     sortOrder: 40,
   ),
   Badge(
@@ -283,7 +287,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '한식',
       recipeTypeCount: 15,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 41,
   ),
   Badge(
@@ -298,7 +302,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '한식',
       recipeTypeCount: 35,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 42,
   ),
 
@@ -315,6 +319,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '양식',
       recipeTypeCount: 5,
     ),
+    isDesignComplete: true,
     sortOrder: 45,
   ),
   Badge(
@@ -329,7 +334,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '양식',
       recipeTypeCount: 12,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 46,
   ),
   Badge(
@@ -344,7 +349,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '양식',
       recipeTypeCount: 25,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 47,
   ),
 
@@ -361,7 +366,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '중식',
       recipeTypeCount: 3,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 50,
   ),
   Badge(
@@ -376,7 +381,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '중식',
       recipeTypeCount: 8,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 51,
   ),
   Badge(
@@ -391,7 +396,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '중식',
       recipeTypeCount: 18,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 52,
   ),
 
@@ -408,7 +413,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '일식',
       recipeTypeCount: 3,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 55,
   ),
   Badge(
@@ -423,7 +428,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '일식',
       recipeTypeCount: 10,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 56,
   ),
   Badge(
@@ -438,7 +443,7 @@ final List<Badge> BADGE_LIST = [
       recipeType: '일식',
       recipeTypeCount: 20,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 57,
   ),
 
@@ -456,6 +461,7 @@ final List<Badge> BADGE_LIST = [
       timeRangeEnd: 7,   // 7시
       timeBasedCount: 15,
     ),
+    isDesignComplete: true,
     sortOrder: 60,
   ),
   Badge(
@@ -471,7 +477,7 @@ final List<Badge> BADGE_LIST = [
       timeRangeEnd: 14,   // 14시
       timeBasedCount: 25,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 61,
   ),
   Badge(
@@ -483,11 +489,11 @@ final List<Badge> BADGE_LIST = [
     difficulty: BadgeDifficulty.medium,
     condition: BadgeCondition(
       type: BadgeType.timeBasedCooking,
-      timeRangeStart: 22, // 22시
-      timeRangeEnd: 23,   // 23시 (24시간제에서는 23까지)
+      timeRangeStart: 22, // 22시 (밤 10시)
+      timeRangeEnd: 6,    // 6시 (새벽 6시) - 자정을 넘어가는 범위
       timeBasedCount: 20,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 62,
   ),
 
@@ -503,6 +509,7 @@ final List<Badge> BADGE_LIST = [
       type: BadgeType.wishlistCollection,
       wishlistCount: 30,
     ),
+    isDesignComplete: true,
     sortOrder: 70,
   ),
   Badge(
@@ -516,7 +523,7 @@ final List<Badge> BADGE_LIST = [
       type: BadgeType.recipeRetry,
       sameRecipeRetryCount: 5,
     ),
-    isDesignComplete: false, // 파일명 공백
+    isDesignComplete: true,
     sortOrder: 71,
   ),
 ];

@@ -29,6 +29,9 @@ class UserStatus extends ChangeNotifier {
   int get currentPoints => _userProfile?.points ?? 0;
   int get currentLevel => _userProfile?.level ?? 1;
   int get currentExperience => _userProfile?.experience ?? 0;
+  
+  // 커스텀 레시피 생성권 관련 getter
+  int get customRecipeTickets => _userProfile?.customRecipeTickets ?? 0;
 
   UserStatus() {
     loadUserStatus();
@@ -161,6 +164,31 @@ class UserStatus extends ChangeNotifier {
     }
   }
 
+  /// 메인 뱃지 변경에 따른 프로필 업데이트 (BadgeStatus에서 호출)
+  Future<void> updateMainBadgeProfile(String? badgeId) async {
+    try {
+      if (_userProfile == null) {
+        // 프로필이 없으면 기본 프로필 생성
+        _userProfile = UserProfile(
+          uid: 'local_user',
+          email: 'local@example.com',
+          name: _nickname,
+          provider: LoginProvider.none,
+        );
+      }
+
+      final updatedProfile = _userProfile!.copyWith(
+        isUsingBadgeProfile: badgeId != null,
+        mainBadgeId: badgeId,
+      );
+      
+      await updateUserProfile(updatedProfile);
+      print('메인 뱃지 변경에 따른 프로필 업데이트 완료: $badgeId');
+    } catch (e) {
+      print('메인 뱃지 프로필 업데이트 실패: $e');
+    }
+  }
+
   /// 현재 표시할 프로필 이미지 경로 가져오기
   String getDisplayProfileImage() {
     if (_userProfile == null) {
@@ -277,7 +305,112 @@ class UserStatus extends ChangeNotifier {
     }
   }
 
+  // =============== 커스텀 레시피 생성권 관련 메서드 ===============
+
+  /// 커스텀 레시피 생성권 추가
+  Future<void> addCustomRecipeTickets(int tickets) async {
+    if (tickets <= 0) return;
+
+    try {
+      final currentProfile = _userProfile ?? UserProfile(
+        uid: 'local_user',
+        email: 'local@example.com',
+        name: _nickname,
+        provider: LoginProvider.none,
+      );
+
+      final updatedProfile = currentProfile.copyWith(
+        customRecipeTickets: currentProfile.customRecipeTickets + tickets,
+      );
+
+      await updateUserProfile(updatedProfile);
+      print('커스텀 레시피 생성권 추가: +$tickets (총 ${updatedProfile.customRecipeTickets}개)');
+    } catch (e) {
+      print('커스텀 레시피 생성권 추가 실패: $e');
+    }
+  }
+
+  /// 커스텀 레시피 생성권 사용 (1개 차감)
+  Future<bool> useCustomRecipeTicket() async {
+    try {
+      final currentProfile = _userProfile ?? UserProfile(
+        uid: 'local_user',
+        email: 'local@example.com',
+        name: _nickname,
+        provider: LoginProvider.none,
+      );
+
+      if (currentProfile.customRecipeTickets <= 0) {
+        print('커스텀 레시피 생성권 부족: 현재 ${currentProfile.customRecipeTickets}개');
+        return false;
+      }
+
+      final updatedProfile = currentProfile.copyWith(
+        customRecipeTickets: currentProfile.customRecipeTickets - 1,
+      );
+
+      await updateUserProfile(updatedProfile);
+      print('커스텀 레시피 생성권 사용: -1 (남은 ${updatedProfile.customRecipeTickets}개)');
+      return true;
+    } catch (e) {
+      print('커스텀 레시피 생성권 사용 실패: $e');
+      return false;
+    }
+  }
+
+  /// 커스텀 레시피 생성권 구매 (포인트로)
+  Future<bool> purchaseCustomRecipeTickets(int tickets, int totalCost) async {
+    if (tickets <= 0 || totalCost <= 0) return false;
+
+    try {
+      final currentProfile = _userProfile ?? UserProfile(
+        uid: 'local_user',
+        email: 'local@example.com',
+        name: _nickname,
+        provider: LoginProvider.none,
+      );
+
+      if (currentProfile.points < totalCost) {
+        print('포인트 부족: 현재 ${currentProfile.points}P, 필요 ${totalCost}P');
+        return false;
+      }
+
+      final updatedProfile = currentProfile.copyWith(
+        points: currentProfile.points - totalCost,
+        customRecipeTickets: currentProfile.customRecipeTickets + tickets,
+      );
+
+      await updateUserProfile(updatedProfile);
+      print('커스텀 레시피 생성권 구매 완료: +${tickets}개, -${totalCost}P');
+      print('남은 포인트: ${updatedProfile.points}P, 총 생성권: ${updatedProfile.customRecipeTickets}개');
+      return true;
+    } catch (e) {
+      print('커스텀 레시피 생성권 구매 실패: $e');
+      return false;
+    }
+  }
+
   // =============== 경험치 및 레벨 관련 메서드 ===============
+
+  /// 난이도별 경험치 반환
+  int getDifficultyExperience(String difficulty) {
+    switch (difficulty) {
+      case '매우쉬움':
+      case '매우 쉬움':
+        return 10;
+      case '쉬움':
+        return 10;
+      case '보통':
+        return 20;
+      case '어려움':
+        return 20;
+      case '매우어려움':
+      case '매우 어려움':
+        return 30;
+      default:
+        return 20; // 기본값
+    }
+  }
 
   /// 특정 레벨에 필요한 총 경험치 계산
   /// 레벨 1: 0XP, 레벨 2: 100XP, 레벨 3: 210XP, 레벨 4: 330XP...
@@ -344,8 +477,8 @@ class UserStatus extends ChangeNotifier {
         final levelDiff = newLevel - currentProfile.level;
         print('🎉 레벨업! ${currentProfile.level} → $newLevel (+$levelDiff레벨)');
 
-        // 레벨업 보상 포인트 지급 (레벨당 50포인트)
-        final bonusPoints = levelDiff * 50;
+        // 레벨업 보상 포인트 지급 (레벨당 100포인트)
+        final bonusPoints = levelDiff * 100;
         final finalProfile = updatedProfile.copyWith(
           points: updatedProfile.points + bonusPoints,
         );
@@ -378,8 +511,9 @@ class UserStatus extends ChangeNotifier {
     _cookingHistory.insert(0, CookingHistory(recipe: recipe, dateTime: DateTime.now()));
     saveUserStatus();
 
-    // 요리 완료 시 경험치 지급 (30XP)
-    addExperience(30);
+    // 요리 완료 시 난이도별 경험치 지급
+    int expToAdd = getDifficultyExperience(recipe.difficulty);
+    addExperience(expToAdd);
 
     notifyListeners();
 
@@ -450,13 +584,17 @@ class UserStatus extends ChangeNotifier {
     return consecutiveDays;
   }
 
-  void reset() {
+  Future<void> reset() async {
     _cookingHistory.clear();
     _ongoingCooking.clear();
     _isInitialized = false;
     _userProfile = null;
     _profileImage = null;
     _nickname = generateRandomNickname();
+    
+    // Hive에서 UserProfile 완전 삭제
+    await HiveService.clearUserProfile();
+    
     saveUserStatus();
     notifyListeners();
   }

@@ -108,89 +108,227 @@ class _SearchRecipeComponentState extends State<SearchRecipeComponent> {
             FocusScope.of(context).unfocus();
           },
           child: Column(
-              children: [
+            children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   HeaderWidget(title: '레시피 탐색'),
-                  IconButton(
-                    onPressed: () {
-                      context.push('/custom');
-                    },
-                    icon: Icon(
-                      Icons.add_circle_outline,
-                      color: Color(0xFF5E3009),
-                      size: 28.w,
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 2.h),
+                    child: Consumer<UserStatus>(
+                      builder: (context, userStatus, child) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 포인트 현황 - 캡슐 형태
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFF5F1ED),
+                                borderRadius: BorderRadius.circular(20.r),
+                                border: Border.all(
+                                  color: Color(0xFFD4C4B0),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 4,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'assets/imgs/items/ice.png',
+                                    width: 18.w,
+                                    height: 18.w,
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    '${userStatus.currentPoints}',
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF7D674B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            // 레시피 추가 버튼
+                            GestureDetector(
+                              onTap: () {
+                                context.push('/customRecipe');
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFFF8B27),
+                                  borderRadius: BorderRadius.circular(20.r),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0xFFFF8B27).withOpacity(0.2),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.add,
+                                      size: 16.w,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 6.w),
+                                    Text(
+                                      '레시피 추가',
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
-          SizedBox(height: 10.h),
-          DottedBarWidget(),
-          SizedBox(height: 12.h),
-          Column(
-            children: [
-              TextField(
-                autofocus: false,
-                focusNode: searchFocusNode,
-                controller: searchController,
-                textAlignVertical: TextAlignVertical.center,
-                onChanged: (value) {
-                  recipeStatus.updateSearchQuery(value);
-                },
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.zero,
-                  hintText: '레시피 검색',
-                  hintStyle: TextStyle(
-                      color: Colors.grey,
-                      fontFamily: 'Mapo',
-                      fontSize: isTablet(context) ? 12.sp : 15.5.sp),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Color(0xFF5E3009),
-                    size: isTablet(context) ? 20.w : 30.w,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: BorderSide(color: Color(0xFF707070)),),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r),
-                      borderSide: BorderSide(color: Color(0xFF5E3009)))
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Container(
-                  height: isTablet(context) ? 50.h : 46.h,
-                  decoration: BoxDecoration(
-                    color: Color(0xFFEAE5DF),
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        height: 34.h,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            FocusScope.of(context).unfocus();
-                            context.push('/recipeFilter');
+              SizedBox(height: 10.h),
+              DottedBarWidget(),
+              SizedBox(height: 12.h),
+              Column(
+                children: [
+                  // 레시피 토글 버튼 (커스텀 레시피가 있을 때만 표시)
+                  Consumer<RecipeStatus>(
+                    builder: (context, recipeStatus, child) {
+                      if (!recipeStatus.hasCustomRecipes) {
+                        return TextField(
+                          autofocus: false,
+                          focusNode: searchFocusNode,
+                          controller: searchController,
+                          textAlignVertical: TextAlignVertical.center,
+                          onChanged: (value) {
+                            recipeStatus.updateSearchQuery(value);
                           },
-                          child: Image.asset(
-                            'assets/imgs/icons/controlpanel.png',
-                            width: 20.w,
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.zero,
+                            hintText: '레시피 검색',
+                            hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontFamily: 'Mapo',
+                                fontSize: isTablet(context) ? 12.sp : 15.5.sp),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: Color(0xFF5E3009),
+                              size: isTablet(context) ? 20.w : 30.w,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(color: Color(0xFF707070)),),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r),
+                                borderSide: BorderSide(color: Color(0xFF5E3009)))
                           ),
-                          style: ElevatedButton.styleFrom(
-                            shape: CircleBorder(),
-                            backgroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
-                            minimumSize: Size.zero,
+                        );
+                      }
+
+                      return Column(
+                        children: [
+                          // 토글 버튼과 검색창을 나란히 배치
+                          Row(
+                            children: [
+                              // 토글 버튼 (5:5 비율)
+                              Expanded(
+                                flex: 5,
+                                child: _OptimizedToggle(
+                                  isSelected: recipeStatus.showCustomRecipes,
+                                  onToggle: (value) => recipeStatus.setShowCustomRecipes(value),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              // 검색창 (5:5 비율)
+                              Expanded(
+                                flex: 5,
+                                child: TextField(
+                                  autofocus: false,
+                                  focusNode: searchFocusNode,
+                                  controller: searchController,
+                                  textAlignVertical: TextAlignVertical.center,
+                                  onChanged: (value) {
+                                    recipeStatus.updateSearchQuery(value);
+                                  },
+                                  decoration: InputDecoration(
+                                    contentPadding: EdgeInsets.zero,
+                                    hintText: '레시피 검색',
+                                    hintStyle: TextStyle(
+                                        color: Colors.grey,
+                                        fontFamily: 'Mapo',
+                                        fontSize: isTablet(context) ? 12.sp : 15.5.sp),
+                                    prefixIcon: Icon(
+                                      Icons.search,
+                                      color: Color(0xFF5E3009),
+                                      size: isTablet(context) ? 20.w : 30.w,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8.r),
+                                      borderSide: BorderSide(color: Color(0xFF707070)),),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r),
+                                        borderSide: BorderSide(color: Color(0xFF5E3009)))
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  SizedBox(height: 8.h),
+                  Container(
+                    height: isTablet(context) ? 50.h : 46.h,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFEAE5DF),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          height: 34.h,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              FocusScope.of(context).unfocus();
+                              context.push('/recipeFilter');
+                            },
+                            child: Image.asset(
+                              'assets/imgs/icons/controlpanel.png',
+                              width: 20.w,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              shape: CircleBorder(),
+                              backgroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
+                              minimumSize: Size.zero,
+                            ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: FilterButtonsWidget(),
-                      ),
-                    ],
+                        Expanded(
+                          child: FilterButtonsWidget(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 ],
               ),
               SizedBox(height: 6.h),
@@ -261,6 +399,92 @@ class _SearchRecipeComponentState extends State<SearchRecipeComponent> {
           ),
         );
       },
+    );
+  }
+
+}
+
+class _OptimizedToggle extends StatefulWidget {
+  final bool isSelected;
+  final Function(bool) onToggle;
+
+  const _OptimizedToggle({
+    required this.isSelected,
+    required this.onToggle,
+  });
+
+  @override
+  State<_OptimizedToggle> createState() => _OptimizedToggleState();
+}
+
+class _OptimizedToggleState extends State<_OptimizedToggle> {
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(
+          color: Color(0xFF5E3009).withOpacity(0.3),
+          width: 1.0,
+        ),
+        color: Colors.transparent,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => widget.onToggle(false),
+              behavior: HitTestBehavior.translucent,
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                margin: EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: !widget.isSelected ? Color(0xFF5E3009) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '전체',
+                  style: TextStyle(
+                    color: !widget.isSelected ? Colors.white : Color(0xFF5E3009),
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Mapo',
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => widget.onToggle(true),
+              behavior: HitTestBehavior.translucent,
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                margin: EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: widget.isSelected ? Color(0xFF5E3009) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '내 레시피',
+                  style: TextStyle(
+                    color: widget.isSelected ? Colors.white : Color(0xFF5E3009),
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Mapo',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

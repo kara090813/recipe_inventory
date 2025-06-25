@@ -9,6 +9,9 @@ class QuestStatus extends ChangeNotifier {
   final QuestSyncService _syncService = QuestSyncService();
   List<Quest> _quests = [];
   bool _isLoading = false;
+  
+  // 이번 세션에서 새로 완료된 퀘스트 추적
+  List<String> _currentSessionNewQuests = [];
 
   // Getters
   List<Quest> get quests => List.unmodifiable(_quests);
@@ -87,6 +90,7 @@ class QuestStatus extends ChangeNotifier {
           // 새로 완료된 퀘스트 추가
           if (isNowCompleted && !quest.isCompleted) {
             completedQuests.add(updatedQuest);
+            _currentSessionNewQuests.add(quest.id);
             print('🎉 Quest completed: ${quest.title}');
           }
 
@@ -310,5 +314,16 @@ class QuestStatus extends ChangeNotifier {
     } catch (e) {
       print('💥 Error clearing quests: $e');
     }
+  }
+  
+  /// 이번 세션에서 새로 완료된 퀘스트 목록 반환
+  List<String> getCurrentSessionNewQuests() {
+    return List.unmodifiable(_currentSessionNewQuests);
+  }
+  
+  /// 이번 세션 새 퀘스트 목록 초기화 (새로운 요리 시작 시 호출)
+  void clearCurrentSessionNewQuests() {
+    _currentSessionNewQuests.clear();
+    print('🗑️ Current session new quests cleared');
   }
 }

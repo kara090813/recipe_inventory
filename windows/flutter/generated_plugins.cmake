@@ -7,7 +7,9 @@ list(APPEND FLUTTER_PLUGIN_LIST
   cloud_firestore
   file_selector_windows
   firebase_core
+  gal
   permission_handler_windows
+  share_plus
   url_launcher_windows
 )
 

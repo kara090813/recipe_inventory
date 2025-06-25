@@ -281,20 +281,25 @@ class _RecipeInfoScreenState extends State<RecipeInfoScreen> {
                       ),
                     ),
                     SizedBox(height: 14.h),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10.r),
-                      child: Image.network(
-                        _loadedRecipe!.thumbnail,
-                        fit: BoxFit.cover,
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            spreadRadius: 0,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: RecipeThumbnailWidget(
+                        recipe: _loadedRecipe!,
                         height: 200.h,
                         width: double.infinity,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(child: CircularProgressIndicator());
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(child: Icon(Icons.error));
-                        },
+                        borderRadius: BorderRadius.circular(12.r),
+                        fit: BoxFit.cover,
+                        highQuality: true,
                       ),
                     ),
                     if (isTablet(context))

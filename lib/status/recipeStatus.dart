@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../funcs/_funcs.dart';
 import '../models/_models.dart';
 import '../models/recipeSyncService.dart';
@@ -12,6 +13,7 @@ class RecipeStatus extends ChangeNotifier {
   static const int PAGE_SIZE = 10;
   final RecipeSyncService _syncService = RecipeSyncService();
   List<Recipe> _recipes = [];
+  List<Recipe> _customRecipes = [];
   List<Recipe> _loadedRecipes = [];
   List<Recipe> _recommendedRecipes = [];
   Set<String> _favoriteRecipeIds = {}; // 좋아요 누른 레시피 ID 목록
@@ -19,6 +21,7 @@ class RecipeStatus extends ChangeNotifier {
   String _searchQuery = '';
   bool _hasMore = true;
   int _currentPage = 0;
+  bool _showCustomRecipes = false; // 커스텀 레시피 표시 여부
 
   // 퀘스트 업데이트를 위한 콜백 함수
   Future<void> Function()? _questUpdateCallback;
@@ -180,6 +183,54 @@ class RecipeStatus extends ChangeNotifier {
   Future<void> _initializeRecipes() async {
     await _loadFavoriteRecipes();
     await refreshRecipes();
+    await loadCustomRecipes();
+  }
+
+  // 커스텀 레시피 관련 메서드들
+  List<Recipe> get customRecipes => _customRecipes;
+  bool get showCustomRecipes => _showCustomRecipes;
+  bool get hasCustomRecipes => _customRecipes.isNotEmpty;
+
+  void toggleRecipeMode() {
+    _showCustomRecipes = !_showCustomRecipes;
+    resetPagination();
+    notifyListeners();
+  }
+
+  void setShowCustomRecipes(bool value) {
+    _showCustomRecipes = value;
+    resetPagination();
+    notifyListeners();
+  }
+
+  Future<void> loadCustomRecipes() async {
+    try {
+      _customRecipes = HiveService.getCustomRecipes();
+      notifyListeners();
+    } catch (e) {
+      print('Error loading custom recipes: $e');
+    }
+  }
+
+  Future<void> deleteCustomRecipe(String id) async {
+    try {
+      await HiveService.deleteCustomRecipe(id);
+      _customRecipes.removeWhere((recipe) => recipe.id == id);
+      
+      // 커스텀 레시피가 모두 삭제되었다면 전체 레시피로 전환
+      if (_customRecipes.isEmpty && _showCustomRecipes) {
+        _showCustomRecipes = false;
+        resetPagination();
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      print('Error deleting custom recipe: $e');
+    }
+  }
+
+  List<Recipe> get currentRecipeList {
+    return _showCustomRecipes ? _customRecipes : _recipes;
   }
 
   Future<void> refreshRecipes() async {
@@ -265,6 +316,32 @@ class RecipeStatus extends ChangeNotifier {
     }
   }
 
+  /// Clear all cached server recipes and reset pagination
+  Future<void> clearAllRecipes() async {
+    try {
+      // Clear recipes from Hive storage
+      await HiveService.clearRecipes();
+      
+      // Clear sync metadata from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(RecipeSyncService.LAST_SYNC_KEY);
+      await prefs.remove(RecipeSyncService.LAST_RECIPE_DATE_KEY);
+      
+      // Clear internal state
+      _recipes.clear();
+      _loadedRecipes.clear();
+      _recommendedRecipes.clear();
+      _currentTabRecipes.clear();
+      
+      // Reset pagination
+      resetPagination();
+      
+      print('All server recipes cleared successfully');
+    } catch (e) {
+      print('Error clearing server recipes: $e');
+    }
+  }
+
   // 필터링된 레시피 가져오기
   List<Recipe> getFilteredRecipes(BuildContext context, {
     String? searchQuery,
@@ -274,8 +351,9 @@ class RecipeStatus extends ChangeNotifier {
     RangeValues? matchRate,
   }) {
     final foodStatus = Provider.of<FoodStatus>(context, listen: false);
+    final currentList = _showCustomRecipes ? _customRecipes : _recipes;
 
-    return _recipes.where((recipe) {
+    return currentList.where((recipe) {
       // 검색어 매칭 (제목과 서브타이틀 모두 검색)
       bool matchesSearch = searchQuery == null
           ? true

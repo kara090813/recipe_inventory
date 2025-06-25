@@ -25,12 +25,6 @@ class BadgeChecker {
 
       print('📊 Total Cooking History Count: ${cookingHistory.length}');
 
-      // 단계별 뱃지인 경우 이전 단계 완료 여부 체크
-      if (!_checkPreviousStagesCompleted(badge, userBadgeProgressList)) {
-        print('⚠️ Previous stages not completed for ${badge.name}');
-        return 0;
-      }
-
       int progress = 0;
 
       switch (badge.condition.type) {
@@ -107,40 +101,6 @@ class BadgeChecker {
     return historyData;
   }
 
-  /// 단계별 뱃지의 이전 단계 완료 여부 체크
-  static bool _checkPreviousStagesCompleted(
-      Badge badge,
-      List<UserBadgeProgress> userBadgeProgressList,
-      ) {
-    // 동일한 타입과 카테고리를 가진 뱃지들 찾기
-    final sameBadges = BADGE_LIST.where((b) =>
-    b.condition.type == badge.condition.type &&
-        b.category == badge.category
-    ).toList();
-
-    // sortOrder로 정렬
-    sameBadges.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-
-    // 현재 뱃지의 인덱스 찾기
-    final currentIndex = sameBadges.indexWhere((b) => b.id == badge.id);
-    if (currentIndex == -1 || currentIndex == 0) {
-      return true; // 첫 번째 단계이거나 찾을 수 없는 경우
-    }
-
-    // 이전 단계들이 모두 완료되었는지 체크
-    for (int i = 0; i < currentIndex; i++) {
-      final previousBadge = sameBadges[i];
-      final progress = userBadgeProgressList.where((p) => p.badgeId == previousBadge.id).firstOrNull;
-
-      if (progress == null || !progress.isUnlocked) {
-        print('❌ Previous stage not completed: ${previousBadge.name}');
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   /// 전체 요리 횟수 체크
   static int _checkTotalCookingCount(Badge badge, List<CookingHistory> history) {
     final count = history.length;
@@ -160,7 +120,15 @@ class BadgeChecker {
     final targetDifficulty = badge.condition.difficulty;
     if (targetDifficulty == null) return 0;
 
-    final matchingHistory = history.where((h) => h.recipe.difficulty == targetDifficulty).toList();
+    // 난이도 뱃지는 해당 난이도와 더 높은 난이도 모두 포함
+    final matchingHistory = history.where((h) {
+      if (targetDifficulty == '쉬움') {
+        return h.recipe.difficulty == '매우 쉬움' || h.recipe.difficulty == '쉬움';
+      } else if (targetDifficulty == '어려움') {
+        return h.recipe.difficulty == '어려움' || h.recipe.difficulty == '매우 어려움';
+      }
+      return h.recipe.difficulty == targetDifficulty;
+    }).toList();
     final count = matchingHistory.length;
 
     print('⭐ Difficulty ($targetDifficulty) Count: $count');

@@ -29,13 +29,16 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       recipe_method: (fields[9] as List).cast<String>(),
       recipe_tags: (fields[10] as List).cast<String>(),
       createdAt: fields[11] as String,
+      isCustom: fields[12] as bool,
+      youtubeUrl: fields[13] as String,
+      updatedAt: fields[14] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, Recipe obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +62,13 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       ..writeByte(10)
       ..write(obj.recipe_tags)
       ..writeByte(11)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(12)
+      ..write(obj.isCustom)
+      ..writeByte(13)
+      ..write(obj.youtubeUrl)
+      ..writeByte(14)
+      ..write(obj.updatedAt);
   }
 
   @override
@@ -133,6 +142,9 @@ _$RecipeImpl _$$RecipeImplFromJson(Map<String, dynamic> json) => _$RecipeImpl(
           .map((e) => e as String)
           .toList(),
       createdAt: json['createdAt'] as String? ?? "20240204000000",
+      isCustom: json['isCustom'] as bool? ?? false,
+      youtubeUrl: json['youtubeUrl'] as String? ?? "",
+      updatedAt: json['updatedAt'] as String? ?? "",
     );
 
 Map<String, dynamic> _$$RecipeImplToJson(_$RecipeImpl instance) =>
@@ -149,6 +161,9 @@ Map<String, dynamic> _$$RecipeImplToJson(_$RecipeImpl instance) =>
       'recipe_method': instance.recipe_method,
       'recipe_tags': instance.recipe_tags,
       'createdAt': instance.createdAt,
+      'isCustom': instance.isCustom,
+      'youtubeUrl': instance.youtubeUrl,
+      'updatedAt': instance.updatedAt,
     };
 
 _$IngredientImpl _$$IngredientImplFromJson(Map<String, dynamic> json) =>

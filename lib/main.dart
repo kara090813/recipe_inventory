@@ -111,6 +111,11 @@ class _RecipeInventoryState extends State<RecipeInventory> with WidgetsBindingOb
         await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
       });
 
+      // 🆕 뱃지 → UserStatus 프로필 업데이트 콜백 설정
+      badgeStatus.setUserProfileUpdateCallback((String? badgeId) async {
+        await userStatus.updateMainBadgeProfile(badgeId);
+      });
+
       // 🆕 초기 뱃지 진행도 업데이트 실행
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {

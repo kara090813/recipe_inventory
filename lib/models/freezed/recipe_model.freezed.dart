@@ -44,6 +44,12 @@ mixin _$Recipe {
   List<String> get recipe_tags => throw _privateConstructorUsedError;
   @HiveField(11)
   String get createdAt => throw _privateConstructorUsedError;
+  @HiveField(12)
+  bool get isCustom => throw _privateConstructorUsedError;
+  @HiveField(13)
+  String get youtubeUrl => throw _privateConstructorUsedError;
+  @HiveField(14)
+  String get updatedAt => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -67,7 +73,10 @@ abstract class $RecipeCopyWith<$Res> {
       @HiveField(8) List<Ingredient> ingredients,
       @HiveField(9) List<String> recipe_method,
       @HiveField(10) List<String> recipe_tags,
-      @HiveField(11) String createdAt});
+      @HiveField(11) String createdAt,
+      @HiveField(12) bool isCustom,
+      @HiveField(13) String youtubeUrl,
+      @HiveField(14) String updatedAt});
 }
 
 /// @nodoc
@@ -95,6 +104,9 @@ class _$RecipeCopyWithImpl<$Res, $Val extends Recipe>
     Object? recipe_method = null,
     Object? recipe_tags = null,
     Object? createdAt = null,
+    Object? isCustom = null,
+    Object? youtubeUrl = null,
+    Object? updatedAt = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -145,6 +157,18 @@ class _$RecipeCopyWithImpl<$Res, $Val extends Recipe>
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
               as String,
+      isCustom: null == isCustom
+          ? _value.isCustom
+          : isCustom // ignore: cast_nullable_to_non_nullable
+              as bool,
+      youtubeUrl: null == youtubeUrl
+          ? _value.youtubeUrl
+          : youtubeUrl // ignore: cast_nullable_to_non_nullable
+              as String,
+      updatedAt: null == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
+              as String,
     ) as $Val);
   }
 }
@@ -168,7 +192,10 @@ abstract class _$$RecipeImplCopyWith<$Res> implements $RecipeCopyWith<$Res> {
       @HiveField(8) List<Ingredient> ingredients,
       @HiveField(9) List<String> recipe_method,
       @HiveField(10) List<String> recipe_tags,
-      @HiveField(11) String createdAt});
+      @HiveField(11) String createdAt,
+      @HiveField(12) bool isCustom,
+      @HiveField(13) String youtubeUrl,
+      @HiveField(14) String updatedAt});
 }
 
 /// @nodoc
@@ -194,6 +221,9 @@ class __$$RecipeImplCopyWithImpl<$Res>
     Object? recipe_method = null,
     Object? recipe_tags = null,
     Object? createdAt = null,
+    Object? isCustom = null,
+    Object? youtubeUrl = null,
+    Object? updatedAt = null,
   }) {
     return _then(_$RecipeImpl(
       id: null == id
@@ -244,6 +274,18 @@ class __$$RecipeImplCopyWithImpl<$Res>
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
               as String,
+      isCustom: null == isCustom
+          ? _value.isCustom
+          : isCustom // ignore: cast_nullable_to_non_nullable
+              as bool,
+      youtubeUrl: null == youtubeUrl
+          ? _value.youtubeUrl
+          : youtubeUrl // ignore: cast_nullable_to_non_nullable
+              as String,
+      updatedAt: null == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -263,7 +305,10 @@ class _$RecipeImpl implements _Recipe {
       @HiveField(8) required final List<Ingredient> ingredients,
       @HiveField(9) required final List<String> recipe_method,
       @HiveField(10) required final List<String> recipe_tags,
-      @HiveField(11) this.createdAt = "20240204000000"})
+      @HiveField(11) this.createdAt = "20240204000000",
+      @HiveField(12) this.isCustom = false,
+      @HiveField(13) this.youtubeUrl = "",
+      @HiveField(14) this.updatedAt = ""})
       : _ingredients = ingredients,
         _recipe_method = recipe_method,
         _recipe_tags = recipe_tags;
@@ -326,10 +371,22 @@ class _$RecipeImpl implements _Recipe {
   @JsonKey()
   @HiveField(11)
   final String createdAt;
+  @override
+  @JsonKey()
+  @HiveField(12)
+  final bool isCustom;
+  @override
+  @JsonKey()
+  @HiveField(13)
+  final String youtubeUrl;
+  @override
+  @JsonKey()
+  @HiveField(14)
+  final String updatedAt;
 
   @override
   String toString() {
-    return 'Recipe(id: $id, link: $link, title: $title, sub_title: $sub_title, thumbnail: $thumbnail, recipe_type: $recipe_type, difficulty: $difficulty, ingredients_cnt: $ingredients_cnt, ingredients: $ingredients, recipe_method: $recipe_method, recipe_tags: $recipe_tags, createdAt: $createdAt)';
+    return 'Recipe(id: $id, link: $link, title: $title, sub_title: $sub_title, thumbnail: $thumbnail, recipe_type: $recipe_type, difficulty: $difficulty, ingredients_cnt: $ingredients_cnt, ingredients: $ingredients, recipe_method: $recipe_method, recipe_tags: $recipe_tags, createdAt: $createdAt, isCustom: $isCustom, youtubeUrl: $youtubeUrl, updatedAt: $updatedAt)';
   }
 
   @override
@@ -357,7 +414,13 @@ class _$RecipeImpl implements _Recipe {
             const DeepCollectionEquality()
                 .equals(other._recipe_tags, _recipe_tags) &&
             (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt));
+                other.createdAt == createdAt) &&
+            (identical(other.isCustom, isCustom) ||
+                other.isCustom == isCustom) &&
+            (identical(other.youtubeUrl, youtubeUrl) ||
+                other.youtubeUrl == youtubeUrl) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(ignore: true)
@@ -375,7 +438,10 @@ class _$RecipeImpl implements _Recipe {
       const DeepCollectionEquality().hash(_ingredients),
       const DeepCollectionEquality().hash(_recipe_method),
       const DeepCollectionEquality().hash(_recipe_tags),
-      createdAt);
+      createdAt,
+      isCustom,
+      youtubeUrl,
+      updatedAt);
 
   @JsonKey(ignore: true)
   @override
@@ -404,7 +470,10 @@ abstract class _Recipe implements Recipe {
       @HiveField(8) required final List<Ingredient> ingredients,
       @HiveField(9) required final List<String> recipe_method,
       @HiveField(10) required final List<String> recipe_tags,
-      @HiveField(11) final String createdAt}) = _$RecipeImpl;
+      @HiveField(11) final String createdAt,
+      @HiveField(12) final bool isCustom,
+      @HiveField(13) final String youtubeUrl,
+      @HiveField(14) final String updatedAt}) = _$RecipeImpl;
 
   factory _Recipe.fromJson(Map<String, dynamic> json) = _$RecipeImpl.fromJson;
 
@@ -444,6 +513,15 @@ abstract class _Recipe implements Recipe {
   @override
   @HiveField(11)
   String get createdAt;
+  @override
+  @HiveField(12)
+  bool get isCustom;
+  @override
+  @HiveField(13)
+  String get youtubeUrl;
+  @override
+  @HiveField(14)
+  String get updatedAt;
   @override
   @JsonKey(ignore: true)
   _$$RecipeImplCopyWith<_$RecipeImpl> get copyWith =>

@@ -9,6 +9,7 @@ import '../widgets/_widgets.dart';
 import '../models/_models.dart';
 import '../status/_status.dart';
 import '../funcs/_funcs.dart';
+import '../utils/custom_snackbar.dart';
 
 class BadgeCollectionScreen extends StatefulWidget {
   const BadgeCollectionScreen({Key? key}) : super(key: key);
@@ -343,9 +344,6 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
 
         // 메인 뱃지 (최적화된 렌더링)
         _buildOptimizedMainBadge(mainBadgeData),
-        
-        // 디버그 초기화 버튼 (작은 크기)
-        _buildDebugResetButton(),
       ],
     );
   }
@@ -647,7 +645,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(category.icon, style: TextStyle(fontSize: 14.sp)),
+                        _getCategoryIcon(category),
                         SizedBox(width: 6.w),
                         Text(
                           category.displayName,
@@ -709,7 +707,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(difficulty.icon, style: TextStyle(fontSize: 12.sp)),
+                    _getDifficultyIcon(difficulty),
                     SizedBox(width: 6.w),
                     Text(
                       difficulty.displayName,
@@ -1135,7 +1133,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                   width: 140.w,
                   height: 140.w,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(20.r),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -1144,7 +1142,8 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                       ),
                     ],
                   ),
-                  child: ClipOval(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20.r),
                     child: _buildOptimizedImage(
                       _getImagePath(data),
                       size: 140.w,
@@ -1170,7 +1169,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(data.badge.category.icon, style: TextStyle(fontSize: 10.sp)),
+                            _getCategoryIcon(data.badge.category, size: 10.sp),
                             SizedBox(width: 4.w),
                             Text(
                               data.badge.category.displayName,
@@ -1198,7 +1197,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(data.badge.difficulty.icon, style: TextStyle(fontSize: 10.sp)),
+                            _getDifficultyIcon(data.badge.difficulty, size: 10.sp),
                             SizedBox(width: 4.w),
                             Text(
                               data.badge.difficulty.displayName,
@@ -1355,7 +1354,7 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
 
                       SizedBox(height: 12.h),
 
-                      if (data.progress.isUnlocked)
+                      if (data.progress.isUnlocked) ...[
                         Container(
                           width: double.infinity,
                           height: 48.h,
@@ -1367,39 +1366,21 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                               Navigator.of(context).pop();
 
                               if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '메인 뱃지가 "${data.badge.name}"로 설정되었습니다!',
-                                      style: TextStyle(fontFamily: 'Mapo'),
-                                    ),
-                                    backgroundColor: Color(0xFF4CAF50),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
+                                CustomSnackBar.showSuccess(context, '메인 뱃지가 "${data.badge.name}"로 설정되었습니다!');
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '메인 뱃지 설정에 실패했습니다.',
-                                      style: TextStyle(fontFamily: 'Mapo'),
-                                    ),
-                                    backgroundColor: Color(0xFFFF5722),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
+                                CustomSnackBar.showError(context, '메인 뱃지 설정에 실패했습니다.');
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFFFF8B27),
-                              foregroundColor: Colors.white,
+                              backgroundColor: data.isMainBadge ? Color(0xFFE0E0E0) : Color(0xFFFF8B27),
+                              foregroundColor: data.isMainBadge ? Color(0xFF666666) : Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                               elevation: 0,
                             ),
                             child: Text(
-                              '메인뱃지로 선택하기',
+                              data.isMainBadge ? '현재 메인뱃지' : '메인뱃지로 선택하기',
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.bold,
@@ -1408,6 +1389,45 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
                             ),
                           ),
                         ),
+                        
+                        if (data.isMainBadge) ...[
+                          SizedBox(height: 12.h),
+                          Container(
+                            width: double.infinity,
+                            height: 48.h,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                final badgeStatus = Provider.of<BadgeStatus>(context, listen: false);
+                                final success = await badgeStatus.clearMainBadge();
+
+                                Navigator.of(context).pop();
+
+                                if (success) {
+                                  CustomSnackBar.showSuccess(context, '메인 뱃지가 해제되었습니다!');
+                                } else {
+                                  CustomSnackBar.showError(context, '메인 뱃지 해제에 실패했습니다.');
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFFFF4444),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                '메인뱃지 해제하기',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Mapo',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ],
                   ),
                 ),
@@ -1425,197 +1445,6 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
     final targetCount = _getTargetCount(data.badge);
     if (targetCount == 0) return 0.0;
     return (data.progress.currentProgress / targetCount * 100).clamp(0.0, 100.0);
-  }
-
-  /// 디버그용 초기화 버튼
-  Widget _buildDebugResetButton() {
-    return Container(
-      margin: EdgeInsets.only(left: 8.w),
-      child: GestureDetector(
-        onTap: () => _showDebugResetDialog(),
-        child: Container(
-          width: 32.w,
-          height: 32.w,
-          decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: Colors.red.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Icon(
-            Icons.refresh,
-            size: 16.w,
-            color: Colors.red,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 디버그 초기화 확인 다이얼로그
-  void _showDebugResetDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          '⚠️ 디버그 초기화',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.red,
-          ),
-        ),
-        content: Text(
-          '다음 데이터가 모두 초기화됩니다:\n\n'
-          '• 모든 뱃지 획득 기록\n'
-          '• 요리 히스토리\n'
-          '• 퀘스트 진행도\n'
-          '• 사용자 프로필 (레벨, 경험치, 포인트)\n\n'
-          '이 작업은 되돌릴 수 없습니다.\n정말 진행하시겠습니까?',
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: Color(0xFF666666),
-          ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              '취소',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontSize: 14.sp,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _performDebugReset();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-            child: Text(
-              '초기화',
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 디버그 초기화 실행
-  Future<void> _performDebugReset() async {
-    try {
-      // 로딩 다이얼로그 표시
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: Container(
-            padding: EdgeInsets.all(20.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: Color(0xFFFF8B27)),
-                SizedBox(height: 16.h),
-                Text(
-                  '데이터 초기화 중...',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Color(0xFF666666),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      // 각 Status에서 데이터 초기화
-      final badgeStatus = Provider.of<BadgeStatus>(context, listen: false);
-      final userStatus = Provider.of<UserStatus>(context, listen: false);
-      final questStatus = Provider.of<QuestStatus>(context, listen: false);
-
-      // 1. 뱃지 데이터 초기화
-      await badgeStatus.clearBadges();
-      
-      // 2. 사용자 데이터 초기화 (요리 히스토리, 프로필 등)
-      userStatus.reset();
-      
-      // 3. 퀘스트 데이터 초기화
-      await questStatus.clearQuests();
-
-      // 4. Badge Status 다시 초기화
-      await badgeStatus.refreshBadges();
-
-      // 로딩 다이얼로그 닫기
-      Navigator.of(context).pop();
-
-      // 성공 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '🎯 디버그 초기화가 완료되었습니다!',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: Color(0xFF4CAF50),
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-        ),
-      );
-
-      print('🗑️ 디버그 초기화 완료 - 모든 데이터가 초기화되었습니다.');
-
-    } catch (e) {
-      // 에러 발생 시 로딩 다이얼로그 닫기
-      Navigator.of(context).pop();
-
-      // 에러 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '❌ 초기화 중 오류가 발생했습니다: $e',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-        ),
-      );
-
-      print('💥 디버그 초기화 실패: $e');
-    }
   }
 
   Widget _buildProgressBarWithPointer(CombinedBadgeData data) {
@@ -1690,6 +1519,68 @@ class _BadgeCollectionScreenState extends State<BadgeCollectionScreen>
             ],
           ),
         );
+      },
+    );
+  }
+
+  // 카테고리 아이콘 위젯 반환
+  Widget _getCategoryIcon(BadgeCategory category, {double? size}) {
+    String imagePath;
+    switch (category) {
+      case BadgeCategory.count:
+        imagePath = 'assets/imgs/icons/badge_count.png';
+        break;
+      case BadgeCategory.continuous:
+        imagePath = 'assets/imgs/icons/badge_continous.png';
+        break;
+      case BadgeCategory.difficulty:
+        imagePath = 'assets/imgs/icons/badge_difficulty.png';
+        break;
+      case BadgeCategory.type:
+        imagePath = 'assets/imgs/icons/badge_type.png';
+        break;
+      case BadgeCategory.time:
+        imagePath = 'assets/imgs/icons/badge_time.png';
+        break;
+      case BadgeCategory.special:
+        imagePath = 'assets/imgs/icons/badge_spec.png';
+        break;
+    }
+
+    return Image.asset(
+      imagePath,
+      width: size ?? 14.sp,
+      height: size ?? 14.sp,
+      errorBuilder: (context, error, stackTrace) {
+        return Text(category.icon, style: TextStyle(fontSize: size ?? 14.sp));
+      },
+    );
+  }
+
+  // 난이도 아이콘 위젯 반환
+  Widget _getDifficultyIcon(BadgeDifficulty difficulty, {double? size}) {
+    String imagePath;
+    switch (difficulty) {
+      case BadgeDifficulty.weak:
+        imagePath = 'assets/imgs/icons/fire1.png';
+        break;
+      case BadgeDifficulty.medium:
+        imagePath = 'assets/imgs/icons/fire2.png';
+        break;
+      case BadgeDifficulty.strong:
+        imagePath = 'assets/imgs/icons/fire3.png';
+        break;
+      case BadgeDifficulty.hell:
+        imagePath = 'assets/imgs/icons/fire4.png';
+        break;
+    }
+
+    return Image.asset(
+      imagePath,
+      width: size ?? 12.sp,
+      height: size ?? 12.sp,
+      errorBuilder: (context, error, stackTrace) {
+        return Text(difficulty.icon, style: TextStyle(fontSize: size ?? 12.sp));
       },
     );
   }

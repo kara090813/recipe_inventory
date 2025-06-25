@@ -3,8 +3,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:flutter_reorderable_list/flutter_reorderable_list.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:convert';
 import '../widgets/backButton_widget.dart';
+import '../widgets/draggable_cooking_step_widget.dart';
 import '../status/userStatus.dart';
 import '../status/recipeStatus.dart';
 import '../services/hive_service.dart';
@@ -37,6 +40,8 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
   List<String> cookingSteps = [];
   List<String> tags = [];
   String _currentTagInput = '';
+  String? _thumbnailImagePath;
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> foodTypes = ['한식', '중식', '일식', '양식', '아시안', '기타'];
   final List<String> difficulties = ['매우 쉬움', '쉬움', '보통', '어려움', '매우 어려움'];
@@ -123,7 +128,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    context.pushReplacement('/custom-purchase');
+                    context.pushReplacement('/customRecipePurchase');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFFF8C00),
@@ -169,6 +174,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
         cookingSteps = List.from(draft.cookingSteps);
         tags = List.from(draft.tags);
         _youtubeLinkController.text = draft.youtubeUrl;
+        _thumbnailImagePath = draft.thumbnailPath.isNotEmpty ? draft.thumbnailPath : null;
       });
       }
     } catch (e) {
@@ -176,6 +182,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
       // 오류가 발생해도 앱이 중단되지 않도록 함
     }
   }
+
 
   void _saveDraft() {
     if (!HiveService.isInitialized) {
@@ -196,6 +203,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
         cookingSteps: cookingSteps,
         tags: tags,
         youtubeUrl: _youtubeLinkController.text,
+        thumbnailPath: _thumbnailImagePath ?? '',
       );
       HiveService.saveCustomRecipeDraft(draft);
     } catch (e) {
@@ -229,6 +237,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
       cookingSteps.clear();
       tags.clear();
       _currentTagInput = '';
+      _thumbnailImagePath = null;
       currentStep = 1;
     });
     _pageController.animateToPage(
@@ -258,12 +267,24 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
         final recipeId = Uuid().v4();
         final now = DateTime.now().millisecondsSinceEpoch.toString();
         
+        // 썸네일 이미지 처리
+        String thumbnailBase64 = '';
+        if (_thumbnailImagePath != null) {
+          try {
+            final imageFile = File(_thumbnailImagePath!);
+            final imageBytes = await imageFile.readAsBytes();
+            thumbnailBase64 = base64Encode(imageBytes);
+          } catch (e) {
+            print('썸네일 이미지 인코딩 실패: $e');
+          }
+        }
+        
         final customRecipe = Recipe(
           id: recipeId,
           link: '', // 커스텀 레시피는 링크 없음
           title: _recipeNameController.text,
           sub_title: _recipeDescController.text,
-          thumbnail: '', // 임시로 빈 문자열, 추후 이미지 처리 로직 추가
+          thumbnail: thumbnailBase64,
           recipe_type: selectedFoodType,
           difficulty: selectedDifficulty,
           ingredients_cnt: ingredients.length,
@@ -476,6 +497,60 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
         });
       }
     }
+  }
+
+  Future<void> _pickImage() async {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 20.h),
+            child: Wrap(
+              children: <Widget>[
+                ListTile(
+                  leading: Icon(Icons.photo_library, color: Color(0xFFFF8C00)),
+                  title: Text('갤러리에서 선택'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final XFile? image = await _picker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 80,
+                    );
+                    if (image != null) {
+                      setState(() {
+                        _thumbnailImagePath = image.path;
+                      });
+                      _saveDraft();
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.photo_camera, color: Color(0xFFFF8C00)),
+                  title: Text('카메라로 촬영'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final XFile? image = await _picker.pickImage(
+                      source: ImageSource.camera,
+                      imageQuality: 80,
+                    );
+                    if (image != null) {
+                      setState(() {
+                        _thumbnailImagePath = image.path;
+                      });
+                      _saveDraft();
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -870,7 +945,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,
-                hintText: '전남친 토스트',
+                hintText: '나만의 토스트',
                 hintStyle: TextStyle(color: Color(0xFFBBBBBB)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -917,7 +992,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,
-                hintText: '우리 레시피에 대한 간단한 소개를 적어주세요 :)\n예) 달콤하면서 짭짤한 맛이 일품인 토스트예요',
+                hintText: '레시피에 대한 간단한 소개를 적어주세요 :)\n예) 달콤하면서 짭짤한 맛이 일품인 토스트예요',
                 hintStyle: TextStyle(color: Color(0xFFBBBBBB), fontSize: 14.sp),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -1322,7 +1397,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,
-                hintText: '식빵을 프라이팬에 구워주다.',
+                hintText: '식빵을 프라이팬에 1분 구워준다.',
                 hintStyle: TextStyle(color: Color(0xFFBBBBBB)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -1374,93 +1449,16 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
               ),
             ),
             SizedBox(height: 16.h),
-            ReorderableListView(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
+            ReorderableCookingStepsList(
+              cookingSteps: cookingSteps,
               onReorder: (oldIndex, newIndex) {
                 setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
                   final item = cookingSteps.removeAt(oldIndex);
                   cookingSteps.insert(newIndex, item);
                   _saveDraft(); // 순서 변경 시 자동 저장
                 });
               },
-              children: cookingSteps.asMap().entries.map((entry) {
-                int index = entry.key;
-                String step = entry.value;
-                
-                return Container(
-                  key: ValueKey('step_$index'),
-                  margin: EdgeInsets.only(bottom: 12.h),
-                  child: Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFDF8F4),
-                      border: Border.all(color: Color(0xFFDEB887), width: 2),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Row(
-                      children: [
-                        // 드래그 핸들
-                        Icon(
-                          Icons.drag_handle,
-                          color: Color(0xFF999999),
-                          size: 20.w,
-                        ),
-                        SizedBox(width: 8.w),
-                        Container(
-                          width: 28.w,
-                          height: 28.w,
-                          decoration: BoxDecoration(
-                            color: Color(0xFFFF8C00),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${index + 1}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Text(
-                            step,
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              color: Color(0xFF5D4037),
-                              height: 1.4,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => _removeCookingStep(index),
-                          child: Container(
-                            width: 24.w,
-                            height: 24.w,
-                            decoration: BoxDecoration(
-                              color: Color(0xFFFF4444),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              size: 16.w,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+              onRemove: (index) => _removeCookingStep(index),
             ),
           ],
         ],
@@ -1487,46 +1485,91 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
             ),
           ),
           SizedBox(height: 8.h),
-          Container(
-            width: double.infinity,
-            height: 180.h,
-            decoration: BoxDecoration(
-              color: Color(0xFFF6E7DB),
-              border: Border.all(width: 2, color: Color(0xFFA8927F)),
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: InkWell(
-              onTap: () {
-                // 이미지 선택 로직
-              },
-              borderRadius: BorderRadius.circular(10.r),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/imgs/items/camera.png',
-                    width: 60.w,
-                  ),
-                  SizedBox(height: 14.h),
-                  Text(
-                    '여기를 눌러 이미지를 추가하세요',
-                    style: TextStyle(
-                      color: Color(0xFF6C3311),
-                      fontSize: 18.sp,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  Text(
-                    '갤러리에서 레시피 썸네일 이미지를\n선택해주세요.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFF898989),
-                      fontSize: 12.sp,
-                    ),
-                  ),
-                ],
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 180.h,
+                decoration: BoxDecoration(
+                  color: Color(0xFFF6E7DB),
+                  border: Border.all(width: 2, color: Color(0xFFA8927F)),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: InkWell(
+                  onTap: _pickImage,
+                  borderRadius: BorderRadius.circular(10.r),
+                  child: _thumbnailImagePath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10.r),
+                          child: Image.file(
+                            File(_thumbnailImagePath!),
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/imgs/items/camera.png',
+                              width: 60.w,
+                            ),
+                            SizedBox(height: 14.h),
+                            Text(
+                              '여기를 눌러 이미지를 추가하세요',
+                              style: TextStyle(
+                                color: Color(0xFF6C3311),
+                                fontSize: 18.sp,
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              '갤러리에서 레시피 썸네일 이미지를\n선택해주세요.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF898989),
+                                fontSize: 12.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
               ),
-            ),
+              if (_thumbnailImagePath != null)
+                Positioned(
+                  right: 8.w,
+                  top: 8.h,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _thumbnailImagePath = null;
+                      });
+                      _saveDraft();
+                    },
+                    child: Container(
+                      width: 32.w,
+                      height: 32.w,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        size: 18.w,
+                        color: Color(0xFFFF4444),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           SizedBox(height: 24.h),
 
@@ -1569,7 +1612,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,
-                hintText: 'https://www.youtube.com/HUBOG',
+                hintText: 'https://www.youtube.com/videoID',
                 hintStyle: TextStyle(color: Color(0xFFBBBBBB)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -1620,7 +1663,7 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
               // 레시피 제목
               Text(
                 _recipeNameController.text.isEmpty
-                    ? '전남친 토스트'
+                    ? '나만의 토스트'
                     : _recipeNameController.text,
                 style: TextStyle(
                   fontSize: 24.sp,
@@ -1652,13 +1695,23 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
                   color: Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
-                child: Center(
-                  child: Icon(
-                    Icons.image,
-                    size: 60.w,
-                    color: Color(0xFFBBBBBB),
-                  ),
-                ),
+                child: _thumbnailImagePath != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12.r),
+                        child: Image.file(
+                          File(_thumbnailImagePath!),
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Center(
+                        child: Icon(
+                          Icons.image,
+                          size: 60.w,
+                          color: Color(0xFFBBBBBB),
+                        ),
+                      ),
               ),
               SizedBox(height: 24.h),
 
@@ -1923,6 +1976,13 @@ class _CustomRecipeScreenState extends State<CustomRecipeScreen> {
   }
 
   Widget _buildBottomNavigation() {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    
+    // 키보드가 올라왔을 때는 네비게이션 숨기기
+    if (bottomInset > 0) {
+      return SizedBox.shrink();
+    }
+    
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(

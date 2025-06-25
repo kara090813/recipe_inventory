@@ -17,11 +17,17 @@ class BadgeStatus extends ChangeNotifier {
   // 뱃지 업데이트를 위한 콜백 함수 (다른 Status들로부터 받음)
   Future<void> Function()? _badgeUpdateCallback;
   
+  // UserStatus 연동을 위한 콜백 함수
+  Future<void> Function(String?)? _userProfileUpdateCallback;
+  
   // 뱃지 팝업 관련 필드
   List<Badge> _pendingBadgeNotifications = [];
   bool _isShowingBadgePopup = false;
   BuildContext? _currentContext;
   bool _isMigrationCompleted = false;
+  
+  // 이번 세션에서 새로 획득한 뱃지 추적
+  List<String> _currentSessionNewBadges = [];
 
   // Getters
   List<Badge> get badges => List.unmodifiable(_badges);
@@ -48,6 +54,12 @@ class BadgeStatus extends ChangeNotifier {
   void setBadgeUpdateCallback(Future<void> Function()? callback) {
     _badgeUpdateCallback = callback;
     print('BadgeStatus: Badge update callback set');
+  }
+
+  /// UserStatus 프로필 업데이트 콜백 설정
+  void setUserProfileUpdateCallback(Future<void> Function(String?)? callback) {
+    _userProfileUpdateCallback = callback;
+    print('BadgeStatus: UserProfile update callback set');
   }
 
   /// 앱 시작 시 뱃지 초기화
@@ -220,6 +232,9 @@ class BadgeStatus extends ChangeNotifier {
             newlyUnlockedBadges.add(updatedProgress);
             print('🎉 Badge unlocked: ${badge.name}');
 
+            // 이번 세션에서 새로 획득한 뱃지로 추가
+            _currentSessionNewBadges.add(badge.id);
+
             // 첫 번째 획득 뱃지를 메인 뱃지로 설정
             if (_mainBadge == null) {
               await _setMainBadgeInternal(badge.id);
@@ -344,6 +359,36 @@ class BadgeStatus extends ChangeNotifier {
     }
   }
 
+  /// 메인 뱃지 해제
+  Future<bool> clearMainBadge() async {
+    try {
+      // Hive에서 메인 뱃지 클리어
+      await HiveService.clearMainBadge();
+
+      // 로컬 상태 업데이트
+      _mainBadge = null;
+      _userBadgeProgressList = HiveService.getUserBadgeProgress();
+
+      // UserStatus 프로필 업데이트 트리거 (null로 해제)
+      if (_userProfileUpdateCallback != null) {
+        try {
+          await _userProfileUpdateCallback!(null);
+          print('BadgeStatus: UserProfile updated - main badge cleared');
+        } catch (e) {
+          print('BadgeStatus: Error clearing user profile badge: $e');
+        }
+      }
+
+      notifyListeners();
+
+      print('✅ Main badge cleared successfully');
+      return true;
+    } catch (e) {
+      print('💥 Error clearing main badge: $e');
+      return false;
+    }
+  }
+
   /// 메인 뱃지 설정 (내부용)
   Future<void> _setMainBadgeInternal(String badgeId) async {
     // Hive에서 메인 뱃지 설정
@@ -352,6 +397,16 @@ class BadgeStatus extends ChangeNotifier {
     // 로컬 상태 업데이트
     _mainBadge = HiveService.getMainBadge();
     _userBadgeProgressList = HiveService.getUserBadgeProgress();
+
+    // UserStatus 프로필 업데이트 트리거
+    if (_userProfileUpdateCallback != null) {
+      try {
+        await _userProfileUpdateCallback!(badgeId);
+        print('BadgeStatus: UserProfile updated with main badge: $badgeId');
+      } catch (e) {
+        print('BadgeStatus: Error updating user profile: $e');
+      }
+    }
 
     notifyListeners();
   }
@@ -604,6 +659,17 @@ class BadgeStatus extends ChangeNotifier {
   void clearPendingBadgePopups() {
     _pendingBadgeNotifications.clear();
     print('🗑️ All pending badge popups cleared');
+  }
+  
+  /// 이번 세션에서 새로 획득한 뱃지 목록 반환
+  List<String> getCurrentSessionNewBadges() {
+    return List.unmodifiable(_currentSessionNewBadges);
+  }
+  
+  /// 이번 세션 새 뱃지 목록 초기화 (새로운 요리 시작 시 호출)
+  void clearCurrentSessionNewBadges() {
+    _currentSessionNewBadges.clear();
+    print('🗑️ Current session new badges cleared');
   }
   
   /// 마이그레이션용 뱃지 업데이트 (알림 억제)

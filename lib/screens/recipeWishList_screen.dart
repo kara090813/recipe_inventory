@@ -185,17 +185,15 @@ class RecipeListItem extends StatelessWidget {
         elevation: 4,
         child: Row(
           children: [
-            ClipRRect(
+            RecipeThumbnailWidget(
+              recipe: recipe,
+              width: 120.w,
+              height: 120.w,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(10.r),
                 bottomLeft: Radius.circular(10.r),
               ),
-              child: Image.network(
-                recipe.thumbnail,
-                width: 120.w,
-                height: 120.w,
-                fit: BoxFit.cover,
-              ),
+              fit: BoxFit.cover,
             ),
             Expanded(
               child: Padding(

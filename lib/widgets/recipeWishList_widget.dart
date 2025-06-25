@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:recipe_inventory/funcs/_funcs.dart';
 import '../models/_models.dart';
+import '_widgets.dart';
 
 class RecipeWishListWidget extends StatelessWidget {
   final List<Recipe> recipes;
@@ -60,17 +61,15 @@ class RecipeWishCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
+          RecipeThumbnailWidget(
+            recipe: recipe,
+            height: 100.h,
+            width: double.infinity,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(9.r),
               topRight: Radius.circular(9.r),
             ),
-            child: Image.network(
-              recipe.thumbnail,
-              height: 100.h,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            fit: BoxFit.cover,
           ),
           Padding(
             padding: EdgeInsets.all(4.w),

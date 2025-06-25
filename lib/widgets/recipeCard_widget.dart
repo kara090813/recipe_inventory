@@ -69,56 +69,13 @@ class RecipeCardWidget extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: 45,
-                    child: ClipRRect(
+                    child: RecipeThumbnailWidget(
+                      recipe: recipe,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(10.r),
                       ),
-                      child: OverflowBox(
-                        maxWidth: double.infinity,
-                        maxHeight: double.infinity,
-                        child: FractionalTranslation(
-                          translation: Offset(0, 0),
-                          child: Transform.scale(
-                            scale: isTablet(context) ? 1 : 0.5,
-                            child: CachedNetworkImage(
-                              imageUrl: recipe.thumbnail,
-                              memCacheWidth: 400,
-                              memCacheHeight: 300,
-                              maxWidthDiskCache: 400,
-                              maxHeightDiskCache: 300,
-                              fadeInDuration: Duration(milliseconds: 200),
-                              fadeOutDuration: Duration(milliseconds: 200),
-                              filterQuality: FilterQuality.low,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.topCenter,
-                              cacheManager: DefaultCacheManager(),
-                              placeholder: (context, url) => Container(
-                                color: Color(0xFFF5F5F5),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 24.w,
-                                    height: 24.w,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Color(0xFFFF8B27),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                color: Color(0xFFF5F5F5),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    color: Colors.grey,
-                                    size: 32.w,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      fit: BoxFit.cover,
+                      cropYoutubeBars: true,
                     ),
                   ),
                   Expanded(

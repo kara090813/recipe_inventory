@@ -9,11 +9,15 @@ import '../funcs/_funcs.dart';
 import '../models/_models.dart';
 import '../models/data.dart';
 import '../status/_status.dart';
+import '../status/recipeStatus.dart';
+import '../status/badgeStatus.dart';
+import '../status/questStatus.dart';
 import '../widgets/_widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import 'dart:math';
 import 'dart:typed_data';
+import '../utils/custom_snackbar.dart';
 
 class ProfileSetScreen extends StatefulWidget {
   const ProfileSetScreen({super.key});
@@ -25,6 +29,8 @@ class ProfileSetScreen extends StatefulWidget {
 class _ProfileSetScreenState extends State<ProfileSetScreen> {
   String _version = '';
   bool _isProcessing = false;
+  bool _isAdminMode = false; // 관리자 모드 변수
+  int _versionTapCount = 0;
 
   @override
   void initState() {
@@ -88,9 +94,7 @@ class _ProfileSetScreenState extends State<ProfileSetScreen> {
       }
     } catch (e) {
       print('Error processing image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지 처리 중 오류가 발생했습니다.')),
-      );
+      CustomSnackBar.showError(context, '이미지 처리 중 오류가 발생했습니다.');
     } finally {
       setState(() {
         _isProcessing = false;
@@ -207,241 +211,347 @@ class _ProfileSetScreenState extends State<ProfileSetScreen> {
         builder: (context, userStatus, child) {
           Widget profileImage = _buildProfileImage(userStatus);
 
-          return Column(
-            children: [
-              Container(
-                color: Colors.white,
-                padding: EdgeInsets.fromLTRB(20.w, 50.h, 20.w, 0),
-                child: Column(
-                  children: [
-                    SizedBox(height: 4.h),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.pop(),
-                          child: Container(
-                            padding: EdgeInsets.all(10.w),
-                            color: Colors.transparent,
-                            child: Image.asset(
-                              'assets/imgs/icons/back_arrow.png',
-                              width: 26.w,
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  color: Colors.white,
+                  padding: EdgeInsets.fromLTRB(20.w, 50.h, 20.w, 0),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 4.h),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => context.pop(),
+                            child: Container(
+                              padding: EdgeInsets.all(10.w),
+                              color: Colors.transparent,
+                              child: Image.asset(
+                                'assets/imgs/icons/back_arrow.png',
+                                width: 26.w,
+                              ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '냉장고 털이 설정',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(0xFF7D674B),
-                              fontSize: 20.sp,
+                          Expanded(
+                            child: Text(
+                              '냉장고 털이 설정',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF7D674B),
+                                fontSize: 20.sp,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 40.w),
-                      ],
-                    ),
-                    SizedBox(height: 10.h),
-                    DottedBarWidget(),
-                    SizedBox(height: 30.h),
-                    Column(
-                      children: [
-                        GestureDetector(
-                          // onTap: () => _pickImage(context, userStatus),
-                          onTap:(){},
-                          child: Stack(
-                            children: [
-                              ClipOval(child: profileImage),
-                              if (!_isProcessing)
-                                // Positioned(
-                                //   right: 0,
-                                //   bottom: 5,
-                                //   child: Container(
-                                //     width: 28.w,
-                                //     height: 28.w,
-                                //     decoration: BoxDecoration(
-                                //       color: Colors.black,
-                                //       borderRadius: BorderRadius.circular(100),
-                                //     ),
-                                //     child: Center(
-                                //       child: Icon(
-                                //         Icons.photo_camera,
-                                //         color: Colors.white,
-                                //         size: 18.w,
-                                //       ),
-                                //     ),
-                                //   ),
-                                // ),
-                              if (_isProcessing)
-                                Positioned.fill(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          SizedBox(width: 40.w),
+                        ],
+                      ),
+                      SizedBox(height: 10.h),
+                      DottedBarWidget(),
+                      SizedBox(height: 30.h),
+                      Column(
+                        children: [
+                          GestureDetector(
+                            // onTap: () => _pickImage(context, userStatus),
+                            onTap:(){},
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(20.r),
+                                  child: profileImage,
+                                ),
+                                if (!_isProcessing)
+                                  // Positioned(
+                                  //   right: 0,
+                                  //   bottom: 5,
+                                  //   child: Container(
+                                  //     width: 28.w,
+                                  //     height: 28.w,
+                                  //     decoration: BoxDecoration(
+                                  //       color: Colors.black,
+                                  //       borderRadius: BorderRadius.circular(100),
+                                  //     ),
+                                  //     child: Center(
+                                  //       child: Icon(
+                                  //         Icons.photo_camera,
+                                  //         color: Colors.white,
+                                  //         size: 18.w,
+                                  //       ),
+                                  //     ),
+                                  //   ),
+                                  // ),
+                                if (_isProcessing)
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.5),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
                                       ),
                                     ),
                                   ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 12.h),
+                          GestureDetector(
+                            onTap: () => _showNicknameDialog(context, userStatus),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  userStatus.nickname,
+                                  style: TextStyle(fontSize: 22.sp),
                                 ),
-                            ],
+                                SizedBox(width: 4.w),
+                                Icon(
+                                  Icons.edit,
+                                  color: Color(0xFFB1B1B1),
+                                  size: 20.w,
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 30.h),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                  child: Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "버전",
+                          style: TextStyle(
+                            color: Color(0xFFFF8B27),
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 12.h),
-                        GestureDetector(
-                          onTap: () => _showNicknameDialog(context, userStatus),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                userStatus.nickname,
-                                style: TextStyle(fontSize: 22.sp),
-                              ),
-                              SizedBox(width: 4.w),
-                              Icon(
-                                Icons.edit,
-                                color: Color(0xFFB1B1B1),
-                                size: 20.w,
-                              ),
-                            ],
+                      ),
+                      SizedBox(height: 12.h),
+                      GestureDetector(
+                        onTap: () {
+                          _versionTapCount++;
+                          if (_versionTapCount >= 5) {
+                            setState(() {
+                              _isAdminMode = !_isAdminMode;
+                              _versionTapCount = 0;
+                            });
+                            CustomSnackBar.showInfo(context, _isAdminMode ? '관리자 모드 활성화' : '관리자 모드 비활성화');
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              '현재 버전 $_version',
+                              style: TextStyle(fontSize: 12.sp),
+                            ),
+                            Expanded(child: SizedBox()),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "라이선스",
+                          style: TextStyle(
+                            color: Color(0xFFFF8B27),
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 30.h),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Container(
-                width: double.infinity,
-                color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                child: Column(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "버전",
+                      ),
+                      SizedBox(height: 12.h),
+                      Text(
+                        '© 2025 LaMoss Tech. All rights reserved.',
                         style: TextStyle(
-                          color: Color(0xFFFF8B27),
                           fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF707070),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 12.h),
-                    Row(
-                      children: [
-                        Text(
-                          '현재 버전 $_version',
-                          style: TextStyle(fontSize: 12.sp),
-                        ),
-                        Expanded(child: SizedBox()),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Container(
-                width: double.infinity,
-                color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "라이선스",
+                      SizedBox(height: 4.h),
+                      Text(
+                        '이 앱은 서울시 "마포 브랜드 서체"를 사용하고 있습니다.',
                         style: TextStyle(
-                          color: Color(0xFFFF8B27),
                           fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF707070),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 12.h),
-                    Text(
-                      '© 2025 LaMoss Tech. All rights reserved.',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Color(0xFF707070),
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '이 앱은 서울시 "마포 브랜드 서체"를 사용하고 있습니다.',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Color(0xFF707070),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(height: 12.h),
-              Container(
-                width: double.infinity,
-                color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                child: Column(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "가이드 다시보기",
-                        style: TextStyle(
-                          color: Color(0xFFFF8B27),
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    InkWell(
-                      onTap: () {
-                        OnboardingGuide.showGuide(context, guideContents);
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.w),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 10.h,), // 패딩
-                          // 추가하여
-                          // 높이 통일
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF8B27),
-                            borderRadius: BorderRadius.circular(8.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
-                                spreadRadius: 1,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                SizedBox(height: 12.h),
+                Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                  child: Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "가이드 다시보기",
+                          style: TextStyle(
+                            color: Color(0xFFFF8B27),
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
                           ),
-                          child: Center(
-                            // 텍스트 중앙 정렬
-                            child: Text(
-                              "냉장고 털이 가이드 확인",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+                      InkWell(
+                        onTap: () {
+                          OnboardingGuide.showGuide(context, guideContents);
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.w),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 10.h,), // 패딩
+                            // 추가하여
+                            // 높이 통일
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF8B27),
+                              borderRadius: BorderRadius.circular(8.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.15),
+                                  spreadRadius: 1,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              // 텍스트 중앙 정렬
+                              child: Text(
+                                "냉장고 털이 가이드 확인",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                // 관리자 섹션
+                if (_isAdminMode) ...[
+                  SizedBox(height: 12.h),
+                  Container(
+                    width: double.infinity,
+                    color: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "관리자 모드",
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Switch(
+                              value: _isAdminMode,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isAdminMode = value;
+                                });
+                              },
+                              activeColor: Colors.red,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16.h),
+                        _buildAdminButton(
+                          "유저 Status 초기화",
+                          Icons.person_off,
+                          () async {
+                            final userStatus = Provider.of<UserStatus>(context, listen: false);
+                            final questStatus = Provider.of<QuestStatus>(context, listen: false);
+                            await userStatus.reset();
+                            await questStatus.clearQuests();
+                            CustomSnackBar.showSuccess(context, '유저 데이터가 초기화되었습니다.');
+                          },
+                        ),
+                        SizedBox(height: 8.h),
+                        _buildAdminButton(
+                          "레시피 초기화",
+                          Icons.restaurant_menu,
+                          () async {
+                            final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
+                            await recipeStatus.clearAllRecipes();
+                            CustomSnackBar.showSuccess(context, '레시피가 초기화되었습니다.');
+                          },
+                        ),
+                        SizedBox(height: 8.h),
+                        _buildAdminButton(
+                          "기타 Status 초기화",
+                          Icons.clear_all,
+                          () async {
+                            final badgeStatus = Provider.of<BadgeStatus>(context, listen: false);
+                            await badgeStatus.clearBadges();
+                            CustomSnackBar.showSuccess(context, '기타 데이터가 초기화되었습니다.');
+                          },
+                        ),
+                        SizedBox(height: 8.h),
+                        _buildAdminButton(
+                          "XP +100",
+                          Icons.trending_up,
+                          () async {
+                            final userStatus = Provider.of<UserStatus>(context, listen: false);
+                            await userStatus.addExperience(100);
+                            CustomSnackBar.showSuccess(context, 'XP가 100 증가했습니다.');
+                          },
+                        ),
+                        SizedBox(height: 8.h),
+                        _buildAdminButton(
+                          "포인트 +100",
+                          Icons.monetization_on,
+                          () {
+                            final userStatus = Provider.of<UserStatus>(context, listen: false);
+                            userStatus.addPoints(100);
+                            CustomSnackBar.showSuccess(context, '포인트가 100 증가했습니다.');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 150.h),
+                ],
+              ],
+            ),
           );
         },
       ),
@@ -478,6 +588,46 @@ class _ProfileSetScreenState extends State<ProfileSetScreen> {
     return Image.asset(
       'assets/imgs/items/baseProfile.png',
       width: 100.w,
+    );
+  }
+
+  Widget _buildAdminButton(String text, IconData icon, VoidCallback onPressed) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.red.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: Colors.red, size: 20.w),
+                  SizedBox(width: 12.w),
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey,
+                size: 16.w,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -9,6 +9,7 @@ import '../models/data.dart';
 import '../widgets/_widgets.dart';
 import '../components/_components.dart';
 import '_screens.dart';
+import '../utils/custom_snackbar.dart';
 
 class MainScreen extends StatefulWidget {
   MainScreen({Key? key}) : super(key: key);
@@ -63,12 +64,7 @@ class _MainScreenState extends State<MainScreen> {
               DateTime.now().difference(_lastPressedAt!) > Duration(seconds: 2)) {
             _lastPressedAt = DateTime.now();
 
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('뒤로가기를 한 번 더 누르면 앱이 종료됩니다'),
-                duration: Duration(seconds: 2),
-              ),
-            );
+            CustomSnackBar.showInfo(context, '뒤로가기를 한 번 더 누르면 앱이 종료됩니다');
           } else {
             // 2초 이내에 두 번째 클릭 시 앱 종료
             SystemNavigator.pop(); // 앱 종료를 위해 SystemNavigator.pop() 사용
@@ -76,11 +72,15 @@ class _MainScreenState extends State<MainScreen> {
         }
       },
       child: Scaffold(
-          body: ScaffoldPaddingWidget(
-            child: IndexedStack(
-              index: tabState.selectedIndex,
-              children: _widgetOptions,
-            ),
+          body: Stack(
+            children: [
+              ScaffoldPaddingWidget(
+                child: IndexedStack(
+                  index: tabState.selectedIndex,
+                  children: _widgetOptions,
+                ),
+              ),
+            ],
           ),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(

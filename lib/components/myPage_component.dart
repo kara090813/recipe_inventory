@@ -31,7 +31,103 @@ class MyPageComponent extends StatelessWidget {
 
     return Column(
       children: [
-        HeaderWidget(title: '마이페이지'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            HeaderWidget(title: '마이페이지'),
+            Padding(
+              padding: EdgeInsets.only(bottom: 2.h),
+              child: Consumer<UserStatus>(
+                builder: (context, userStatus, child) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 포인트 현황 - 캡슐 형태
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF5F1ED),
+                          borderRadius: BorderRadius.circular(20.r),
+                          border: Border.all(
+                            color: Color(0xFFD4C4B0),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 4,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(
+                              'assets/imgs/items/ice.png',
+                              width: 18.w,
+                              height: 18.w,
+                            ),
+                            SizedBox(width: 6.w),
+                            Text(
+                              '${userStatus.currentPoints}',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF7D674B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      // 레시피 추가 버튼
+                      GestureDetector(
+                        onTap: () {
+                          context.push('/customRecipe');
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFF8B27),
+                            borderRadius: BorderRadius.circular(20.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFFFF8B27).withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.add,
+                                size: 16.w,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                '레시피 추가',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
         SizedBox(height: 10.h),
         DottedBarWidget(),
         SizedBox(height: 8.h),
@@ -55,8 +151,8 @@ class MyPageComponent extends StatelessWidget {
 
                 SizedBox(height: 24.h),
 
-                // 🆕 퀘스트 & 뱃지 (2개 카드)
-                _buildQuestAndBadgeSection(context),
+                // 🆕 퀘스트 카드
+                _buildQuestSection(context),
 
                 SizedBox(height: 24.h),
 
@@ -114,34 +210,29 @@ class MyPageComponent extends StatelessWidget {
               // 프로필 이미지 + 레벨 뱃지
               Stack(
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      // 프로필 이미지 클릭 시 뱃지 선택 다이얼로그 표시
-                      _showProfileBadgeDialog(context, userStatus);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: userStatus.userProfile?.isUsingBadgeProfile == true 
-                            ? Color(0xFFFFB347) 
-                            : Color(0xFFBB885E), 
-                          width: 3
-                        ),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(
+                        color: userStatus.userProfile?.isUsingBadgeProfile == true 
+                          ? Color(0xFFFFB347) 
+                          : Color(0xFFBB885E), 
+                        width: 3
                       ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          userStatus.getDisplayProfileImage(), 
-                          width: 80.w, 
-                          height: 80.w, 
-                          fit: BoxFit.cover
-                        ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(17.r),
+                      child: Image.asset(
+                        userStatus.getDisplayProfileImage(), 
+                        width: 80.w, 
+                        height: 80.w, 
+                        fit: BoxFit.cover
                       ),
                     ),
                   ),
                   Positioned(
-                    bottom: -5,
-                    right: -5,
+                    bottom: -2,
+                    right: -2,
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
@@ -155,13 +246,13 @@ class MyPageComponent extends StatelessWidget {
                   // 프로필 타입 표시 아이콘
                   if (userStatus.userProfile?.isUsingBadgeProfile == true)
                     Positioned(
-                      top: -5,
-                      right: -5,
+                      top: -2,
+                      right: -2,
                       child: Container(
                         padding: EdgeInsets.all(4.w),
                         decoration: BoxDecoration(
                           color: Color(0xFFFFB347),
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(8.r),
                           boxShadow: [BoxShadow(color: Color(0xFFFF8B27).withOpacity(0.3), blurRadius: 4, offset: Offset(0, 2))],
                         ),
                         child: Icon(Icons.star, size: 12.w, color: Colors.white),
@@ -192,9 +283,9 @@ class MyPageComponent extends StatelessWidget {
                         SizedBox(width: 8.w),
                         OutlinedButton(
                           onPressed: () => context.push('/profileSet'),
-                          child: Text("설정", style: TextStyle(color: Color(0xFF7D674B), fontSize: 10.sp)),
+                          child: Text("설정", style: TextStyle(color: Color(0xFF7D674B), fontSize: 12.sp,fontFamily: 'Mapo')),
                           style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                             side: BorderSide(color: Color(0xFF7D674B)),
                             minimumSize: Size(0, 0),
                           ),
@@ -207,23 +298,10 @@ class MyPageComponent extends StatelessWidget {
                     // 포인트 표시
                     Row(
                       children: [
-                        Container(
+                        Image.asset(
+                          'assets/imgs/items/ice.png',
                           width: 16.w,
                           height: 16.w,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF6BB6FF),
-                            borderRadius: BorderRadius.circular(3.r),
-                          ),
-                          child: Center(
-                            child: Container(
-                              width: 10.w,
-                              height: 10.w,
-                              decoration: BoxDecoration(
-                                color: Color(0xFF4A9EFF),
-                                borderRadius: BorderRadius.circular(2.r),
-                              ),
-                            ),
-                          ),
                         ),
                         SizedBox(width: 4.w),
                         Text(
@@ -397,42 +475,105 @@ class MyPageComponent extends StatelessWidget {
                   
                   SizedBox(height: 12.h),
                   
-                  // 뱃지 관리 버튼
+                  // 페이지 관리 버튼
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => context.push('/badge'),
-                          icon: Icon(Icons.collections_bookmark, size: 14.w),
-                          label: Text('뱃지 컬렉션'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Color(0xFF7D674B),
-                            side: BorderSide(color: Color(0xFF7D674B)),
-                            padding: EdgeInsets.symmetric(vertical: 8.h),
-                            shape: RoundedRectangleBorder(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF8F2E8),
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(color: Color(0xFF7D674B), width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFF7D674B).withOpacity(0.15),
+                                blurRadius: 6,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => context.push('/badge'),
                               borderRadius: BorderRadius.circular(12.r),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.collections_bookmark,
+                                      size: 16.w,
+                                      color: Color(0xFF7D674B),
+                                    ),
+                                    SizedBox(width: 6.w),
+                                    Text(
+                                      '뱃지 컬렉션',
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7D674B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                       SizedBox(width: 8.w),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _showProfileBadgeDialog(context, userStatus),
-                          icon: Icon(
-                            mainBadge != null ? Icons.swap_horiz : Icons.star,
-                            size: 14.w,
-                          ),
-                          label: Text(mainBadge != null ? '뱃지 변경' : '뱃지 설정'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Color(0xFFFFB347),
-                            side: BorderSide(color: Color(0xFFFFB347)),
-                            padding: EdgeInsets.symmetric(vertical: 8.h),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
+                      Consumer<RecipeStatus>(
+                        builder: (context, recipeStatus, child) {
+                          return Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Color(0xFFFFF0E6),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(color: Color(0xFFFF8B27), width: 1.5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0xFFFF8B27).withOpacity(0.15),
+                                    blurRadius: 6,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: recipeStatus.hasCustomRecipes 
+                                      ? () => context.push('/custom-manage')
+                                      : () => context.push('/customRecipe'),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          recipeStatus.hasCustomRecipes ? Icons.restaurant_menu : Icons.add_circle,
+                                          size: 16.w,
+                                          color: Color(0xFFFF8B27),
+                                        ),
+                                        SizedBox(width: 6.w),
+                                        Text(
+                                          recipeStatus.hasCustomRecipes ? '레시피 관리' : '레시피 만들기',
+                                          style: TextStyle(
+                                            fontSize: 13.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFFFF8B27),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -445,510 +586,117 @@ class MyPageComponent extends StatelessWidget {
     );
   }
 
-  // 프로필 뱃지 선택 다이얼로그
-  void _showProfileBadgeDialog(BuildContext context, UserStatus userStatus) {
-    final badgeStatus = context.read<BadgeStatus>();
-    
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
+
+  // 퀘스트 섹션
+  Widget _buildQuestSection(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFFFE0B2), Color(0xFFFFF3E6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Color(0xFFFF8B27), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFFFF8B27).withOpacity(0.2),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
-          title: Text(
-            '프로필 설정',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF7D674B),
-            ),
-          ),
-          content: Container(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 현재 프로필 정보
-                Container(
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFFF3E6),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: Color(0xFFBB885E)),
-                  ),
-                  child: Row(
-                    children: [
-                      ClipOval(
-                        child: Image.asset(
-                          userStatus.getDisplayProfileImage(),
-                          width: 50.w,
-                          height: 50.w,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '현재 프로필',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Color(0xFF999999),
-                              ),
-                            ),
-                            Text(
-                              userStatus.getProfileType(),
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF7D674B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                SizedBox(height: 16.h),
-                
-                // 베이스 프로필로 변경 버튼
-                if (userStatus.userProfile?.isUsingBadgeProfile == true)
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await userStatus.toggleBadgeProfile(null);
-                      Navigator.of(context).pop();
-                    },
-                    icon: Icon(Icons.person, size: 16.w),
-                    label: Text('베이스 프로필로 변경'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFBB885E),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => context.push('/quest'),
+        borderRadius: BorderRadius.circular(16.r),
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Row(
+            children: [
+              Container(
+                width: 50.w,
+                height: 50.w,
+                decoration: BoxDecoration(
+                  color: Color(0xFFFF8B27),
+                  borderRadius: BorderRadius.circular(12.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFFFF8B27).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
                     ),
-                  ),
-                
-                SizedBox(height: 12.h),
-                
-                // 뱃지 프로필 선택 버튼
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _showBadgeSelectionDialog(context, userStatus, badgeStatus);
-                  },
-                  icon: Icon(Icons.star, size: 16.w),
-                  label: Text('뱃지 프로필 선택'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFFFB347),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                '닫기',
-                style: TextStyle(color: Color(0xFF7D674B)),
+                child: Center(
+                  child: Text('🏆', style: TextStyle(fontSize: 22.sp)),
+                ),
               ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 뱃지 선택 다이얼로그
-  void _showBadgeSelectionDialog(BuildContext context, UserStatus userStatus, BadgeStatus badgeStatus) {
-    // 획득한 뱃지만 필터링
-    final userBadges = badgeStatus.unlockedBadges;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          title: Text(
-            '뱃지 프로필 선택',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF7D674B),
-            ),
-          ),
-          content: Container(
-            width: double.maxFinite,
-            height: 400.h,
-            child: userBadges.isEmpty
-                ? Center(
-                    child: Text(
-                      '획득한 뱃지가 없습니다.',
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '냉털이 퀘스트',
                       style: TextStyle(
-                        fontSize: 14.sp,
-                        color: Color(0xFF999999),
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7D674B),
+                        fontFamily: 'Mapo',
                       ),
                     ),
-                  )
-                : GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 0.8,
-                      crossAxisSpacing: 12.w,
-                      mainAxisSpacing: 12.h,
-                    ),
-                    itemCount: userBadges.length,
-                    itemBuilder: (context, index) {
-                      final userBadge = userBadges[index];
-                      final badge = badgeStatus.getBadgeById(userBadge.badgeId);
-                      if (badge == null) return Container();
-
-                      final isSelected = userStatus.userProfile?.mainBadgeId == badge.id;
-
-                      return GestureDetector(
-                        onTap: () async {
-                          await userStatus.toggleBadgeProfile(badge.id);
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isSelected ? Color(0xFFFFE0B2) : Colors.white,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
-                              color: isSelected ? Color(0xFFFFB347) : Color(0xFFE0E0E0),
-                              width: isSelected ? 2 : 1,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: Color(0xFFFFB347).withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                badge.imagePath,
-                                width: 50.w,
-                                height: 50.w,
-                                fit: BoxFit.contain,
-                              ),
-                              SizedBox(height: 4.h),
-                              Text(
-                                badge.name,
-                                style: TextStyle(
-                                  fontSize: 10.sp,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? Color(0xFF7D674B) : Color(0xFF666666),
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (isSelected)
-                                Container(
-                                  margin: EdgeInsets.only(top: 4.h),
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFFFB347),
-                                    borderRadius: BorderRadius.circular(10.r),
-                                  ),
-                                  child: Text(
-                                    '사용중',
-                                    style: TextStyle(
-                                      fontSize: 8.sp,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                '취소',
-                style: TextStyle(color: Color(0xFF7D674B)),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 퀘스트 및 뱃지 섹션 (뱃지 카드 업데이트)
-  Widget _buildQuestAndBadgeSection(BuildContext context) {
-    return Column(
-      children: [
-        // 퀘스트 그라데이션 카드
-        Container(
-          margin: EdgeInsets.only(bottom: 12.h),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFFFE0B2), Color(0xFFFFF3E6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: Color(0xFFFF8B27), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Color(0xFFFF8B27).withOpacity(0.2),
-                spreadRadius: 0,
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: InkWell(
-            onTap: () => context.push('/quest'),
-            borderRadius: BorderRadius.circular(16.r),
-            child: Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Row(
-                children: [
-                  Container(
-                    width: 50.w,
-                    height: 50.w,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF8B27),
-                      borderRadius: BorderRadius.circular(12.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0xFFFF8B27).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text('🏆', style: TextStyle(fontSize: 22.sp)),
-                    ),
-                  ),
-                  SizedBox(width: 16.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '냉털이 퀘스트',
+                    SizedBox(height: 4.h),
+                    Consumer<QuestStatus>(
+                      builder: (context, questStatus, child) {
+                        final claimableCount = questStatus.quests
+                            .where((q) => q.isCompleted && !q.isRewardReceived)
+                            .length;
+                        return Text(
+                          claimableCount > 0
+                              ? "$claimableCount개의 보상을 수령할 수 있어요!"
+                              : "새로운 퀘스트에 도전하세요!",
                           style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF7D674B),
+                            fontSize: 12.sp,
+                            color: Color(0xFF8D6E63),
                             fontFamily: 'Mapo',
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Consumer<QuestStatus>(
-                          builder: (context, questStatus, child) {
-                            final claimableCount = questStatus.quests
-                                .where((q) => q.isCompleted && !q.isRewardReceived)
-                                .length;
-                            return Text(
-                              claimableCount > 0
-                                  ? "$claimableCount개의 보상을 수령할 수 있어요!"
-                                  : "새로운 퀘스트에 도전하세요!",
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Color(0xFF8D6E63),
-                                fontFamily: 'Mapo',
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  Consumer<QuestStatus>(
-                    builder: (context, questStatus, child) {
-                      final claimableCount = questStatus.quests
-                          .where((q) => q.isCompleted && !q.isRewardReceived)
-                          .length;
-                      if (claimableCount > 0) {
-                        return Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFFF8B27),
-                            borderRadius: BorderRadius.circular(20.r),
-                          ),
-                          child: Text(
-                            '$claimableCount',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Mapo',
-                            ),
                           ),
                         );
-                      }
-                      return Container();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        // 뱃지 그라데이션 카드
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFEFEBE7), Color(0xFFF5F0E8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: Color(0xFF7D674B), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Color(0xFF7D674B).withOpacity(0.2),
-                spreadRadius: 0,
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: InkWell(
-            onTap: () => context.push('/badge'),
-            borderRadius: BorderRadius.circular(16.r),
-            child: Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Row(
-                children: [
-                  Stack(
-                    children: [
-                      Container(
-                        width: 50.w,
-                        height: 50.w,
-                        decoration: BoxDecoration(
-                          color: Color(0xFF7D674B),
-                          borderRadius: BorderRadius.circular(12.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color(0xFF7D674B).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text('⭐', style: TextStyle(fontSize: 22.sp)),
-                        ),
-                      ),
-                      Consumer<BadgeStatus>(
-                        builder: (context, badgeStatus, child) {
-                          // 최근 획득한 뱃지가 있는지 확인 (예: 7일 이내)
-                          final recentBadges = badgeStatus.unlockedBadges
-                              .where((badge) => badge.unlockedAt != null &&
-                                  DateTime.now().difference(badge.unlockedAt!).inDays <= 7)
-                              .toList();
-                          
-                          if (recentBadges.isNotEmpty) {
-                            return Positioned(
-                              top: -2,
-                              right: -2,
-                              child: Container(
-                                width: 12.w,
-                                height: 12.w,
-                                decoration: BoxDecoration(
-                                  color: Color(0xFFFF3333),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1),
-                                ),
-                              ),
-                            );
-                          }
-                          return Container();
-                        },
-                      ),
-                    ],
-                  ),
-                  SizedBox(width: 16.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '뱃지 컬렉션',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF7D674B),
-                            fontFamily: 'Mapo',
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Consumer<BadgeStatus>(
-                          builder: (context, badgeStatus, child) {
-                            final recentBadges = badgeStatus.unlockedBadges
-                                .where((badge) => badge.unlockedAt != null &&
-                                    DateTime.now().difference(badge.unlockedAt!).inDays <= 7)
-                                .toList();
-                            
-                            return Text(
-                              recentBadges.isNotEmpty
-                                  ? '새로운 뱃지를 획득했어요!'
-                                  : '다양한 뱃지를 모아보세요!',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Color(0xFF8D6E63),
-                                fontFamily: 'Mapo',
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                      },
                     ),
-                  ),
-                  Consumer<BadgeStatus>(
-                    builder: (context, badgeStatus, child) {
-                      final unlockedCount = badgeStatus.unlockedBadges.length;
-                      final totalCount = badgeStatus.badges.length;
-                      return Text(
-                        '$unlockedCount/$totalCount',
+                  ],
+                ),
+              ),
+              Consumer<QuestStatus>(
+                builder: (context, questStatus, child) {
+                  final claimableCount = questStatus.quests
+                      .where((q) => q.isCompleted && !q.isRewardReceived)
+                      .length;
+                  if (claimableCount > 0) {
+                    return Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF8B27),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Text(
+                        '$claimableCount',
                         style: TextStyle(
-                          color: Color(0xFF7D674B),
+                          color: Colors.white,
                           fontSize: 14.sp,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Mapo',
                         ),
-                      );
-                    },
-                  ),
-                ],
+                      ),
+                    );
+                  }
+                  return Container();
+                },
               ),
-            ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -990,10 +738,13 @@ class MyPageComponent extends StatelessWidget {
             child: ListTile(
               leading: Image.asset('assets/imgs/icons/history_icon1.png', width: 20.w),
               title: Text(ongoingCooking[0].recipe.title),
-              subtitle: Text("요리 시작 일시 : ${ongoingCooking[0].startTime.year}. ${ongoingCooking[0].startTime.month.toString().padLeft(2, '0')}. ${ongoingCooking[0].startTime.day.toString().padLeft(2, '0')}"),
-              trailing: ClipRRect(
+              subtitle: Text("${ongoingCooking[0].startTime.month.toString().padLeft(2, '0')}월${ongoingCooking[0].startTime.day.toString().padLeft(2, '0')}일 ${ongoingCooking[0].startTime.hour.toString().padLeft(2, '0')}:${ongoingCooking[0].startTime.minute.toString().padLeft(2, '0')}"),
+              trailing: RecipeThumbnailWidget(
+                recipe: ongoingCooking[0].recipe,
+                width: 50.w,
+                height: 50.w,
                 borderRadius: BorderRadius.circular(8.r),
-                child: Image.network(ongoingCooking[0].recipe.thumbnail, width: 50.w, height: 50.w, fit: BoxFit.cover),
+                fit: BoxFit.cover,
               ),
             ),
           ),

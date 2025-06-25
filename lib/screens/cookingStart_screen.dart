@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:in_app_review/in_app_review.dart';
 import 'package:recipe_inventory/funcs/_funcs.dart';
@@ -15,8 +16,10 @@ import 'package:provider/provider.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../models/_models.dart';
+import '../models/freezed/badge_model.dart' as BadgeModel;
 import '../status/_status.dart';
 import '../widgets/_widgets.dart';
+import 'cook_complete_screen.dart';
 
 class CookingStartScreen extends StatefulWidget {
   final Recipe? recipe;
@@ -28,13 +31,45 @@ class CookingStartScreen extends StatefulWidget {
   State<CookingStartScreen> createState() => _CookingStartScreenState();
 }
 
-class _CookingStartScreenState extends State<CookingStartScreen> {
+class _CookingStartScreenState extends State<CookingStartScreen> with TickerProviderStateMixin {
   Recipe? _loadedRecipe;
   bool _isLoading = false;
   String? _error;
 
   /// (5.x) YoutubePlayerController
   late YoutubePlayerController _youtubeController;
+  
+  /// 조리 시작 시간
+  DateTime? _cookingStartTime;
+  
+  /// 애니메이션 컨트롤러들
+  late AnimationController _pulseController;
+  late AnimationController _glowController;
+  late AnimationController _bounceController;
+  late AnimationController _shimmerController;
+  
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _glowAnimation;
+  late Animation<double> _bounceAnimation;
+  late Animation<Offset> _shimmerAnimation;
+  
+  /// 타이머들
+  Timer? _nudgeTimer;
+  Timer? _cookingDurationTimer;
+  
+  /// 요리 진행 상태
+  int _cookingMinutes = 0;
+  bool _showMotivationalMessage = false;
+  
+  /// 메시지 목록
+  final List<String> _motivationalMessages = [
+    "🍳 요리가 거의 완성되어 가요!",
+    "👨‍🍳 맛있는 요리가 완성되었나요?",
+    "✨ 완료 버튼을 눌러 보상을 받아보세요!",
+    "🎁 새로운 뱃지와 퀘스트가 기다리고 있어요!",
+    "🏆 요리 완료로 경험치를 얻어보세요!",
+  ];
+  
 
   /// Interstitial 광고 ID
   final String interstitialAdUnitId = Platform.isAndroid
@@ -45,8 +80,115 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
   @override
   void initState() {
     super.initState();
+    _cookingStartTime = DateTime.now(); // 조리 시작 시간 기록
+    _initializeAnimations();
+    _startCookingTimer();
     _loadRecipe();
   }
+  
+  void _initializeAnimations() {
+    // 맥박 애니메이션 (느린 펄스)
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    
+    // 글로우 애니메이션 (빛나는 효과)
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    _glowAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+    
+    // 바운스 애니메이션
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _bounceAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
+    
+    // 시머 애니메이션 (반짝임)
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _shimmerAnimation = Tween<Offset>(
+      begin: const Offset(-2.0, 0.0),
+      end: const Offset(2.0, 0.0),
+    ).animate(CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // 자동 애니메이션 시작
+    _startAutoAnimations();
+  }
+  
+  void _startAutoAnimations() {
+    // 맥박 애니메이션 반복
+    _pulseController.repeat(reverse: true);
+    
+    // 글로우 애니메이션 반복
+    _glowController.repeat(reverse: true);
+    
+    // 넛지 타이머 설정 (15초마다)
+    _nudgeTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      _triggerAttentionAnimation();
+    });
+    
+  }
+  
+  void _startCookingTimer() {
+    _cookingDurationTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      setState(() {
+        _cookingMinutes++;
+      });
+      
+      // 10분 후부터 동기부여 메시지 표시
+      if (_cookingMinutes >= 10 && _cookingMinutes % 5 == 0) {
+        _showMotivationalNudge();
+      }
+    });
+  }
+  
+  void _triggerAttentionAnimation() {
+    if (mounted) {
+      _bounceController.forward().then((_) {
+        _bounceController.reverse();
+      });
+      
+      _shimmerController.forward().then((_) {
+        _shimmerController.reset();
+      });
+    }
+  }
+  
+  void _showMotivationalNudge() {
+    if (mounted) {
+      setState(() {
+        _showMotivationalMessage = true;
+      });
+      
+      _triggerAttentionAnimation();
+      
+      // 5초 후 메시지 숨김
+      Timer(const Duration(seconds: 5), () {
+        if (mounted) {
+          setState(() {
+            _showMotivationalMessage = false;
+          });
+        }
+      });
+    }
+  }
+  
 
   Future<void> _loadRecipe() async {
     setState(() {
@@ -95,6 +237,42 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  // 유튜브 링크가 유효한지 확인하는 메서드
+  bool _hasValidYouTubeLink() {
+    if (_loadedRecipe == null) return false;
+    
+    // 1. recipe.link 확인 (기본 레시피용)
+    if (_loadedRecipe!.link.isNotEmpty && 
+        _loadedRecipe!.link != '' && 
+        !_loadedRecipe!.link.contains('null') &&
+        Uri.tryParse(_loadedRecipe!.link) != null) {
+      return true;
+    }
+    
+    // 2. recipe.youtubeUrl 확인 (커스텀 레시피용)
+    if (_loadedRecipe!.youtubeUrl.isNotEmpty && 
+        _loadedRecipe!.youtubeUrl != '' && 
+        !_loadedRecipe!.youtubeUrl.contains('null') &&
+        Uri.tryParse(_loadedRecipe!.youtubeUrl) != null) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  // 유튜브 URL을 가져오는 메서드
+  String _getYouTubeUrl() {
+    if (_loadedRecipe == null) return '';
+    
+    // 커스텀 레시피의 경우 youtubeUrl 우선 사용
+    if (_loadedRecipe!.isCustom && _loadedRecipe!.youtubeUrl.isNotEmpty) {
+      return _loadedRecipe!.youtubeUrl;
+    }
+    
+    // 기본 레시피 또는 커스텀 레시피에 youtubeUrl이 없는 경우 link 사용
+    return _loadedRecipe!.link;
   }
 
   void _initializeYoutubePlayer() {
@@ -309,19 +487,21 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
   Future<void> _checkCookCountAndNavigate(BuildContext context) async {
     final userStatus = Provider.of<UserStatus>(context, listen: false);
     final badgeStatus = Provider.of<BadgeStatus>(context, listen: false);
+    final foodStatus = Provider.of<FoodStatus>(context, listen: false);
+    final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
+    final questStatus = Provider.of<QuestStatus>(context, listen: false);
     
-    // BadgeStatus에 현재 컨텍스트 설정 (뱃지 팝업 표시용)
-    badgeStatus.setCurrentContext(context);
+    // 이전 세션 새 뱃지/퀘스트 목록 초기화
+    badgeStatus.clearCurrentSessionNewBadges();
+    questStatus.clearCurrentSessionNewQuests();
     
     userStatus.endCooking(_loadedRecipe!);
     
-    // 강제로 뱃지 진행도 업데이트 및 팝업 확인
-    Future.delayed(const Duration(milliseconds: 100), () async {
-      final foodStatus = Provider.of<FoodStatus>(context, listen: false);
-      final recipeStatus = Provider.of<RecipeStatus>(context, listen: false);
-      await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
-      badgeStatus.showPendingBadgePopups();
-    });
+    // 뱃지 진행도 업데이트 (팝업 표시는 하지 않음)
+    await badgeStatus.updateBadgeProgress(userStatus, foodStatus, recipeStatus);
+    
+    // 퀘스트 진행도 업데이트
+    await questStatus.updateQuestProgress(userStatus, foodStatus, recipeStatus);
     
     final cookCount = userStatus.cookingHistory.length;
 
@@ -334,7 +514,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
     if (shouldRequestReview) {
       _showPreReviewNoticeDialog(context, cookCount);
     } else {
-      _showAdAndNavigateHome(context);
+      _navigateToCompleteScreen(context);
     }
   }
 
@@ -386,7 +566,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        _navigateToHome(context);
+                        _navigateToCompleteScreen(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE8E8E8),
@@ -431,7 +611,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                           debugPrint('리뷰 요청 실패: $e');
                         }
 
-                        _navigateToHome(context);
+                        _navigateToCompleteScreen(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF8B27),
@@ -469,41 +649,257 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
     context.go('/');
   }
 
-  /// 광고 표시 후 메인화면 이동
-  void _showAdAndNavigateHome(BuildContext context) {
-    if (_interstitialAd != null) {
-      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (ad) {
-          ad.dispose();
-          if (!mounted) return;  // mounted 체크
-          // TabStatus 변경
-          Provider.of<TabStatus>(context, listen: false).setIndex(4);
-          // 네비게이션
-          context.go('/');
-        },
-        onAdFailedToShowFullScreenContent: (ad, error) {
-          ad.dispose();
-          if (!mounted) return;  // mounted 체크
-          // TabStatus 변경
-          Provider.of<TabStatus>(context, listen: false).setIndex(4);
-          // 네비게이션
-          context.go('/');
-        },
-      );
-      _interstitialAd!.show();
-    } else {
-      if (!mounted) return;  // mounted 체크
-      // TabStatus 변경
-      Provider.of<TabStatus>(context, listen: false).setIndex(4);
-      // 네비게이션
-      context.go('/');
+  /// 완료 화면으로 이동 (광고 없이)
+  void _navigateToCompleteScreen(BuildContext context) {
+    if (!mounted) return;
+    
+    // 실제 조리 시간 계산 (분 단위)
+    final cookingTime = _calculateCookingTimeInMinutes();
+    
+    // 이번 세션에서 새로 획득한 뱃지와 퀘스트 정보 가져오기
+    final badgeStatus = Provider.of<BadgeStatus>(context, listen: false);
+    final questStatus = Provider.of<QuestStatus>(context, listen: false);
+    final newBadgeIds = badgeStatus.getCurrentSessionNewBadges();
+    final newQuests = questStatus.getCurrentSessionNewQuests();
+    
+    // 뱃지 ID로부터 실제 뱃지 객체들 가져오기
+    final newBadgeObjects = newBadgeIds
+        .map((id) => badgeStatus.getBadgeById(id))
+        .where((badge) => badge != null)
+        .cast<BadgeModel.Badge>()
+        .toList();
+    
+    print('🎯 NavigateToCompleteScreen - newBadgeIds: $newBadgeIds');
+    print('🎯 NavigateToCompleteScreen - newBadgeObjects: ${newBadgeObjects.length}');
+    
+    // GoRouter를 사용하여 완료 화면으로 이동
+    context.go('/cook-complete', extra: {
+      'recipe': _loadedRecipe!,
+      'cookingTime': cookingTime,
+      'newlyAcquiredBadgeIds': newBadgeIds,
+      'newlyCompletedQuestIds': newQuests,
+      'interstitialAd': _interstitialAd, // 광고 객체 전달
+      'newlyAcquiredBadges': newBadgeObjects, // 실제 뱃지 객체들 전달
+    });
+  }
+
+  /// 실제 조리 시간 계산 (분 단위)
+  int _calculateCookingTimeInMinutes() {
+    if (_cookingStartTime == null) {
+      print('⚠️ 조리 시작 시간이 기록되지 않음, 기본값 30분 반환');
+      return 30; // 기본값
     }
+    
+    final now = DateTime.now();
+    final duration = now.difference(_cookingStartTime!);
+    final minutes = duration.inMinutes;
+    
+    // 최소 1분, 최대 480분(8시간)으로 제한
+    final clampedMinutes = minutes.clamp(1, 480);
+    
+    print('🕒 조리 시간: ${duration.inHours}시간 ${duration.inMinutes % 60}분 (총 ${clampedMinutes}분)');
+    
+    return clampedMinutes;
   }
 
   /// 요리 종료 로직
   void _endCooking(BuildContext context) {
     if (_loadedRecipe == null) return;
     _showIngredientRemovalDialog(context, _loadedRecipe!);
+  }
+  
+  
+  /// 향상된 완료 버튼 위젯
+  Widget _buildEnhancedFinishButton() {
+    return Column(
+      children: [
+        // 동기부여 메시지 (조건부 표시)
+        if (_showMotivationalMessage)
+          AnimatedOpacity(
+            opacity: _showMotivationalMessage ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 500),
+            child: Container(
+              margin: EdgeInsets.only(bottom: 16.h),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFFFE4B5).withOpacity(0.9),
+                    const Color(0xFFFFD700).withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber[700],
+                    size: 20.w,
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    _motivationalMessages[Random().nextInt(_motivationalMessages.length)],
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF8B4513),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(width: 8.w),
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber[700],
+                    size: 20.w,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        
+        // 메인 완료 버튼
+        AnimatedBuilder(
+          animation: Listenable.merge([_pulseAnimation, _glowAnimation, _bounceAnimation, _shimmerAnimation]),
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _pulseAnimation.value * _bounceAnimation.value,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF8B27).withOpacity(_glowAnimation.value * 0.6),
+                      blurRadius: 20,
+                      spreadRadius: _glowAnimation.value * 4,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Stack(
+                    children: [
+                      // 기본 버튼
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFFFF8B27),
+                              const Color(0xFFFF6B00),
+                              const Color(0xFFE55100),
+                            ],
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () async {
+                              final result = await _showExitConfirmationDialog(context);
+                              if (result == null) {
+                                return;
+                              }
+                              if (result) {
+                                _endCooking(context);
+                              } else {
+                                context.pop();
+                              }
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 18.h),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: Colors.white,
+                                    size: 24.w,
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  Text(
+                                    '요리 완료하기',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'Mapo',
+                                      fontSize: 20.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12.r),
+                                    ),
+                                    child: Text(
+                                      '🎁',
+                                      style: TextStyle(fontSize: 16.sp),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // 시머 효과
+                      Positioned.fill(
+                        child: Transform.translate(
+                          offset: Offset(_shimmerAnimation.value.dx * 200, 0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.white.withOpacity(0.3),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.5, 1.0],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        
+        // 보조 설명 텍스트
+        SizedBox(height: 12.h),
+        Text(
+          '눌러야 퀘스트와 뱃지의 진행도가 체크되고 기록됩니다! 📊',
+          style: TextStyle(
+            fontSize: 13.sp,
+            color: const Color(0xFF8B4513),
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
   }
 
   /// 유튜브 플레이어 위젯
@@ -539,13 +935,25 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
     return Column(
       children: [
         // 썸네일 이미지
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10.r),
-          child: Image.network(
-            recipe.thumbnail,
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                spreadRadius: 0,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: RecipeThumbnailWidget(
+            recipe: recipe,
             width: double.infinity,
             height: 200.h,
+            borderRadius: BorderRadius.circular(12.r),
             fit: BoxFit.cover,
+            highQuality: true,
           ),
         ),
         SizedBox(height: 10.h),
@@ -560,6 +968,17 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
     if (_loadedRecipe != null) {
       _youtubeController.close();
     }
+    
+    // 애니메이션 컨트롤러들 정리
+    _pulseController.dispose();
+    _glowController.dispose();
+    _bounceController.dispose();
+    _shimmerController.dispose();
+    
+    // 타이머들 정리
+    _nudgeTimer?.cancel();
+    _cookingDurationTimer?.cancel();
+    
     super.dispose();
   }
 
@@ -747,44 +1166,47 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                             ),
                           ),
                           SizedBox(height: 4.h),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: InkWell(
-                              onTap: () async {
-                                final Uri youtubeUrl = Uri.parse(_loadedRecipe!.link);
-                                try {
-                                  // 유튜브 앱(설치 시) → 없으면 웹브라우저
-                                  await launchUrl(
-                                    youtubeUrl,
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                } catch (e) {
-                                  debugPrint('Could not launch youtube: $e');
-                                }
-                              },
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.link,
-                                    size: 24.w,
-                                    color: const Color(0xFF277AFF),
-                                  ),
-                                  SizedBox(width: 2.w),
-                                  Text(
-                                    '레시피 영상 보러가기',
-                                    style: TextStyle(
-                                      fontFamily: 'Mapo',
+                          // 유튜브 링크가 있는 경우에만 표시
+                          if (_hasValidYouTubeLink())
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: InkWell(
+                                onTap: () async {
+                                  final String youtubeUrl = _getYouTubeUrl();
+                                  final Uri uri = Uri.parse(youtubeUrl);
+                                  try {
+                                    // 유튜브 앱(설치 시) → 없으면 웹브라우저
+                                    await launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  } catch (e) {
+                                    debugPrint('Could not launch youtube: $e');
+                                  }
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.link,
+                                      size: 24.w,
                                       color: const Color(0xFF277AFF),
-                                      decoration: TextDecoration.underline,
-                                      decorationColor: const Color(0xFF277AFF),
-                                      decorationThickness: 1,
-                                      fontSize: 15.sp,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 2.w),
+                                    Text(
+                                      '레시피 영상 보러가기',
+                                      style: TextStyle(
+                                        fontFamily: 'Mapo',
+                                        color: const Color(0xFF277AFF),
+                                        decoration: TextDecoration.underline,
+                                        decorationColor: const Color(0xFF277AFF),
+                                        decorationThickness: 1,
+                                        fontSize: 15.sp,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
                           SizedBox(height: 10.h),
                           Row(
                             children: [
@@ -821,35 +1243,7 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
                             ingredients: _loadedRecipe!.ingredients,
                           ),
                           SizedBox(height: 8.h),
-                          ElevatedButton(
-                            onPressed: () async {
-                              final result = await _showExitConfirmationDialog(context);
-                              if (result == null) {
-                                return;
-                              }
-                              if (result) {
-                                _endCooking(context);
-                              } else {
-                                context.pop();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF5E3009),
-                              minimumSize: const Size(double.infinity, 0),
-                              padding: EdgeInsets.symmetric(vertical: 14.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                            ),
-                            child: Text(
-                              '요리 종료하기',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'Mapo',
-                                fontSize: 18.sp,
-                              ),
-                            ),
-                          ),
+                          _buildEnhancedFinishButton(),
                           SizedBox(height: 50.h),
                         ],
                       ),
@@ -960,3 +1354,4 @@ class _CookingStartScreenState extends State<CookingStartScreen> {
     );
   }
 }
+

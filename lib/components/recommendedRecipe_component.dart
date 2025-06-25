@@ -377,38 +377,10 @@ class RecipeCard extends StatelessWidget {
         children: [
           Expanded(
             flex: 1,
-            child: ClipRRect(
+            child: RecipeThumbnailWidget(
+              recipe: recipe,
               borderRadius: BorderRadius.vertical(top: Radius.circular(10.r)),
-              child: CachedNetworkImage(
-                imageUrl: recipe.thumbnail,
-                memCacheWidth: 600,
-                memCacheHeight: 400,
-                maxWidthDiskCache: 600,
-                maxHeightDiskCache: 400,
-                fadeInDuration: Duration(milliseconds: 200),
-                fadeOutDuration: Duration(milliseconds: 200),
-                filterQuality: FilterQuality.low,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Color(0xFFF5F5F5),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFFF8B27),
-                      strokeWidth: 2,
-                    ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Color(0xFFF5F5F5),
-                  child: Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: Colors.grey,
-                      size: 40,
-                    ),
-                  ),
-                ),
-              ),
+              fit: BoxFit.cover,
             ),
           ),
           Expanded(

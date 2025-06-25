@@ -25,15 +25,16 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       points: fields[5] as int,
       experience: fields[6] as int,
       level: fields[7] as int,
-      isUsingBadgeProfile: fields[8] != null ? fields[8] as bool : false,
+      isUsingBadgeProfile: fields[8] as bool,
       mainBadgeId: fields[9] as String?,
+      customRecipeTickets: fields[10] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProfile obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.uid)
       ..writeByte(1)
@@ -53,7 +54,9 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       ..writeByte(8)
       ..write(obj.isUsingBadgeProfile)
       ..writeByte(9)
-      ..write(obj.mainBadgeId);
+      ..write(obj.mainBadgeId)
+      ..writeByte(10)
+      ..write(obj.customRecipeTickets);
   }
 
   @override
@@ -127,6 +130,7 @@ _$UserProfileImpl _$$UserProfileImplFromJson(Map<String, dynamic> json) =>
       level: (json['level'] as num?)?.toInt() ?? 1,
       isUsingBadgeProfile: json['isUsingBadgeProfile'] as bool? ?? false,
       mainBadgeId: json['mainBadgeId'] as String?,
+      customRecipeTickets: (json['customRecipeTickets'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
@@ -141,6 +145,7 @@ Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
       'level': instance.level,
       'isUsingBadgeProfile': instance.isUsingBadgeProfile,
       'mainBadgeId': instance.mainBadgeId,
+      'customRecipeTickets': instance.customRecipeTickets,
     };
 
 const _$LoginProviderEnumMap = {

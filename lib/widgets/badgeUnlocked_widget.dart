@@ -83,7 +83,9 @@ class _BadgeUnlockedWidgetState extends State<BadgeUnlockedWidget>
     return AnimatedBuilder(
       animation: Listenable.merge([_scaleAnimation, _fadeAnimation]),
       builder: (context, child) {
-        return Material(
+        return Container(
+          width: double.infinity,
+          height: double.infinity,
           color: Colors.black.withOpacity(0.5 * _fadeAnimation.value),
           child: Center(
             child: Transform.scale(
@@ -282,7 +284,7 @@ Future<void> showBadgeUnlockedDialog({
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
-    barrierColor: Colors.transparent,
+    barrierColor: Colors.black.withOpacity(0.5),
     builder: (BuildContext context) {
       return BadgeUnlockedWidget(
         badge: badge,

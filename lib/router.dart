@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'models/_models.dart';
+import 'models/freezed/badge_model.dart' as BadgeModel;
 import 'screens/_screens.dart';
 import 'status/recipeStatus.dart';
 
@@ -114,9 +115,42 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/custom',
+        path: '/customRecipe',
         builder: (context, state) {
           return CustomRecipeScreen();
+        },
+      ),
+      GoRoute(
+        path: '/customRecipePurchase',
+        builder: (context, state) {
+          return CustomRecipePurchaseScreen();
+        },
+      ),
+      GoRoute(
+        path: '/custom-manage',
+        builder: (context, state) {
+          return CustomRecipeManageScreen();
+        },
+      ),
+      GoRoute(
+        path: '/custom-edit/:recipeId',
+        builder: (context, state) {
+          final recipeId = state.pathParameters['recipeId']!;
+          return CustomRecipeEditScreen(recipeId: recipeId);
+        },
+      ),
+      GoRoute(
+        path: '/cook-complete',
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>;
+          return CookCompleteScreen(
+            recipe: data['recipe'] as Recipe,
+            cookingTime: data['cookingTime'] as int,
+            newlyAcquiredBadgeIds: data['newlyAcquiredBadgeIds'] as List<String>?,
+            newlyCompletedQuestIds: data['newlyCompletedQuestIds'] as List<String>?,
+            interstitialAd: data['interstitialAd'],
+            newlyAcquiredBadges: data['newlyAcquiredBadges'] as List<BadgeModel.Badge>?,
+          );
         },
       ),
     ],

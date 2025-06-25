@@ -17,3 +17,6 @@ export 'matchRateIndicator_widget.dart';
 export 'ingredientList_widget.dart';
 export 'adSupportedRecipeList_widget.dart';
 export 'badgeUnlocked_widget.dart';
+export 'badge_unlock_popup_widget.dart';
+export 'recipe_thumbnail_widget.dart';
+export 'draggable_cooking_step_widget.dart';

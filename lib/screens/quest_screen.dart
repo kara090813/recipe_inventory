@@ -7,6 +7,7 @@ import 'dart:io' show Platform;
 import '../widgets/_widgets.dart';
 import '../models/_models.dart';
 import '../status/_status.dart';
+import '../utils/custom_snackbar.dart';
 
 class QuestScreen extends StatefulWidget {
   const QuestScreen({Key? key}) : super(key: key);
@@ -299,15 +300,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
   /// 광고 시청 처리
   void _showRewardedAd() {
     if (_rewardedAd == null || _isAdShowing) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '광고를 불러오는 중입니다. 잠시 후 다시 시도해주세요.',
-            style: TextStyle(fontFamily: 'Mapo'),
-          ),
-          backgroundColor: Color(0xFFFF8B27),
-        ),
-      );
+      CustomSnackBar.show(context, message: '광고를 불러오는 중입니다. 잠시 후 다시 시도해주세요.', backgroundColor: Color(0xFFFF8B27));
       return;
     }
     
@@ -327,28 +320,7 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
     userStatus.addPoints(userStatus.currentPoints + 100);
     
     // 성공 메시지 표시
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Image.asset(
-              'assets/imgs/items/ice.png',
-              width: 24.w,
-              height: 24.w,
-            ),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Text(
-                '광고 시청 완료! 얼음 포인트 100개를 획득했습니다!',
-                style: TextStyle(fontFamily: 'Mapo', fontSize: 14.sp),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Color(0xFF4CAF50),
-        duration: Duration(seconds: 3),
-      ),
-    );
+    CustomSnackBar.showSuccess(context, '광고 시청 완료! 얼음 포인트 100개를 획득했습니다!');
   }
   
   /// 광고 시청 카드 (아이콘 변경 및 비활성화 상태 지원)
@@ -638,244 +610,242 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
     Widget questCard = Container(
       margin: EdgeInsets.only(bottom: 12.h),
       height: 160.h, // 모바일 최적화를 위한 높이 증가
-      child: Row(
+      child: Stack(
         children: [
-          // 좌측 티켓 (퀘스트 정보 영역)
-          Expanded(
-            flex: 72,
-            child: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/imgs/background/ticketLeft.png'),
-                  fit: BoxFit.fill,
-                ),
-              ),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 12.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 제목과 퍼센티지를 한 줄에 배치
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // 실제 카드 컨테이너
+          Row(
+            children: [
+              // 좌측 티켓 (퀘스트 정보 영역)
+              Expanded(
+                flex: 72,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/imgs/background/ticketLeft.png'),
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 12.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: Text(
-                            quest.title,
-                            style: TextStyle(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF5E3009),
-                              fontFamily: 'Mapo',
+                        // 제목과 퍼센티지를 한 줄에 배치
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                quest.title,
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF5E3009),
+                                  fontFamily: 'Mapo',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF8B4513),
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                          child: Text(
-                            '${progressPercentage}%',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Mapo',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 4.h),
-
-                    // 퀘스트 설명 추가
-                    Text(
-                      quest.description,
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        color: Color(0xFF666666),
-                        fontFamily: 'Mapo',
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    SizedBox(height: 8.h),
-
-                    // 프로그레스 바 (전체 너비 차지)
-                    _buildProgressBarWithPointer(quest, progressColor),
-
-                    SizedBox(height: 2.h),
-
-                    // 프로그레스 바 아래 숫자 (0부터 maxProgress까지)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '0',
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: Color(0xFF666666),
-                            fontFamily: 'Mapo',
-                          ),
-                        ),
-                        Text(
-                          '${quest.targetCount}',
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: Color(0xFF666666),
-                            fontFamily: 'Mapo',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // 우측 티켓 (보상 영역)
-          Expanded(
-            flex: 28,
-            child: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(rightTicketImage),
-                  fit: BoxFit.fill,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 보상 아이콘 - ice.png로 통일
-                  if (quest.rewardPoints > 0) ...[
-                    Image.asset(
-                      'assets/imgs/items/ice.png',
-                      width: 32.w,
-                      height: 32.w,
-                      color: isRewardReceived ? Colors.grey : null,
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      '${quest.rewardPoints}P',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                        color: isRewardReceived ? Color(0xFF999999) : Color(0xFF5E3009),
-                        fontFamily: 'Mapo',
-                      ),
-                    ),
-                  ],
-
-                  // 경험치 보상도 표시
-                  if (quest.rewardExperience > 0) ...[
-                    SizedBox(height: 2.h),
-                    Text(
-                      '+${quest.rewardExperience}XP',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: isRewardReceived ? Color(0xFF999999) : Color(0xFF5E3009),
-                        fontFamily: 'Mapo',
-                      ),
-                    ),
-                  ],
-
-                  SizedBox(height: 4.h),
-
-                  // 상태별 버튼/텍스트
-                  if (isCompleted && !isRewardReceived)
-                    GestureDetector(
-                      onTap: () => _handleReceiveReward(quest, questStatus, userStatus),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10.r),
-                          border: Border.all(
-                            color: Color(0xFFFF8B27),
-                            width: 1.2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              offset: Offset(0, 1),
-                              blurRadius: 3,
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: Color(0xFF8B4513),
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              child: Text(
+                                '${progressPercentage}%',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontFamily: 'Mapo',
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        child: Text(
+
+                        SizedBox(height: 4.h),
+
+                        // 퀘스트 설명 추가
+                        Text(
+                          quest.description,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            color: Color(0xFF666666),
+                            fontFamily: 'Mapo',
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        SizedBox(height: 8.h),
+
+                        // 프로그레스 바 (전체 너비 차지)
+                        _buildProgressBarWithPointer(quest, progressColor),
+
+                        SizedBox(height: 2.h),
+
+                        // 프로그레스 바 아래 숫자 (0부터 maxProgress까지)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '0',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: Color(0xFF666666),
+                                fontFamily: 'Mapo',
+                              ),
+                            ),
+                            Text(
+                              '${quest.targetCount}',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: Color(0xFF666666),
+                                fontFamily: 'Mapo',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 우측 티켓 (보상 영역)
+              Expanded(
+                flex: 28,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(rightTicketImage),
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 보상 아이콘 - ice.png로 통일
+                      if (quest.rewardPoints > 0) ...[
+                        Image.asset(
+                          'assets/imgs/items/ice.png',
+                          width: 32.w,
+                          height: 32.w,
+                          color: isRewardReceived ? Colors.grey : null,
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          '${quest.rewardPoints}P',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            color: isRewardReceived ? Color(0xFF999999) : Color(0xFF5E3009),
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                      ],
+
+                      // 경험치 보상도 표시
+                      if (quest.rewardExperience > 0) ...[
+                        SizedBox(height: 2.h),
+                        Text(
+                          '+${quest.rewardExperience}XP',
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            color: isRewardReceived ? Color(0xFF999999) : Color(0xFF5E3009),
+                            fontFamily: 'Mapo',
+                          ),
+                        ),
+                      ],
+
+                      SizedBox(height: 4.h),
+
+                      // 상태별 버튼/텍스트
+                      if (isCompleted && !isRewardReceived)
+                        GestureDetector(
+                          onTap: () => _handleReceiveReward(quest, questStatus, userStatus),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10.r),
+                              border: Border.all(
+                                color: Color(0xFFFF8B27),
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  offset: Offset(0, 1),
+                                  blurRadius: 3,
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              statusText,
+                              style: TextStyle(
+                                color: Color(0xFFFF8B27),
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Mapo',
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Text(
                           statusText,
                           style: TextStyle(
-                            color: Color(0xFFFF8B27),
+                            color: statusTextColor,
                             fontSize: 13.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Mapo',
                           ),
                         ),
-                      ),
-                    )
-                  else
-                    Text(
-                      statusText,
-                      style: TextStyle(
-                        color: statusTextColor,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Mapo',
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    // 완료된 퀘스트(보상까지 받은)에 반짝이는 애니메이션 적용
-    if (isRewardReceived) {
-      return AnimatedBuilder(
-        animation: _shimmerAnimation,
-        builder: (context, child) {
-          return Stack(
-            children: [
-              questCard,
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.r),
-                  child: AnimatedBuilder(
-                    animation: _shimmerAnimation,
-                    builder: (context, child) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment(-1.0 + _shimmerAnimation.value, 0.0),
-                            end: Alignment(1.0 + _shimmerAnimation.value, 0.0),
-                            colors: [
-                              Colors.transparent,
-                              Colors.white.withOpacity(0.3),
-                              Colors.transparent,
-                            ],
-                            stops: [0.0, 0.5, 1.0],
-                          ),
-                        ),
-                      );
-                    },
+                    ],
                   ),
                 ),
               ),
             ],
-          );
-        },
-      );
-    }
+          ),
+          
+          // 보상 수령 대기 상태인 퀘스트의 왼쪽 영역에만 반짝이는 애니메이션 적용
+          if (isCompleted && !isRewardReceived)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              right: MediaQuery.of(context).size.width * 0.26, // 오른쪽 26% 영역 제외하여 왼쪽 카드 경계선까지 확장
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8.r),
+                child: AnimatedBuilder(
+                  animation: _shimmerAnimation,
+                  builder: (context, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment(-1.0 + _shimmerAnimation.value, 0.0),
+                          end: Alignment(1.0 + _shimmerAnimation.value, 0.0),
+                          colors: [
+                            Colors.transparent,
+                            Colors.white.withOpacity(0.3),
+                            Colors.transparent,
+                          ],
+                          stops: [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
 
     return questCard;
   }
@@ -887,48 +857,15 @@ class _QuestScreenState extends State<QuestScreen> with TickerProviderStateMixin
 
       if (success && mounted) {
         // 성공 알림 표시
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8.w),
-                Expanded(
-                  child: Text(
-                    '보상을 받았습니다! +${quest.rewardPoints}P +${quest.rewardExperience}XP',
-                    style: TextStyle(fontFamily: 'Mapo'),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Color(0xFF4CAF50),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        CustomSnackBar.showSuccess(context, '보상을 받았습니다! +${quest.rewardPoints}P +${quest.rewardExperience}XP');
       } else if (mounted) {
         // 실패 알림 표시
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '보상 받기에 실패했습니다.',
-              style: TextStyle(fontFamily: 'Mapo'),
-            ),
-            backgroundColor: Color(0xFFE53E3E),
-          ),
-        );
+        CustomSnackBar.showError(context, '보상 받기에 실패했습니다.');
       }
     } catch (e) {
       print('보상 받기 처리 중 오류: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '오류가 발생했습니다: $e',
-              style: TextStyle(fontFamily: 'Mapo'),
-            ),
-            backgroundColor: Color(0xFFE53E3E),
-          ),
-        );
+        CustomSnackBar.showError(context, '오류가 발생했습니다: $e');
       }
     }
   }

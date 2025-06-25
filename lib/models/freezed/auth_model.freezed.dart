@@ -40,7 +40,9 @@ mixin _$UserProfile {
   bool get isUsingBadgeProfile =>
       throw _privateConstructorUsedError; // 뱃지 프로필 사용 여부
   @HiveField(9)
-  String? get mainBadgeId => throw _privateConstructorUsedError;
+  String? get mainBadgeId => throw _privateConstructorUsedError; // 메인 뱃지 ID
+  @HiveField(10)
+  int get customRecipeTickets => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -64,7 +66,8 @@ abstract class $UserProfileCopyWith<$Res> {
       @HiveField(6) int experience,
       @HiveField(7) int level,
       @HiveField(8) bool isUsingBadgeProfile,
-      @HiveField(9) String? mainBadgeId});
+      @HiveField(9) String? mainBadgeId,
+      @HiveField(10) int customRecipeTickets});
 }
 
 /// @nodoc
@@ -90,6 +93,7 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? level = null,
     Object? isUsingBadgeProfile = null,
     Object? mainBadgeId = freezed,
+    Object? customRecipeTickets = null,
   }) {
     return _then(_value.copyWith(
       uid: null == uid
@@ -132,6 +136,10 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
           ? _value.mainBadgeId
           : mainBadgeId // ignore: cast_nullable_to_non_nullable
               as String?,
+      customRecipeTickets: null == customRecipeTickets
+          ? _value.customRecipeTickets
+          : customRecipeTickets // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -154,7 +162,8 @@ abstract class _$$UserProfileImplCopyWith<$Res>
       @HiveField(6) int experience,
       @HiveField(7) int level,
       @HiveField(8) bool isUsingBadgeProfile,
-      @HiveField(9) String? mainBadgeId});
+      @HiveField(9) String? mainBadgeId,
+      @HiveField(10) int customRecipeTickets});
 }
 
 /// @nodoc
@@ -178,6 +187,7 @@ class __$$UserProfileImplCopyWithImpl<$Res>
     Object? level = null,
     Object? isUsingBadgeProfile = null,
     Object? mainBadgeId = freezed,
+    Object? customRecipeTickets = null,
   }) {
     return _then(_$UserProfileImpl(
       uid: null == uid
@@ -220,6 +230,10 @@ class __$$UserProfileImplCopyWithImpl<$Res>
           ? _value.mainBadgeId
           : mainBadgeId // ignore: cast_nullable_to_non_nullable
               as String?,
+      customRecipeTickets: null == customRecipeTickets
+          ? _value.customRecipeTickets
+          : customRecipeTickets // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -237,7 +251,8 @@ class _$UserProfileImpl implements _UserProfile {
       @HiveField(6) this.experience = 0,
       @HiveField(7) this.level = 1,
       @HiveField(8) this.isUsingBadgeProfile = false,
-      @HiveField(9) this.mainBadgeId});
+      @HiveField(9) this.mainBadgeId,
+      @HiveField(10) this.customRecipeTickets = 0});
 
   factory _$UserProfileImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserProfileImplFromJson(json);
@@ -280,10 +295,15 @@ class _$UserProfileImpl implements _UserProfile {
   @override
   @HiveField(9)
   final String? mainBadgeId;
+// 메인 뱃지 ID
+  @override
+  @JsonKey()
+  @HiveField(10)
+  final int customRecipeTickets;
 
   @override
   String toString() {
-    return 'UserProfile(uid: $uid, email: $email, name: $name, photoURL: $photoURL, provider: $provider, points: $points, experience: $experience, level: $level, isUsingBadgeProfile: $isUsingBadgeProfile, mainBadgeId: $mainBadgeId)';
+    return 'UserProfile(uid: $uid, email: $email, name: $name, photoURL: $photoURL, provider: $provider, points: $points, experience: $experience, level: $level, isUsingBadgeProfile: $isUsingBadgeProfile, mainBadgeId: $mainBadgeId, customRecipeTickets: $customRecipeTickets)';
   }
 
   @override
@@ -305,13 +325,26 @@ class _$UserProfileImpl implements _UserProfile {
             (identical(other.isUsingBadgeProfile, isUsingBadgeProfile) ||
                 other.isUsingBadgeProfile == isUsingBadgeProfile) &&
             (identical(other.mainBadgeId, mainBadgeId) ||
-                other.mainBadgeId == mainBadgeId));
+                other.mainBadgeId == mainBadgeId) &&
+            (identical(other.customRecipeTickets, customRecipeTickets) ||
+                other.customRecipeTickets == customRecipeTickets));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, uid, email, name, photoURL,
-      provider, points, experience, level, isUsingBadgeProfile, mainBadgeId);
+  int get hashCode => Object.hash(
+      runtimeType,
+      uid,
+      email,
+      name,
+      photoURL,
+      provider,
+      points,
+      experience,
+      level,
+      isUsingBadgeProfile,
+      mainBadgeId,
+      customRecipeTickets);
 
   @JsonKey(ignore: true)
   @override
@@ -338,7 +371,8 @@ abstract class _UserProfile implements UserProfile {
       @HiveField(6) final int experience,
       @HiveField(7) final int level,
       @HiveField(8) final bool isUsingBadgeProfile,
-      @HiveField(9) final String? mainBadgeId}) = _$UserProfileImpl;
+      @HiveField(9) final String? mainBadgeId,
+      @HiveField(10) final int customRecipeTickets}) = _$UserProfileImpl;
 
   factory _UserProfile.fromJson(Map<String, dynamic> json) =
       _$UserProfileImpl.fromJson;
@@ -373,6 +407,9 @@ abstract class _UserProfile implements UserProfile {
   @override // 뱃지 프로필 사용 여부
   @HiveField(9)
   String? get mainBadgeId;
+  @override // 메인 뱃지 ID
+  @HiveField(10)
+  int get customRecipeTickets;
   @override
   @JsonKey(ignore: true)
   _$$UserProfileImplCopyWith<_$UserProfileImpl> get copyWith =>

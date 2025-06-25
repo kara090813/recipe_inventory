@@ -13,6 +13,12 @@ class HiveService {
   static const String QUEST_BOX = 'quests';
   static const String USER_BADGE_PROGRESS_BOX = 'user_badge_progress';
   static const String BADGE_STATS_BOX = 'badge_stats';
+  static const String CUSTOM_RECIPES_BOX = 'custom_recipes';
+  static const String CUSTOM_RECIPE_DRAFT_BOX = 'custom_recipe_draft';
+  static const String YOUTUBE_CONVERSION_BOX = 'youtube_conversion';
+  
+  // 초기화 상태 추적
+  static bool _isInitialized = false;
 
   static late Box<Recipe> _recipeBox;
   static late Box<Food> _foodBox;
@@ -24,6 +30,9 @@ class HiveService {
   static late Box<Quest> _questBox;
   static late Box<UserBadgeProgress> _userBadgeProgressBox;
   static late Box<BadgeStats> _badgeStatsBox;
+  static late Box<Recipe> _customRecipesBox;
+  static late Box<CustomRecipeDraft> _customRecipeDraftBox;
+  static late Box _youtubeConversionBox;
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -80,30 +89,140 @@ class HiveService {
     if (!Hive.isAdapterRegistered(16)) {
       Hive.registerAdapter(BadgeStatsAdapter());
     }
+    if (!Hive.isAdapterRegistered(17)) {
+      Hive.registerAdapter(CustomRecipeDraftAdapter());
+    }
 
-    // Box 열기
-    _recipeBox = await Hive.openBox<Recipe>(RECIPE_BOX);
+    // Box 열기 - Recipe 박스는 스키마 변경으로 인한 오류 처리
+    try {
+      _recipeBox = await Hive.openBox<Recipe>(RECIPE_BOX);
+    } catch (e) {
+      print('Recipe 박스 열기 실패, 삭제 후 재생성: $e');
+      try {
+        await Hive.deleteBoxFromDisk(RECIPE_BOX);
+      } catch (deleteError) {
+        print('Recipe 박스 삭제 실패: $deleteError');
+      }
+      _recipeBox = await Hive.openBox<Recipe>(RECIPE_BOX);
+    }
     _foodBox = await Hive.openBox<Food>(FOOD_BOX);
-    _cookingHistoryBox =
-        await Hive.openBox<CookingHistory>(COOKING_HISTORY_BOX);
-    _ongoingCookingBox =
-        await Hive.openBox<OngoingCooking>(ONGOING_COOKING_BOX);
+    
+    // CookingHistory 박스 처리 - Recipe 참조로 인한 오류 처리
+    try {
+      _cookingHistoryBox = await Hive.openBox<CookingHistory>(COOKING_HISTORY_BOX);
+    } catch (e) {
+      print('CookingHistory 박스 열기 실패, 삭제 후 재생성: $e');
+      try {
+        await Hive.deleteBoxFromDisk(COOKING_HISTORY_BOX);
+      } catch (deleteError) {
+        print('CookingHistory 박스 삭제 실패: $deleteError');
+      }
+      _cookingHistoryBox = await Hive.openBox<CookingHistory>(COOKING_HISTORY_BOX);
+    }
+    
+    // OngoingCooking 박스 처리 - Recipe 참조로 인한 오류 처리
+    try {
+      _ongoingCookingBox = await Hive.openBox<OngoingCooking>(ONGOING_COOKING_BOX);
+    } catch (e) {
+      print('OngoingCooking 박스 열기 실패, 삭제 후 재생성: $e');
+      try {
+        await Hive.deleteBoxFromDisk(ONGOING_COOKING_BOX);
+      } catch (deleteError) {
+        print('OngoingCooking 박스 삭제 실패: $deleteError');
+      }
+      _ongoingCookingBox = await Hive.openBox<OngoingCooking>(ONGOING_COOKING_BOX);
+    }
     
     // UserProfile 박스 처리 - 스키마 변경으로 인한 오류 처리
     try {
       _userProfileBox = await Hive.openBox<UserProfile>(USER_PROFILE_BOX);
     } catch (e) {
       print('UserProfile 박스 열기 실패, 삭제 후 재생성: $e');
-      await Hive.deleteBoxFromDisk(USER_PROFILE_BOX);
+      try {
+        await Hive.deleteBoxFromDisk(USER_PROFILE_BOX);
+      } catch (deleteError) {
+        print('박스 삭제 실패: $deleteError');
+      }
       _userProfileBox = await Hive.openBox<UserProfile>(USER_PROFILE_BOX);
     }
     
     _favoriteRecipesBox = await Hive.openBox<String>(FAVORITE_RECIPES_BOX);
     _appSettingsBox = await Hive.openBox(APP_SETTINGS_BOX);
-    _questBox = await Hive.openBox<Quest>(QUEST_BOX);
-    _userBadgeProgressBox = await Hive.openBox<UserBadgeProgress>(USER_BADGE_PROGRESS_BOX);
-    _badgeStatsBox = await Hive.openBox<BadgeStats>(BADGE_STATS_BOX);
+    
+    // Quest 박스 처리 - 안전한 초기화
+    try {
+      _questBox = await Hive.openBox<Quest>(QUEST_BOX);
+    } catch (e) {
+      print('Quest 박스 열기 실패, 삭제 후 재생성: $e');
+      try {
+        await Hive.deleteBoxFromDisk(QUEST_BOX);
+      } catch (deleteError) {
+        print('Quest 박스 삭제 실패: $deleteError');
+      }
+      _questBox = await Hive.openBox<Quest>(QUEST_BOX);
+    }
+    
+    // UserBadgeProgress 박스 처리 - 안전한 초기화
+    try {
+      _userBadgeProgressBox = await Hive.openBox<UserBadgeProgress>(USER_BADGE_PROGRESS_BOX);
+    } catch (e) {
+      print('UserBadgeProgress 박스 열기 실패, 삭제 후 재생성: $e');
+      try {
+        await Hive.deleteBoxFromDisk(USER_BADGE_PROGRESS_BOX);
+      } catch (deleteError) {
+        print('UserBadgeProgress 박스 삭제 실패: $deleteError');
+      }
+      _userBadgeProgressBox = await Hive.openBox<UserBadgeProgress>(USER_BADGE_PROGRESS_BOX);
+    }
+    
+    // BadgeStats 박스 처리 - 안전한 초기화
+    try {
+      _badgeStatsBox = await Hive.openBox<BadgeStats>(BADGE_STATS_BOX);
+    } catch (e) {
+      print('BadgeStats 박스 열기 실패, 삭제 후 재생성: $e');
+      try {
+        await Hive.deleteBoxFromDisk(BADGE_STATS_BOX);
+      } catch (deleteError) {
+        print('BadgeStats 박스 삭제 실패: $deleteError');
+      }
+      _badgeStatsBox = await Hive.openBox<BadgeStats>(BADGE_STATS_BOX);
+    }
+    // CustomRecipes 박스 처리
+    try {
+      _customRecipesBox = await Hive.openBox<Recipe>(CUSTOM_RECIPES_BOX);
+    } catch (e) {
+      print('CustomRecipes 박스 열기 실패, 삭제 후 재생성: $e');
+      try {
+        await Hive.deleteBoxFromDisk(CUSTOM_RECIPES_BOX);
+      } catch (deleteError) {
+        print('CustomRecipes 박스 삭제 실패: $deleteError');
+      }
+      _customRecipesBox = await Hive.openBox<Recipe>(CUSTOM_RECIPES_BOX);
+    }
+    
+    // CustomRecipeDraft 박스 처리
+    try {
+      _customRecipeDraftBox = await Hive.openBox<CustomRecipeDraft>(CUSTOM_RECIPE_DRAFT_BOX);
+    } catch (e) {
+      print('CustomRecipeDraft 박스 열기 실패, 삭제 후 재생성: $e');
+      try {
+        await Hive.deleteBoxFromDisk(CUSTOM_RECIPE_DRAFT_BOX);
+      } catch (deleteError) {
+        print('CustomRecipeDraft 박스 삭제 실패: $deleteError');
+      }
+      _customRecipeDraftBox = await Hive.openBox<CustomRecipeDraft>(CUSTOM_RECIPE_DRAFT_BOX);
+    }
+
+    // YoutubeConversion 박스 (변환 제한 관리용)
+    _youtubeConversionBox = await Hive.openBox(YOUTUBE_CONVERSION_BOX);
+    
+    // 초기화 완료 표시
+    _isInitialized = true;
+    print('✅ HiveService 초기화 완료');
   }
+  
+  // 초기화 상태 확인 메서드
+  static bool get isInitialized => _isInitialized;
 
   // Recipe 관련 메서드
   static Future<void> saveRecipes(List<Recipe> recipes) async {
@@ -119,6 +238,97 @@ class HiveService {
 
   static Recipe? getRecipe(String id) {
     return _recipeBox.get(id);
+  }
+
+  static Future<void> clearRecipes() async {
+    await _recipeBox.clear();
+  }
+
+  // Custom Recipe 관련 메서드
+  static Future<void> saveCustomRecipe(Recipe recipe) async {
+    await _customRecipesBox.put(recipe.id, recipe);
+  }
+
+  static Future<void> updateCustomRecipe(Recipe recipe) async {
+    await _customRecipesBox.put(recipe.id, recipe);
+  }
+
+  static List<Recipe> getCustomRecipes() {
+    return _customRecipesBox.values.toList();
+  }
+
+  static Recipe? getCustomRecipe(String id) {
+    return _customRecipesBox.get(id);
+  }
+
+  static Future<void> deleteCustomRecipe(String id) async {
+    await _customRecipesBox.delete(id);
+  }
+
+  static Future<void> clearCustomRecipes() async {
+    await _customRecipesBox.clear();
+  }
+
+  // Custom Recipe Draft 관련 메서드
+  static Future<void> saveCustomRecipeDraft(CustomRecipeDraft draft) async {
+    if (!_isInitialized) {
+      print('⚠️ HiveService가 아직 초기화되지 않았습니다.');
+      return;
+    }
+    
+    try {
+      final updatedDraft = draft.copyWith(
+        lastSavedAt: DateTime.now().millisecondsSinceEpoch.toString(),
+      );
+      await _customRecipeDraftBox.put('draft', updatedDraft);
+    } catch (e) {
+      print('CustomRecipeDraft 저장 실패: $e');
+      throw e; // 오류를 다시 throw하여 호출하는 곳에서 처리할 수 있도록 함
+    }
+  }
+
+  static CustomRecipeDraft? getCustomRecipeDraft() {
+    if (!_isInitialized) {
+      return null;
+    }
+    
+    try {
+      return _customRecipeDraftBox.get('draft');
+    } catch (e) {
+      // 박스가 아직 초기화되지 않았거나 오류가 발생한 경우
+      return null;
+    }
+  }
+
+  static Future<void> clearCustomRecipeDraft() async {
+    if (!_isInitialized) {
+      print('⚠️ HiveService가 아직 초기화되지 않았습니다.');
+      return;
+    }
+    
+    try {
+      await _customRecipeDraftBox.clear();
+    } catch (e) {
+      print('CustomRecipeDraft 삭제 실패: $e');
+      throw e;
+    }
+  }
+
+  static bool hasCustomRecipeDraft() {
+    if (!_isInitialized) {
+      return false;
+    }
+    
+    try {
+      final draft = getCustomRecipeDraft();
+      return draft != null && 
+             (draft.title.isNotEmpty || 
+              draft.ingredients.isNotEmpty || 
+              draft.cookingSteps.isNotEmpty);
+    } catch (e) {
+      // 박스가 아직 초기화되지 않았거나 오류가 발생한 경우
+      return false;
+    }
   }
 
   // Food 관련 메서드
@@ -386,6 +596,24 @@ class HiveService {
     }
   }
 
+  /// 메인 뱃지 해제
+  static Future<void> clearMainBadge() async {
+    // 모든 뱃지의 메인 설정 해제
+    final allProgress = getUserBadgeProgress();
+    for (final progress in allProgress) {
+      if (progress.isMainBadge) {
+        await updateBadgeProgress(
+          badgeId: progress.badgeId,
+          currentProgress: progress.currentProgress,
+          isUnlocked: progress.isUnlocked,
+          unlockedAt: progress.unlockedAt,
+          isMainBadge: false,
+          metadata: progress.metadata,
+        );
+      }
+    }
+  }
+
   /// 메인 뱃지 가져오기
   static UserBadgeProgress? getMainBadge() {
     final allProgress = getUserBadgeProgress();
@@ -475,11 +703,86 @@ class HiveService {
     await _questBox.clear();
     await _userBadgeProgressBox.clear();
     await _badgeStatsBox.clear();
+    await _customRecipesBox.clear();
+    await _customRecipeDraftBox.clear();
+    await _youtubeConversionBox.clear();
   }
 
   // 마이그레이션용 메서드
   static Future<void> migrateFromSharedPreferences() async {
     // 이 메서드는 기존 SharedPreferences 데이터를 Hive로 마이그레이션할 때 사용
     // 필요시 구현
+  }
+
+  /// UserProfile 마이그레이션 메서드
+  static Future<void> _migrateUserProfile() async {
+    try {
+      final existingProfile = _userProfileBox.get('user_profile');
+      if (existingProfile != null) {
+        // 마이그레이션 로직 제거 - 기존 사용자도 기본값 유지
+        print('UserProfile 로드 완료');
+      }
+    } catch (e) {
+      print('UserProfile 마이그레이션 실패: $e');
+      // 마이그레이션 실패 시 박스 재생성
+      await Hive.deleteBoxFromDisk(USER_PROFILE_BOX);
+      _userProfileBox = await Hive.openBox<UserProfile>(USER_PROFILE_BOX);
+    }
+  }
+
+  // ==================== YouTube 변환 제한 관련 메서드 ====================
+
+  /// 오늘 유튜브 변환 가능 여부 확인
+  static Future<bool> canConvertYoutube() async {
+    final today = DateTime.now();
+    final todayKey = '${today.year}-${today.month}-${today.day}';
+    final conversions = _youtubeConversionBox.get(todayKey, defaultValue: 0) as int;
+    return conversions < 2; // 하루 최대 2회
+  }
+
+  /// 유튜브 변환 횟수 증가
+  static Future<void> incrementYoutubeConversion() async {
+    final today = DateTime.now();
+    final todayKey = '${today.year}-${today.month}-${today.day}';
+    final currentCount = _youtubeConversionBox.get(todayKey, defaultValue: 0) as int;
+    await _youtubeConversionBox.put(todayKey, currentCount + 1);
+  }
+
+  /// 오늘 유튜브 변환 횟수 가져오기
+  static int getTodayYoutubeConversions() {
+    final today = DateTime.now();
+    final todayKey = '${today.year}-${today.month}-${today.day}';
+    return _youtubeConversionBox.get(todayKey, defaultValue: 0) as int;
+  }
+
+  /// 유튜브 변환 기록 정리 (일주일 이전 데이터 삭제)
+  static Future<void> cleanupYoutubeConversions() async {
+    final weekAgo = DateTime.now().subtract(Duration(days: 7));
+    final keysToDelete = <String>[];
+    
+    for (final key in _youtubeConversionBox.keys) {
+      if (key is String && key.contains('-')) {
+        try {
+          final parts = key.split('-');
+          if (parts.length == 3) {
+            final date = DateTime(
+              int.parse(parts[0]),
+              int.parse(parts[1]),
+              int.parse(parts[2]),
+            );
+            if (date.isBefore(weekAgo)) {
+              keysToDelete.add(key);
+            }
+          }
+        } catch (e) {
+          // 잘못된 형식의 키는 삭제
+          keysToDelete.add(key);
+        }
+      }
+    }
+    
+    for (final key in keysToDelete) {
+      await _youtubeConversionBox.delete(key);
+    }
   }
 }

@@ -20,6 +20,9 @@ class Recipe with _$Recipe {
     @HiveField(9) required List<String> recipe_method,
     @HiveField(10) required List<String> recipe_tags,
     @HiveField(11) @Default("20240204000000") String createdAt,
+    @HiveField(12) @Default(false) bool isCustom,
+    @HiveField(13) @Default("") String youtubeUrl,
+    @HiveField(14) @Default("") String updatedAt,
   }) = _Recipe;
 
   factory Recipe.fromJson(Map<String, dynamic> json) => _$RecipeFromJson(json);

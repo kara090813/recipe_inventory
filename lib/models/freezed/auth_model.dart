@@ -18,6 +18,7 @@ class UserProfile with _$UserProfile {
     @HiveField(7) @Default(1) int level,            // 현재 레벨
     @HiveField(8) @Default(false) bool isUsingBadgeProfile,  // 뱃지 프로필 사용 여부
     @HiveField(9) String? mainBadgeId,              // 메인 뱃지 ID
+    @HiveField(10) @Default(0) int customRecipeTickets,  // 커스텀 레시피 생성권
   }) = _UserProfile;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => _$UserProfileFromJson(json);
